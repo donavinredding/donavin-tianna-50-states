@@ -1,0 +1,308 @@
+/* --- CSS Reset & Vintage Variables --- */
+:root {
+    --bg-color: #f4efe1; /* Vintage cream paper */
+    --text-color: #2b2b2b;
+    --dark-pastel-green: #3b5e43;
+    --pastel-orange: #d9822b;
+    --dark-pastel-red: #8c3a3a;
+    --white: #fcf8f2;
+    --polaroid-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    --font-heading: 'Special Elite', cursive, serif;
+    --font-body: 'Courier Prime', monospace, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* --- Header --- */
+.site-header {
+    background-color: var(--dark-pastel-green);
+    color: var(--white);
+    text-align: center;
+    padding: 2rem 1rem;
+    border-bottom: 4px dashed var(--pastel-orange);
+}
+
+.site-header h1 {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: #e2dcd0;
+}
+
+/* --- Main Map Layout --- */
+.main-container {
+    flex: 1;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.map-instruction {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    background-color: var(--white);
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--dark-pastel-green);
+    border-radius: 4px;
+    box-shadow: 3px 3px 0px var(--pastel-orange);
+}
+
+.us-map-wrapper {
+    width: 100%;
+    background-color: var(--white);
+    border: 4px solid var(--dark-pastel-green);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 6px 6px 0px rgba(59, 94, 67, 0.3);
+}
+
+/* States Grid (Mobile-First Responsive Grid) */
+.states-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+}
+
+/* State Card / Shape Styling */
+.state-card {
+    background-color: var(--pastel-orange);
+    color: var(--white);
+    font-family: var(--font-heading);
+    height: 90px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #b36219;
+    box-shadow: 2px 3px 5px rgba(0,0,0,0.15);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.state-card:nth-child(even) {
+    background-color: var(--dark-pastel-green);
+    border-color: #28422f;
+}
+
+.state-card:nth-child(3n) {
+    background-color: var(--dark-pastel-red);
+    border-color: #612525;
+}
+
+/* Hover Effect: Scale Up & Fade Effect Container */
+.state-card:hover {
+    transform: scale(1.08);
+    z-index: 10;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+.state-card .state-bg-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+    z-index: 1;
+}
+
+.state-card:hover .state-bg-slider {
+    opacity: 0.45; /* Fades through images on hover */
+    animation: fadeImages 6s infinite;
+}
+
+.state-card span {
+    position: relative;
+    z-index: 2;
+    font-size: 0.95rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    padding: 0 4px;
+}
+
+/* --- Modal Gallery Styling --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    display: none;
+    opacity: 0;
+}
+
+.modal-content {
+    background-color: var(--bg-color);
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    border-radius: 8px;
+    border: 4px solid var(--dark-pastel-green);
+    padding: 2rem 1.5rem;
+    position: relative;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: var(--dark-pastel-red);
+    color: var(--white);
+    border: none;
+    font-size: 1.8rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background-color: #612525;
+}
+
+.modal-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.modal-header h2 {
+    font-family: var(--font-heading);
+    font-size: 2.2rem;
+    color: var(--dark-pastel-green);
+}
+
+.modal-header p {
+    font-style: italic;
+    color: #666;
+}
+
+/* --- Polaroid Gallery Layout --- */
+.polaroid-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 2rem;
+    padding: 1rem 0;
+}
+
+.polaroid-item {
+    background: var(--white);
+    padding: 12px 12px 35px 12px;
+    box-shadow: var(--polaroid-shadow);
+    border: 1px solid #ddd;
+    transform: rotate(var(--rot, 0deg));
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.polaroid-item:nth-child(odd) {
+    --rot: 2deg;
+}
+
+.polaroid-item:nth-child(even) {
+    --rot: -2deg;
+}
+
+.polaroid-item:hover {
+    transform: scale(1.03) rotate(0deg);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    z-index: 5;
+}
+
+.polaroid-img-wrapper {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+    background-color: #eee;
+}
+
+.polaroid-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: sepia(0.2); /* Retro photo touch */
+}
+
+.polaroid-caption {
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    text-align: center;
+    margin-top: 15px;
+    color: #333;
+}
+
+/* --- Footer --- */
+.site-footer {
+    background-color: #2b2b2b;
+    color: var(--white);
+    text-align: center;
+    padding: 1.2rem;
+    font-size: 0.9rem;
+    border-top: 3px solid var(--pastel-orange);
+}
+
+/* --- Responsive Media Queries --- */
+@media (max-width: 768px) {
+    .states-grid {
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 8px;
+    }
+
+    .state-card {
+        height: 75px;
+        font-size: 0.85rem;
+    }
+
+    .modal-content {
+        padding: 1.5rem 1rem;
+        max-height: 90vh;
+    }
+}

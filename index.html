@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donavin's and Tianna's 50 State Gallery</title>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="site-header">
+        <div class="header-content">
+            <h1>Donavin & Tianna's 50 State Gallery</h1>
+            <p class="subtitle">A Vintage Journey Across America 🇺🇸</p>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="map-instruction">
+            <p>Hover to explore • Click a state to view the family Polaroid collection</p>
+        </div>
+
+        <div class="us-map-wrapper">
+            <div id="states-grid" class="states-grid">
+                </div>
+        </div>
+    </main>
+
+    <div id="gallery-modal" class="modal hidden">
+        <div class="modal-content">
+            <button id="close-modal" class="close-btn">&times;</button>
+            <div class="modal-header">
+                <h2 id="modal-state-title">State Name</h2>
+                <p id="modal-state-subtitle">Memories & Moments</p>
+            </div>
+            <div id="polaroid-gallery" class="polaroid-gallery">
+                </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <p>&copy; 2026 Donavin & Tianna • Built with love for the family.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
