@@ -1,14 +1,24 @@
-/* --- CSS Reset & Vintage Variables --- */
+/* --- CSS Reset & Modern Autumnal Variables --- */
 :root {
-    --bg-color: #f4efe1; /* Vintage cream paper */
-    --text-color: #2b2b2b;
-    --dark-pastel-green: #3b5e43;
-    --pastel-orange: #d9822b;
-    --dark-pastel-red: #8c3a3a;
-    --white: #fcf8f2;
-    --polaroid-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    --font-heading: 'Special Elite', cursive, serif;
-    --font-body: 'Courier Prime', monospace, sans-serif;
+    /* Updated Palette directly sampled from the image swatches */
+    --sage-green: #677A6E;        /* Muted Sage */
+    --deep-burgundy: #660C21;     /* Deep Wine/Burgundy */
+    --burnt-orange: #C65108;      /* Warm Rust/Orange */
+    --warm-taupe: #BC9F86;        /* Soft Sand/Taupe */
+    --light-cream: #E5DFD5;       /* Warm Cream background */
+    --white: #FFFFFF;             /* Crisp modern white */
+    --text-color: #211917;        /* Soft dark espresso */
+    
+    /* Playful UI Variables */
+    --border-radius-sm: 12px;
+    --border-radius-md: 20px;
+    --border-radius-lg: 28px;
+    --card-shadow: 0 10px 25px -5px rgba(103, 122, 110, 0.15);
+    --hover-shadow: 0 18px 35px -5px rgba(102, 12, 33, 0.2);
+    
+    /* Clean, playful sans-serif typography */
+    --font-heading: 'Fredoka', 'Quicksand', 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Nunito', 'Outfit', sans-serif;
 }
 
 * {
@@ -18,9 +28,10 @@
 }
 
 body {
-    background-color: var(--bg-color);
+    background-color: var(--light-cream);
     color: var(--text-color);
     font-family: var(--font-body);
+    font-weight: 500;
     line-height: 1.6;
     display: flex;
     flex-direction: column;
@@ -29,305 +40,28 @@ body {
 
 /* --- Header --- */
 .site-header {
-    background-color: var(--dark-pastel-green);
+    background-color: var(--sage-green);
     color: var(--white);
     text-align: center;
-    padding: 2rem 1rem;
-    border-bottom: 4px dashed var(--pastel-orange);
+    padding: 3rem 1.5rem;
+    border-bottom-left-radius: var(--border-radius-lg);
+    border-bottom-right-radius: var(--border-radius-lg);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
 }
 
 .site-header h1 {
     font-family: var(--font-heading);
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
-    letter-spacing: 1px;
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    letter-spacing: -0.5px;
     margin-bottom: 0.5rem;
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+    font-weight: 700;
 }
 
 .subtitle {
-    font-size: 1.1rem;
-    font-style: italic;
-    color: #e2dcd0;
-}
-
-/* --- Main Map Layout --- */
-.main-container {
-    flex: 1;
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.map-instruction {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    font-size: 1rem;
-    background-color: var(--white);
-    padding: 0.5rem 1rem;
-    border: 2px solid var(--dark-pastel-green);
-    border-radius: 4px;
-    box-shadow: 3px 3px 0px var(--pastel-orange);
-}
-
-.us-map-wrapper {
-    width: 100%;
-    background-color: var(--white);
-    border: 4px solid var(--dark-pastel-green);
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 6px 6px 0px rgba(59, 94, 67, 0.3);
-}
-
-/* States Grid (Mobile-First Responsive Grid) */
-.states-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 12px;
-}
-
-/* State Card / Shape Styling */
-.state-card {
-    background-color: var(--pastel-orange);
-    color: var(--white);
-    font-family: var(--font-heading);
-    height: 90px;
-    border-radius: 6px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    border: 2px solid #b36219;
-    box-shadow: 2px 3px 5px rgba(0,0,0,0.15);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.state-card:nth-child(even) {
-    background-color: var(--dark-pastel-green);
-    border-color: #28422f;
-}
-
-.state-card:nth-child(3n) {
-    background-color: var(--dark-pastel-red);
-    border-color: #612525;
-}
-
-/* Hover Effect: Scale Up & Fade Effect Container */
-.state-card:hover {
-    transform: scale(1.08);
-    z-index: 10;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-}
-
-.state-card .state-bg-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 0.8s ease-in-out;
-    z-index: 1;
-}
-
-.state-card:hover .state-bg-slider {
-    opacity: 0.45; /* Fades through images on hover */
-    animation: fadeImages 6s infinite;
-}
-
-.state-card span {
-    position: relative;
-    z-index: 2;
-    font-size: 0.95rem;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-    padding: 0 4px;
-}
-
-/* --- Modal Gallery Styling --- */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.75);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    padding: 1rem;
-    opacity: 1;
-    transition: opacity 0.3s ease;
-}
-
-.modal.hidden {
-    display: none;
-    opacity: 0;
-}
-
-.modal-content {
-    background-color: var(--bg-color);
-    width: 100%;
-    max-width: 900px;
-    max-height: 85vh;
-    border-radius: 8px;
-    border: 4px solid var(--dark-pastel-green);
-    padding: 2rem 1.5rem;
-    position: relative;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.close-btn {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: var(--dark-pastel-red);
-    color: var(--white);
-    border: none;
-    font-size: 1.8rem;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    transition: background 0.2s;
-}
-
-.close-btn:hover {
-    background-color: #612525;
-}
-
-.modal-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.modal-header h2 {
-    font-family: var(--font-heading);
-    font-size: 2.2rem;
-    color: var(--dark-pastel-green);
-}
-
-.modal-header p {
-    font-style: italic;
-    color: #666;
-}
-
-/* --- Polaroid Gallery Layout --- */
-.polaroid-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 2rem;
-    padding: 1rem 0;
-}
-
-.polaroid-item {
-    background: var(--white);
-    padding: 12px 12px 35px 12px;
-    box-shadow: var(--polaroid-shadow);
-    border: 1px solid #ddd;
-    transform: rotate(var(--rot, 0deg));
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.polaroid-item:nth-child(odd) {
-    --rot: 2deg;
-}
-
-.polaroid-item:nth-child(even) {
-    --rot: -2deg;
-}
-
-.polaroid-item:hover {
-    transform: scale(1.03) rotate(0deg);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
-    z-index: 5;
-}
-
-.polaroid-img-wrapper {
-    width: 100%;
-    height: 200px;
-    overflow: hidden;
-    background-color: #eee;
-}
-
-.polaroid-img-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    filter: sepia(0.2); /* Retro photo touch */
-}
-/* --- CSS Reset & Refined Autumnal Variables --- */
-:root {
-    /* Exact Palette extracted from image swatches */
-    --bg-color: #E2DDD5;          /* Lighter warm limestone background */
-    --text-color: #231C18;        /* Deep espresso brown */
-    --sage-green: #6C7A70;        /* Muted eucalyptus green */
-    --deep-burgundy: #680E23;     /* Rich wine/burgundy */
-    --burnt-orange: #C0510C;      /* Rust orange */
-    --warm-taupe: #BEA490;        /* Warm nude/taupe */
-    --cream: #F5F0E8;             /* Warm alabaster cream */
-    
-    /* Elegant Romantic UI Variables */
-    --card-shadow: 0 10px 30px rgba(35, 28, 24, 0.08);
-    --polaroid-shadow: 0 12px 32px rgba(35, 28, 24, 0.15);
-    --font-heading: 'Playfair Display', Georgia, serif;
-    --font-body: 'Cormorant Garamond', Garamond, serif;
-    --border-radius-soft: 8px;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: var(--font-body);
-    line-height: 1.65;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-}
-
-/* --- Header --- */
-.site-header {
-    background-color: var(--deep-burgundy);
-    color: var(--cream);
-    text-align: center;
-    padding: 3.5rem 1rem 3rem;
-    border-bottom: 3px solid var(--burnt-orange);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.site-header h1 {
-    font-family: var(--font-heading);
-    font-size: clamp(2.2rem, 5vw, 3.4rem);
-    letter-spacing: 2px;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-}
-
-.subtitle {
-    font-size: 1.25rem;
-    font-style: italic;
-    color: var(--warm-taupe);
-    letter-spacing: 0.5px;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--light-cream);
+    opacity: 0.95;
 }
 
 /* --- Main Layout --- */
@@ -336,7 +70,7 @@ body {
     max-width: 1200px;
     width: 100%;
     margin: 0 auto;
-    padding: 3rem 1.5rem;
+    padding: 2.5rem 1.5rem;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -344,21 +78,20 @@ body {
 
 .map-instruction {
     text-align: center;
-    margin-bottom: 2rem;
-    font-size: 1.15rem;
-    background-color: var(--cream);
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background-color: var(--white);
     color: var(--text-color);
-    padding: 0.8rem 1.8rem;
-    border: 1px solid var(--warm-taupe);
-    border-radius: 30px; /* Soft pill shape for an organic, modern feel */
-    box-shadow: 0 4px 12px rgba(35, 28, 24, 0.05);
+    padding: 0.8rem 1.6rem;
+    border-radius: var(--border-radius-md);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .us-map-wrapper {
     width: 100%;
-    background-color: var(--cream);
-    border: 1px solid var(--warm-taupe);
-    border-radius: var(--border-radius-soft);
+    background-color: var(--white);
+    border-radius: var(--border-radius-lg);
     padding: 2rem;
     box-shadow: var(--card-shadow);
 }
@@ -366,17 +99,17 @@ body {
 /* States Grid */
 .states-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     gap: 16px;
 }
 
-/* State Card / Warm Romantic Palette Alternation */
+/* State Card / Color Alternation */
 .state-card {
     background-color: var(--burnt-orange);
-    color: var(--cream);
+    color: var(--white);
     font-family: var(--font-heading);
     height: 100px;
-    border-radius: var(--border-radius-soft);
+    border-radius: var(--border-radius-sm);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -385,9 +118,9 @@ body {
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    border: none;
-    box-shadow: 0 4px 12px rgba(35, 28, 24, 0.1);
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    /* Playful cubic-bezier spring effect */
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
 
 .state-card:nth-child(even) {
@@ -400,14 +133,14 @@ body {
 
 .state-card:nth-child(4n) {
     background-color: var(--warm-taupe);
-    color: var(--text-color);
+    color: var(--white);
 }
 
-/* Hover Effect */
+/* Hover Effect - Bouncy & Playful */
 .state-card:hover {
-    transform: translateY(-5px);
+    transform: translateY(-6px) scale(1.05);
     z-index: 10;
-    box-shadow: 0 12px 24px rgba(35, 28, 24, 0.25);
+    box-shadow: var(--hover-shadow);
 }
 
 .state-card .state-bg-slider {
@@ -419,21 +152,19 @@ body {
     background-size: cover;
     background-position: center;
     opacity: 0;
-    transition: opacity 0.8s ease-in-out;
+    transition: opacity 0.4s ease;
     z-index: 1;
 }
 
 .state-card:hover .state-bg-slider {
-    opacity: 0.35;
-    animation: fadeImages 6s infinite;
+    opacity: 0.3;
 }
 
 .state-card span {
     position: relative;
     z-index: 2;
-    font-size: 1.05rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    font-size: 1.1rem;
+    font-weight: 700;
     padding: 0 6px;
 }
 
@@ -444,13 +175,13 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(35, 28, 24, 0.82);
-    backdrop-filter: blur(4px); /* Warm soft focus overlay */
+    background-color: rgba(33, 25, 23, 0.6);
+    backdrop-filter: blur(6px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    padding: 1rem;
+    padding: 1.5rem;
     opacity: 1;
     transition: opacity 0.3s ease;
 }
@@ -461,16 +192,15 @@ body {
 }
 
 .modal-content {
-    background-color: var(--cream);
+    background-color: var(--light-cream);
     width: 100%;
     max-width: 920px;
     max-height: 85vh;
-    border-radius: var(--border-radius-soft);
-    border: 1px solid var(--warm-taupe);
-    padding: 3rem 2rem;
+    border-radius: var(--border-radius-lg);
+    padding: 2.5rem;
     position: relative;
     overflow-y: auto;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 
 .close-btn {
@@ -478,106 +208,97 @@ body {
     top: 20px;
     right: 20px;
     background: var(--deep-burgundy);
-    color: var(--cream);
+    color: var(--white);
     border: none;
     font-size: 1.4rem;
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
 }
 
 .close-btn:hover {
     background-color: var(--burnt-orange);
-    transform: scale(1.08);
+    transform: scale(1.15) rotate(90deg);
 }
 
 .modal-header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
 }
 
 .modal-header h2 {
     font-family: var(--font-heading);
-    font-size: 2.6rem;
+    font-size: 2.5rem;
     color: var(--deep-burgundy);
-    font-weight: 500;
 }
 
 .modal-header p {
-    font-style: italic;
+    font-size: 1.05rem;
     color: var(--text-color);
-    opacity: 0.85;
-    font-size: 1.1rem;
+    opacity: 0.8;
 }
 
-/* --- Polaroid Gallery --- */
+/* --- Modern Card Gallery --- */
 .polaroid-gallery {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 2.5rem;
-    padding: 1rem 0;
+    gap: 1.5rem;
+    padding: 0.5rem 0;
 }
 
 .polaroid-item {
-    background: #FFFFFF;
-    padding: 16px 16px 42px 16px;
-    box-shadow: var(--polaroid-shadow);
-    border: 1px solid rgba(190, 164, 144, 0.3);
-    border-radius: 2px;
-    transform: rotate(var(--rot, 0deg));
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-.polaroid-item:nth-child(odd) {
-    --rot: 2deg;
-}
-
-.polaroid-item:nth-child(even) {
-    --rot: -2deg;
+    background: var(--white);
+    padding: 12px;
+    box-shadow: var(--card-shadow);
+    border-radius: var(--border-radius-md);
+    transform: none; /* Removed vintage tilted polaroid angles */
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
 }
 
 .polaroid-item:hover {
-    transform: scale(1.04) rotate(0deg);
-    box-shadow: 0 16px 36px rgba(35, 28, 24, 0.2);
+    transform: translateY(-8px);
+    box-shadow: var(--hover-shadow);
     z-index: 5;
 }
 
 .polaroid-img-wrapper {
     width: 100%;
-    height: 220px;
+    height: 210px;
     overflow: hidden;
-    background-color: var(--warm-taupe);
+    border-radius: var(--border-radius-sm);
+    background-color: var(--light-cream);
 }
 
 .polaroid-img-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: sepia(0.12) contrast(1.02);
+    filter: none; /* Removed vintage sepia filter for vibrant full colors */
 }
 
 .polaroid-caption {
     font-family: var(--font-heading);
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    font-weight: 600;
     text-align: center;
-    margin-top: 18px;
+    margin-top: 12px;
     color: var(--text-color);
 }
 
 /* --- Footer --- */
 .site-footer {
     background-color: var(--text-color);
-    color: var(--cream);
+    color: var(--white);
     text-align: center;
-    padding: 2rem 1rem;
+    padding: 2rem 1.5rem;
     font-size: 0.95rem;
-    border-top: 3px solid var(--burnt-orange);
-    letter-spacing: 0.5px;
+    border-top-left-radius: var(--border-radius-md);
+    border-top-right-radius: var(--border-radius-md);
 }
 
 /* --- Responsive Media Queries --- */
@@ -589,11 +310,10 @@ body {
 
     .state-card {
         height: 85px;
-        font-size: 0.9rem;
     }
 
     .modal-content {
-        padding: 2rem 1.2rem;
+        padding: 1.8rem 1.2rem;
         max-height: 90vh;
     }
 }
