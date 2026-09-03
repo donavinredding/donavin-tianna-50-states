@@ -4,45 +4,439 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Donavin's and Tianna's 50 State Gallery</title>
-    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f4eee1; /* Vintage paper cream */
+            --primary-red: #9E2A2B; /* Dark pastel red */
+            --primary-green: #4A7C59; /* Dark pastel green */
+            --primary-orange: #E09F3E; /* Pastel orange */
+            --text-dark: #2b2b2b;
+            --polaroid-bg: #ffffff;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            font-family: 'Courier Prime', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image: radial-gradient(#e3dccb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px dashed var(--primary-red);
+            padding-bottom: 15px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h1 {
+            font-family: 'Special Elite', cursive;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            color: var(--primary-red);
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px var(--primary-orange);
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            color: var(--primary-green);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Map Container */
+        .map-container {
+            width: 100%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 4px solid var(--text-dark);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        svg.us-map {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* SVG State Styling & Interactive States */
+        .state {
+            fill: var(--primary-green);
+            stroke: var(--bg-color);
+            stroke-width: 1.5;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            transform-origin: center;
+        }
+
+        .state:hover {
+            fill: var(--primary-orange);
+            transform: scale(1.04);
+            filter: drop-shadow(0px 5px 8px rgba(0,0,0,0.3));
+            z-index: 10;
+        }
+
+        /* Floating Hover Preview Box */
+        #hover-preview {
+            position: absolute;
+            background: var(--polaroid-bg);
+            border: 3px solid var(--text-dark);
+            padding: 10px 10px 30px 10px;
+            box-shadow: var(--shadow);
+            width: 160px;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            transform: rotate(-3deg);
+        }
+
+        #hover-preview img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border: 1px solid #ccc;
+        }
+
+        #hover-preview .preview-title {
+            font-family: 'Special Elite', cursive;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 8px;
+            color: var(--text-dark);
+        }
+
+        /* Modal Gallery Overlay */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(43, 43, 43, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: var(--bg-color);
+            border: 5px solid var(--primary-red);
+            width: 100%;
+            max-width: 900px;
+            max-height: 85vh;
+            border-radius: 8px;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            font-family: 'Special Elite', cursive;
+            font-size: 1.2rem;
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .close-btn:hover {
+            background: var(--text-dark);
+        }
+
+        .modal-header {
+            font-family: 'Special Elite', cursive;
+            font-size: 2rem;
+            color: var(--primary-red);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Polaroid Gallery Grid */
+        .polaroid-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            padding: 10px;
+        }
+
+        .polaroid {
+            background: var(--polaroid-bg);
+            padding: 12px 12px 35px 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            border: 1px solid #dcd7cc;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .polaroid:nth-child(odd) {
+            transform: rotate(2deg);
+        }
+
+        .polaroid:nth-child(even) {
+            transform: rotate(-2deg);
+        }
+
+        .polaroid:hover {
+            transform: scale(1.05) rotate(0deg);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .polaroid img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid #eee;
+        }
+
+        .polaroid p {
+            font-family: 'Special Elite', cursive;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        footer {
+            margin-top: auto;
+            font-size: 0.9rem;
+            color: var(--primary-red);
+            font-family: 'Special Elite', cursive;
+            text-align: center;
+            padding: 15px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .map-container {
+                padding: 10px;
+            }
+            .modal-content {
+                padding: 15px;
+            }
+        }
+    </style>
 </head>
 <body>
 
-    <header class="site-header">
-        <div class="header-content">
-            <h1>Donavin & Tianna's 50 State Gallery</h1>
-            <p class="subtitle">A Vintage Journey Across America 🇺🇸</p>
-        </div>
+    <header>
+        <h1>Donavin's & Tianna's 50 State Gallery</h1>
+        <p class="subtitle">A Family Journey Across America</p>
     </header>
 
-    <main class="main-container">
-        <div class="map-instruction">
-            <p>Hover to explore • Click a state to view the family Polaroid collection</p>
-        </div>
+    <div class="map-container">
+        <svg class="us-map" viewBox="0 0 959 593" xmlns="http://www.w3.org/2000/svg">
+            <g id="states-group">
+                <path id="AL" class="state" data-name="Alabama" d="M667,347 l16,3 l13,44 l-48,15 l-4,-23 l-3,-1 l-2,-13 l4,-17 l20,-8 z"/>
+                <path id="AK" class="state" data-name="Alaska" d="M100,480 l20,5 l10,20 l-15,10 z"/>
+                <path id="AZ" class="state" data-name="Arizona" d="M190,290 l65,8 l5,85 l-70,5 l-5,-45 z"/>
+                <path id="AR" class="state" data-name="Arkansas" d="M522,330 l52,4 l4,45 l-54,5 l-2,-49 z"/>
+                <path id="CA" class="state" data-name="California" d="M90,200 l35,45 l40,80 l-45,30 l-25,-55 l-10,-60 l-5,-30 z"/>
+                <path id="CO" class="state" data-name="Colorado" d="M312,235 l78,3 l3,67 l-80,4 l-1,-74 z"/>
+                <path id="CT" class="state" data-name="Connecticut" d="M880,185 l18,2 l2,12 l-18,2 z"/>
+                <path id="DE" class="state" data-name="Delaware" d="M835,230 l10,2 l3,20 l-10,2 z"/>
+                <path id="FL" class="state" data-name="Florida" d="M690,400 l45,3 l15,65 l25,35 l-18,10 l-12,-30 l-25,-40 l-15,-20 l-15,-23 z"/>
+                <path id="GA" class="state" data-name="Georgia" d="M700,345 l40,4 l8,55 l-42,35 l-15,-40 l9,-54 z"/>
+                <path id="HI" class="state" data-name="Hawaii" d="M250,510 l25,5 l5,15 l-25,5 z"/>
+                <path id="ID" class="state" data-name="Idaho" d="M190,120 l30,3 l15,60 l-18,45 l-12,-15 l-8,-55 l-7,-38 z"/>
+                <path id="IL" class="state" data-name="Illinois" d="M570,230 l25,3 l10,75 l-23,10 l-14,-70 l2,-18 z"/>
+                <path id="IN" class="state" data-name="Indiana" d="M610,235 l24,3 l4,65 l-24,4 l-4,-72 z"/>
+                <path id="IA" class="state" data-name="Iowa" d="M510,210 l60,5 l4,50 l-62,6 l-2,-61 z"/>
+                <path id="KS" class="state" data-name="Kansas" d="M410,270 l82,3 l2,48 l-82,4 l-2,-55 z"/>
+                <path id="KY" class="state" data-name="Kentucky" d="M612,300 l75,4 l10,25 l-75,10 l-10,-39 z"/>
+                <path id="LA" class="state" data-name="Louisiana" d="M525,400 l50,3 l8,35 l-45,15 l-10,-25 l-3,-28 z"/>
+                <path id="ME" class="state" data-name="Maine" d="M890,90 l35,15 l10,50 l-20,30 l-15,-20 l-10,-55 z"/>
+                <path id="MD" class="state" data-name="Maryland" d="M800,225 l30,3 l5,15 l-32,5 l-3,-23 z"/>
+                <path id="MA" class="state" data-name="Massachusetts" d="M860,165 l35,3 l2,15 l-35,3 l-2,-21 z"/>
+                <path id="MI" class="state" data-name="Michigan" d="M615,170 l40,10 l15,45 l-25,15 l-20,-30 l-10,-40 z"/>
+                <path id="MN" class="state" data-name="Minnesota" d="M535,145 l45,4 l10,65 l-48,5 l-7,-74 z"/>
+                <path id="MS" class="state" data-name="Mississippi" d="M625,345 l20,3 l8,55 l-23,10 l-5,-68 z"/>
+                <path id="MO" class="state" data-name="Missouri" d="M515,255 l60,4 l6,55 l-58,10 l-8,-69 z"/>
+                <path id="MT" class="state" data-name="Montana" d="M235,100 l85,5 l5,55 l-85,5 l-5,-65 z"/>
+                <path id="NE" class="state" data-name="Nebraska" d="M410,210 l85,5 l3,45 l-85,4 l-3,-54 z"/>
+                <path id="NV" class="state" data-name="Nevada" d="M140,200 l40,5 l20,80 l-45,20 l-15,-105 z"/>
+                <path id="NH" class="state" data-name="New Hampshire" d="M875,120 l15,2 l5,35 l-15,5 l-5,-42 z"/>
+                <path id="NJ" class="state" data-name="New Jersey" d="M840,200 l12,2 l8,35 l-12,5 l-8,-42 z"/>
+                <path id="NM" class="state" data-name="New Mexico" d="M312,300 l70,5 l5,70 l-72,5 l-3,-80 z"/>
+                <path id="NY" class="state" data-name="New York" d="M780,140 l60,10 l15,45 l-55,15 l-20,-70 z"/>
+                <path id="NC" class="state" data-name="North Carolina" d="M700,305 l85,8 l10,30 l-85,15 l-10,-53 z"/>
+                <path id="ND" class="state" data-name="North Dakota" d="M395,145 l85,5 l4,45 l-85,5 l-4,-55 z"/>
+                <path id="OH" class="state" data-name="Ohio" d="M670,225 l45,5 l8,40 l-45,8 l-8,-53 z"/>
+                <path id="OK" class="state" data-name="Oklahoma" d="M412,330 l85,5 l3,35 l-85,5 l-3,-45 z"/>
+                <path id="OR" class="state" data-name="Oregon" d="M95,135 l70,5 l5,55 l-70,5 l-5,-65 z"/>
+                <path id="PA" class="state" data-name="Pennsylvania" d="M720,195 l75,8 l5,35 l-75,8 l-5,-51 z"/>
+                <path id="RI" class="state" data-name="Rhode Island" d="M900,195 l10,2 l2,10 l-10,2 z"/>
+                <path id="SC" class="state" data-name="South Carolina" d="M725,355 l50,6 l8,25 l-50,10 l-8,-41 z"/>
+                <path id="SD" class="state" data-name="South Dakota" d="M395,200 l85,5 l3,45 l-85,5 l-3,-55 z"/>
+                <path id="Tennessee" class="state" data-name="Tennessee" d="M605,310 l90,5 l8,22 l-90,6 l-8,-33 z"/>
+                <path id="TX" class="state" data-name="Texas" d="M380,380 l90,10 l30,85 l-35,35 l-45,-45 l-45,25 l-5,-110 z"/>
+                <path id="UT" class="state" data-name="Utah" d="M242,220 l55,5 l8,70 l-55,8 l-8,-83 z"/>
+                <path id="VT" class="state" data-name="Vermont" d="M855,125 l12,2 l5,35 l-12,2 l-5,-39 z"/>
+                <path id="VA" class="state" data-name="Virginia" d="M710,270 l85,5 l12,25 l-85,10 l-12,-40 z"/>
+                <path id="WA" class="state" data-name="Washington" d="M100,80 l75,5 l5,45 l-75,5 l-5,-55 z"/>
+                <path id="WV" class="state" data-name="West Virginia" d="M685,250 l30,5 l8,25 l-30,5 l-8,-35 z"/>
+                <path id="WI" class="state" data-name="Wisconsin" d="M575,175 l45,5 l8,55 l-45,8 l-8,-68 z"/>
+                <path id="WY" class="state" data-name="Wyoming" d="M310,150 l75,5 l4,55 l-75,5 l-4,-65 z"/>
+            </g>
+        </svg>
 
-        <div class="us-map-wrapper">
-            <div id="states-grid" class="states-grid">
-                </div>
+        <div id="hover-preview">
+            <img id="preview-img" src="" alt="Preview">
+            <div id="preview-title" class="preview-title">State Name</div>
         </div>
-    </main>
+    </div>
 
-    <div id="gallery-modal" class="modal hidden">
+    <div id="gallery-modal" class="modal">
         <div class="modal-content">
-            <button id="close-modal" class="close-btn">&times;</button>
-            <div class="modal-header">
-                <h2 id="modal-state-title">State Name</h2>
-                <p id="modal-state-subtitle">Memories & Moments</p>
-            </div>
-            <div id="polaroid-gallery" class="polaroid-gallery">
+            <button class="close-btn" id="close-modal">X Close</button>
+            <h2 id="modal-state-title" class="modal-header">State Gallery</h2>
+            <div id="polaroid-container" class="polaroid-grid">
                 </div>
         </div>
     </div>
 
-    <footer class="site-footer">
-        <p>&copy; 2026 Donavin & Tianna • Built with love for the family.</p>
+    <footer>
+        <p>&copy; 2026 Donavin & Tianna. Created with family love for GitHub Pages.</p>
     </footer>
 
-    <script src="script.js"></script>
+    <script>
+        // Sample mock data for state memories, images, and descriptions
+        const stateGalleries = {
+            "California": [
+                { img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80", desc: "Yosemite family camping trip!" },
+                { img: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=600&q=80", desc: "San Francisco cable car ride." }
+            ],
+            "Texas": [
+                { img: "https://images.unsplash.com/photo-1531219434158-a578ca3275f1?auto=format&fit=crop&w=600&q=80", desc: "Austin barbecue weekend." },
+                { img: "https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?auto=format&fit=crop&w=600&q=80", desc: "San Antonio River Walk." }
+            ],
+            "New York": [
+                { img: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?auto=format&fit=crop&w=600&q=80", desc: "Central Park autumn walk." },
+                { img: "https://images.unsplash.com/photo-1534430480872-3498386e7856?auto=format&fit=crop&w=600&q=80", desc: "Times Square lights!" }
+            ],
+            "Florida": [
+                { img: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80", desc: "Miami beach sunset." },
+                { img: "https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?auto=format&fit=crop&w=600&q=80", desc: "Family trip to the Everglades." }
+            ]
+        };
+
+        // Fallback default images for any state without custom data loaded yet
+        const defaultGallery = [
+            { img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80", desc: "Exploring scenic backroads!" },
+            { img: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80", desc: "Unforgettable family memories here." }
+        ];
+
+        const states = document.querySelectorAll('.state');
+        const hoverPreview = document.getElementById('hover-preview');
+        const previewImg = document.getElementById('preview-img');
+        const previewTitle = document.getElementById('preview-title');
+        
+        const modal = document.getElementById('gallery-modal');
+        const closeModal = document.getElementById('close-modal');
+        const modalStateTitle = document.getElementById('modal-state-title');
+        const polaroidContainer = document.getElementById('polaroid-container');
+
+        let intervalId = null;
+
+        // Hover functionality with image cycling/fading
+        states.forEach(state => {
+            const stateName = state.getAttribute('data-name');
+            const data = stateGalleries[stateName] || defaultGallery;
+
+            state.addEventListener('mouseenter', (e) => {
+                previewTitle.textContent = stateName;
+                let currentIndex = 0;
+                previewImg.src = data[currentIndex].img;
+                
+                hoverPreview.style.display = 'block';
+                
+                // Cycle images while hovering
+                if (data.length > 1) {
+                    intervalId = setInterval(() => {
+                        currentIndex = (currentIndex + 1) % data.length;
+                        previewImg.src = data[currentIndex].img;
+                    }, 1500);
+                }
+            });
+
+            state.addEventListener('mousemove', (e) => {
+                hoverPreview.style.left = (e.pageX + 15) + 'px';
+                hoverPreview.style.top = (e.pageY - 120) + 'px';
+            });
+
+            state.addEventListener('mouseleave', () => {
+                hoverPreview.style.display = 'none';
+                if (intervalId) clearInterval(intervalId);
+            });
+
+            // Click functionality to open Polaroid Modal Gallery
+            state.addEventListener('click', () => {
+                modalStateTitle.textContent = `${stateName} Gallery`;
+                polaroidContainer.innerHTML = '';
+
+                data.forEach(item => {
+                    const polaroidDiv = document.createElement('div');
+                    polaroidDiv.className = 'polaroid';
+                    polaroidDiv.innerHTML = `
+                        <img src="${item.img}" alt="${stateName} photo">
+                        <p>${item.desc}</p>
+                    `;
+                    polaroidContainer.appendChild(polaroidDiv);
+                });
+
+                modal.classList.add('active');
+            });
+        });
+
+        // Close modal handlers
+        closeModal.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>

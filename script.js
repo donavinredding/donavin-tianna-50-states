@@ -1,242 +1,131 @@
-// List of all 50 US States with sample data for family memories
-const statesData = [
-    { name: "Alabama", code: "AL", images: [
-        { url: "https://picsum.photos/id/1015/400/300", desc: "Family trip to Gulf Shores." },
-        { url: "https://picsum.photos/id/1025/400/300", desc: "Exploring Huntsville Space Center." }
-    ]},
-    { name: "Alaska", code: "AK", images: [
-        { url: "https://picsum.photos/id/1039/400/300", desc: "Glacier sightseeing adventure." },
-        { url: "https://picsum.photos/id/1043/400/300", desc: "Spotting wildlife in Denali." }
-    ]},
-    { name: "Arizona", code: "AZ", images: [
-        { url: "https://picsum.photos/id/1050/400/300", desc: "Grand Canyon sunset hike." },
-        { url: "https://picsum.photos/id/1069/400/300", desc: "Sedona red rocks." }
-    ]},
-    { name: "Arkansas", code: "AR", images: [
-        { url: "https://picsum.photos/id/1074/400/300", desc: "Hot Springs National Park soaking." }
-    ]},
-    { name: "California", code: "CA", images: [
-        { url: "https://picsum.photos/id/1011/400/300", desc: "Pacific Coast Highway drive." },
-        { url: "https://picsum.photos/id/1012/400/300", desc: "Yosemite camping weekend." },
-        { url: "https://picsum.photos/id/1016/400/300", desc: "Golden Gate Bridge walk." }
-    ]},
-    { name: "Colorado", code: "CO", images: [
-        { url: "https://picsum.photos/id/1020/400/300", desc: "Rocky Mountain snow trip." },
-        { url: "https://picsum.photos/id/1024/400/300", desc: "Hiking in Boulder." }
-    ]},
-    { name: "Connecticut", code: "CT", images: [
-        { url: "https://picsum.photos/id/1031/400/300", desc: "Mystic Seaport Museum visit." }
-    ]},
-    { name: "Delaware", code: "DE", images: [
-        { url: "https://picsum.photos/id/1035/400/300", desc: "Rehoboth Beach boardwalk day." }
-    ]},
-    { name: "Florida", code: "FL", images: [
-        { url: "https://picsum.photos/id/1041/400/300", desc: "Key West family vacation." },
-        { url: "https://picsum.photos/id/1042/400/300", desc: "Everglades airboat ride." }
-    ]},
-    { name: "Georgia", code: "GA", images: [
-        { url: "https://picsum.photos/id/1055/400/300", desc: "Savannah historic square walk." },
-        { url: "https://picsum.photos/id/1057/400/300", desc: "Atlanta botanical gardens." }
-    ]},
-    { name: "Hawaii", code: "HI", images: [
-        { url: "https://picsum.photos/id/1062/400/300", desc: "Waikiki beach snorkeling." },
-        { url: "https://picsum.photos/id/1067/400/300", desc: "Road to Hana roadtrip." }
-    ]},
-    { name: "Idaho", code: "ID", images: [
-        { url: "https://picsum.photos/id/1070/400/300", desc: "Sun Valley hiking retreat." }
-    ]},
-    { name: "Illinois", code: "IL", images: [
-        { url: "https://picsum.photos/id/1080/400/300", desc: "Chicago deep-dish pizza & Millennium Park." }
-    ]},
-    { name: "Indiana", code: "IN", images: [
-        { url: "https://picsum.photos/id/1081/400/300", desc: "Indianapolis Motor Speedway tour." }
-    ]},
-    { name: "Iowa", code: "IA", images: [
-        { url: "https://picsum.photos/id/1082/400/300", desc: "State Fair family fun." }
-    ]},
-    { name: "Kansas", code: "KS", images: [
-        { url: "https://picsum.photos/id/1083/400/300", desc: "Sunflower fields road trip." }
-    ]},
-    { name: "Kentucky", code: "KY", images: [
-        { url: "https://picsum.photos/id/1084/400/300", desc: "Mammoth Cave exploration." }
-    ]},
-    { name: "Louisiana", code: "LA", images: [
-        { url: "https://picsum.photos/id/100/400/300", desc: "New Orleans French Quarter jazz night." }
-    ]},
-    { name: "Maine", code: "ME", images: [
-        { url: "https://picsum.photos/id/101/400/300", desc: "Acadia National Park lighthouse hike." }
-    ]},
-    { name: "Maryland", code: "MD", images: [
-        { url: "https://picsum.photos/id/102/400/300", desc: "Annapolis harbor crab feast." }
-    ]},
-    { name: "Massachusetts", code: "MA", images: [
-        { url: "https://picsum.photos/id/103/400/300", desc: "Boston Freedom Trail walk." }
-    ]},
-    { name: "Michigan", code: "MI", images: [
-        { url: "https://picsum.photos/id/104/400/300", desc: "Mackinac Island bike ride." }
-    ]},
-    { name: "Minnesota", code: "MN", images: [
-        { url: "https://picsum.photos/id/106/400/300", desc: "Canoeing the Boundary Waters." }
-    ]},
-    { name: "Mississippi", code: "MS", images: [
-        { url: "https://picsum.photos/id/108/400/300", desc: "Natchez Trace Parkway drive." }
-    ]},
-    { name: "Missouri", code: "MO", images: [
-        { url: "https://picsum.photos/id/109/400/300", desc: "St. Louis Gateway Arch view." }
-    ]},
-    { name: "Montana", code: "MT", images: [
-        { url: "https://picsum.photos/id/111/400/300", desc: "Glacier National Park camping." }
-    ]},
-    { name: "Nebraska", code: "NE", images: [
-        { url: "https://picsum.photos/id/112/400/300", desc: "Chimney Rock historic stop." }
-    ]},
-    { name: "Nevada", code: "NV", images: [
-        { url: "https://picsum.photos/id/113/400/300", desc: "Lake Tahoe summer weekend." }
-    ]},
-    { name: "New Hampshire", code: "NH", images: [
-        { url: "https://picsum.photos/id/114/400/300", desc: "White Mountains autumn foliage." }
-    ]},
-    { name: "New Jersey", code: "NJ", images: [
-        { url: "https://picsum.photos/id/115/400/300", desc: "Cape May Victorian beach getaway." }
-    ]},
-    { name: "New Mexico", code: "NM", images: [
-        { url: "https://picsum.photos/id/116/400/300", desc: "Santa Fe art market & balloon fiesta." }
-    ]},
-    { name: "New York", code: "NY", images: [
-        { url: "https://picsum.photos/id/119/400/300", desc: "Central Park autumn walk." },
-        { url: "https://picsum.photos/id/120/400/300", desc: "Niagara Falls boat tour." }
-    ]},
-    { name: "North Carolina", code: "NC", images: [
-        { url: "https://picsum.photos/id/121/400/300", desc: "Outer Banks lighthouse tour." }
-    ]},
-    { name: "North Dakota", code: "ND", images: [
-        { url: "https://picsum.photos/id/122/400/300", desc: "Theodore Roosevelt National Park." }
-    ]},
-    { name: "Ohio", code: "OH", images: [
-        { url: "https://picsum.photos/id/123/400/300", desc: "Hocking Hills State Park trails." }
-    ]},
-    { name: "Oklahoma", code: "OK", images: [
-        { url: "https://picsum.photos/id/124/400/300", desc: "Route 66 historic road trip." }
-    ]},
-    { name: "Oregon", code: "OR", images: [
-        { url: "https://picsum.photos/id/125/400/300", desc: "Multnomah Falls & coast exploration." }
-    ]},
-    { name: "Pennsylvania", code: "PA", images: [
-        { url: "https://picsum.photos/id/129/400/300", desc: "Philadelphia Liberty Bell visit." }
-    ]},
-    { name: "Rhode Island", code: "RI", images: [
-        { url: "https://picsum.photos/id/131/400/300", desc: "Newport Cliff Walk mansions." }
-    ]},
-    { name: "South Carolina", code: "SC", images: [
-        { url: "https://picsum.photos/id/132/400/300", desc: "Charleston historic walking tour." }
-    ]},
-    { name: "South Dakota", code: "SD", images: [
-        { url: "https://picsum.photos/id/133/400/300", desc: "Badlands National Park sightseeing." }
-    ]},
-    { name: "Tennessee", code: "TN", images: [
-        { url: "https://picsum.photos/id/134/400/300", desc: "Great Smoky Mountains cabin trip." }
-    ]},
-    { name: "Texas", code: "TX", images: [
-        { url: "https://picsum.photos/id/135/400/300", desc: "Austin live music & BBQ weekend." }
-    ]},
-    { name: "Utah", code: "UT", images: [
-        { url: "https://picsum.photos/id/136/400/300", desc: "Zion National Park red rock hike." }
-    ]},
-    { name: "Vermont", code: "VT", images: [
-        { url: "https://picsum.photos/id/137/400/300", desc: "Maple syrup tasting & farm tour." }
-    ]},
-    { name: "Virginia", code: "VA", images: [
-        { url: "https://picsum.photos/id/139/400/300", desc: "Shenandoah National Park skyline drive." }
-    ]},
-    { name: "Washington", code: "WA", images: [
-        { url: "https://picsum.photos/id/140/400/300", desc: "Olympic National Park rainforest." }
-    ]},
-    { name: "West Virginia", code: "WV", images: [
-        { url: "https://picsum.photos/id/142/400/300", desc: "New River Gorge bridge rafting." }
-    ]},
-    { name: "Wisconsin", code: "WI", images: [
-        { url: "https://picsum.photos/id/143/400/300", desc: "Door County cherry picking weekend." }
-    ]},
-    { name: "Wyoming", code: "WY", images: [
-        { url: "https://picsum.photos/id/144/400/300", desc: "Yellowstone geysers & bison spotting." }
-    ]}
-];
+// Sample Data Store for each state's images and descriptions
+// You can expand this with actual paths to your family photos for each state code (e.g., 'CA', 'NY', etc.)
+const stateData = {
+    "AL": { name: "Alabama", images: [{ url: "./images/alabama1.jpg", caption: "Sweet Home Alabama trip" }] },
+    "AK": { name: "Alaska", images: [{ url: "./images/alaska1.jpg", caption: "Glacier exploring!" }] },
+    "CA": { 
+        name: "California", 
+        images: [
+            { url: "./images/california1.jpg", caption: "Sunset at Santa Monica Pier" },
+            { url: "./images/california2.jpg", caption: "Redwoods National Park adventure" },
+            { url: "./images/california3.jpg", caption: "Big Sur coastal drive" }
+        ] 
+    },
+    "NY": { 
+        name: "New York", 
+        images: [
+            { url: "./images/ny1.jpg", caption: "Central Park autumn walk" },
+            { url: "./images/ny2.jpg", caption: "Times Square lights" }
+        ] 
+    },
+    // Default fallback for any state without explicit custom photos yet
+    "DEFAULT": {
+        name: "Our Memory",
+        images: [
+            { url: "./images/default1.jpg", caption: "Memories made along the way." },
+            { url: "./images/default2.jpg", caption: "Exploring the USA together!" }
+        ]
+    }
+};
 
-// DOM Elements
-const statesGrid = document.getElementById('states-grid');
-const modal = document.getElementById('gallery-modal');
-const closeModalBtn = document.getElementById('close-modal');
-const modalStateTitle = document.getElementById('modal-state-title');
-const polaroidGallery = document.getElementById('polaroid-gallery');
+document.addEventListener("DOMContentLoaded", () => {
+    const svgObject = document.getElementById("us-map-object");
+    const modal = document.getElementById("gallery-modal");
+    const closeModalBtn = document.getElementById("close-modal");
+    const modalTitle = document.getElementById("modal-state-title");
+    const polaroidGrid = document.getElementById("polaroid-grid");
 
-// Render State Cards onto the Grid
-function renderStates() {
-    statesGrid.innerHTML = '';
-    statesData.forEach(state => {
-        const card = document.createElement('div');
-        card.className = 'state-card';
-        card.setAttribute('data-code', state.code);
+    // Wait for external SVG object to load fully
+    svgObject.addEventListener("load", () => {
+        const svgDoc = svgObject.contentDocument;
+        if (!svgDoc) return;
 
-        // Background container for hover fade effect
-        const bgSlider = document.createElement('div');
-        bgSlider.className = 'state-bg-slider';
-        // Use the first image for hover background preview
-        if (state.images && state.images.length > 0) {
-            bgSlider.style.backgroundImage = `url('${state.images[0].url}')`;
-        }
+        // Select all state elements (assuming standard SVG paths/g tags have state IDs like id="CA")
+        const states = svgDoc.querySelectorAll("path, g[id]");
 
-        const titleSpan = document.createElement('span');
-        titleSpan.textContent = `${state.name} (${state.code})`;
+        states.forEach(state => {
+            const stateId = state.id ? state.id.toUpperCase() : null;
+            if (!stateId || stateId.length !== 2) return; // Skip non-state elements
 
-        card.appendChild(bgSlider);
-        card.appendChild(titleSpan);
+            // Styling injection for retro appearance
+            state.style.fill = "#3b5336"; // Dark pastel green base
+            state.style.stroke = "#faf6f0";
+            state.style.strokeWidth = "1.5";
+            state.style.cursor = "pointer";
+            state.style.transition = "all 0.3s ease";
 
-        // Click event to open modal gallery
-        card.addEventListener('click', () => {
-            openStateGallery(state);
+            let fadeInterval = null;
+            let currentImgIdx = 0;
+            const data = stateData[stateId] || { 
+                name: stateId, 
+                images: [{ url: "./images/placeholder.jpg", caption: `Adventures in ${stateId}` }] 
+            };
+
+            // Hover: increase size / highlight & fade through photos inside state styling
+            state.addEventListener("mouseenter", () => {
+                state.style.fill = "#d97742"; // Pastel orange highlight
+                state.style.transform = "scale(1.02)";
+                
+                // Optional: Cycle colors/images or visual effect on hover
+                let colors = ["#d97742", "#8c3b32", "#3b5336"];
+                let cIdx = 0;
+                fadeInterval = setInterval(() => {
+                    cIdx = (cIdx + 1) % colors.length;
+                    state.style.fill = colors[cIdx];
+                }, 800);
+            });
+
+            state.addEventListener("mouseleave", () => {
+                state.style.fill = "#3b5336"; // Revert to dark pastel green
+                state.style.transform = "scale(1)";
+                clearInterval(fadeInterval);
+            });
+
+            // Click: Open Polaroid gallery modal
+            state.addEventListener("click", () => {
+                openGallery(data);
+            });
         });
-
-        statesGrid.appendChild(card);
     });
-}
 
-// Open and populate Polaroid Gallery Modal
-function openStateGallery(state) {
-    modalStateTitle.textContent = `${state.name} Gallery`;
-    polaroidGallery.innerHTML = '';
+    function openGallery(data) {
+        modalTitle.textContent = data.name;
+        polaroidGrid.innerHTML = "";
 
-    if (state.images && state.images.length > 0) {
-        state.images.forEach(img => {
-            const polaroid = document.createElement('div');
-            polaroid.className = 'polaroid-item';
+        data.images.forEach((img, index) => {
+            // Random slight rotation for vintage polaroid scattered stack effect (-3deg to 3deg)
+            const randomRotation = (Math.random() * 6 - 3).toFixed(1);
 
-            polaroid.innerHTML = `
-                <div class="polaroid-img-wrapper">
-                    <img src="${img.url}" alt="${state.name} Memory" loading="lazy">
+            const card = document.createElement("div");
+            card.className = "polaroid-card";
+            card.style.setProperty('--rot', `${randomRotation}deg`);
+
+            card.innerHTML = `
+                <div class="polaroid-image-container">
+                    <img src="${img.url}" alt="${img.caption}" onerror="this.src='https://via.placeholder.com/300x200/3b5336/faf6f0?text=Family+Memory'">
                 </div>
-                <div class="polaroid-caption">${img.desc}</div>
+                <div class="polaroid-caption">${img.caption}</div>
             `;
-            polaroidGallery.appendChild(polaroid);
+            polaroidGrid.appendChild(card);
         });
-    } else {
-        polaroidGallery.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">No family memories added for this state yet!</p>`;
+
+        modal.classList.remove("hidden");
     }
 
-    modal.classList.remove('hidden');
-}
+    // Close Modal Event Listeners
+    closeModalBtn.addEventListener("click", () => {
+        modal.classList.add("hidden");
+    });
 
-// Close Modal Events
-closeModalBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
-});
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+            modal.classList.add("hidden");
+        }
+    });
 
-window.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.classList.add('hidden');
-    }
-});
-
-// Initialize App
-document.addEventListener('DOMContentLoaded', () => {
-    renderStates();
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+            modal.classList.add("hidden");
+        }
+    });
 });
