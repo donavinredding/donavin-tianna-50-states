@@ -1,0 +1,366 @@
+:root {
+    --bg-color: #f4eee1;
+    --primary-red: #9E2A2B;
+    --primary-green: #4A7C59;
+    --primary-orange: #E09F3E;
+    --text-dark: #2b2b2b;
+    --polaroid-bg: #ffffff;
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-dark);
+    font-family: 'Courier Prime', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+    background-image: radial-gradient(#e3dccb 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+/* --- Typography & Header --- */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    border-bottom: 3px dashed var(--primary-red);
+    padding-bottom: 15px;
+    width: 100%;
+    max-width: 900px;
+}
+
+h1 {
+    font-family: 'Special Elite', cursive;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    color: var(--primary-red);
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 0px var(--primary-orange);
+    margin-bottom: 8px;
+}
+
+p.subtitle {
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    color: var(--primary-green);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* --- Map Container & SVG --- */
+.map-container {
+    width: 100%;
+    max-width: 1100px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 4px solid var(--text-dark);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    position: relative;
+    margin-bottom: 40px;
+}
+
+svg.us-map {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    overflow: visible; /* Stops Alaska from being cut off */
+}
+
+.state {
+    fill: #ffffff; /* <--- Add this line */
+    cursor: pointer;
+    stroke: #000000;
+    stroke-width: 4px;
+    stroke-linejoin: round;
+    pointer-events: visiblePainted;
+    filter: sepia(1) hue-rotate(70deg) saturate(2) opacity(1) contrast(0.5);
+    transition: filter 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
+}
+
+.state:hover {
+    stroke: #142417;
+    filter: none;
+    stroke-width: 1px;
+}
+
+#states-group {
+    transform: translate(-45.169px, -16.693px) translate(-164.944px, 26.472px) translate(186.337px, -12.091px) translate(-20.215px, 4.665px) translate(0, 0) rotate(0deg, 637.9px, 178.419px);
+}
+
+svg pattern image {
+    width: 100%;
+    height: 100%;
+    preserveAspectRatio: xMidYMid slice; 
+}
+
+/* --- Hover Preview --- */
+#hover-preview {
+    position: absolute;
+    background: var(--polaroid-bg);
+    border: 3px solid var(--text-dark);
+    padding: 10px 10px 30px 10px;
+    box-shadow: var(--shadow);
+    width: 160px;
+    pointer-events: none;
+    display: none;
+    z-index: 100;
+    transform: rotate(-3deg);
+}
+
+#hover-preview, #hover-preview * {
+    pointer-events: none !important;
+}
+
+#hover-preview img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border: 1px solid #ccc;
+}
+
+#hover-preview .preview-title {
+    font-family: 'Special Elite', cursive;
+    font-size: 0.85rem;
+    text-align: center;
+    margin-top: 8px;
+    color: var(--text-dark);
+}
+
+/* --- Modal Gallery --- */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(43, 43, 43, 0.85);
+    display: flex;
+    justify-content: center; align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+}
+
+.modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-content {
+    background: var(--bg-color);
+    border: 5px solid var(--primary-red);
+    width: 100%;
+    max-width: 900px;
+    max-height: 85vh;
+    border-radius: 8px;
+    padding: 30px;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px; right: 20px;
+    background: var(--primary-red);
+    color: white;
+    border: none;
+    font-family: 'Special Elite', cursive;
+    font-size: 1.2rem;
+    padding: 5px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.close-btn:hover { background: var(--text-dark); }
+
+.modal-header {
+    font-family: 'Special Elite', cursive;
+    font-size: 2rem;
+    color: var(--primary-red);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* --- Polaroids & Delete Button --- */
+.polaroid-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 25px;
+    padding: 10px;
+}
+
+.polaroid {
+    background: var(--polaroid-bg);
+    padding: 12px 12px 35px 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    border: 1px solid #dcd7cc;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.polaroid:nth-child(odd) { transform: rotate(2deg); }
+.polaroid:nth-child(even) { transform: rotate(-2deg); }
+.polaroid:hover {
+    transform: scale(1.05) rotate(0deg);
+    box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.polaroid img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    object-position: center;
+    border-bottom: 1px solid #eee;
+}
+
+.polaroid p {
+    font-family: 'Special Elite', cursive;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    text-align: center;
+    margin-top: 12px;
+}
+
+.delete-btn {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--primary-red);
+    color: white;
+    border: 2px solid var(--polaroid-bg);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-family: 'Courier Prime', monospace;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 20;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.polaroid:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    transform: scale(1.15);
+    background: #d32f2f;
+}
+
+/* --- Forms & Buttons --- */
+.add-memory-container {
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px dashed var(--primary-red);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 25px;
+}
+
+.add-memory-container .form-title {
+    font-family: 'Special Elite', cursive;
+    font-size: 1.1rem;
+    color: var(--text-dark);
+    margin-bottom: 10px;
+}
+
+#add-memory-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+#caption-input, #image-file-input {
+    flex: 1 1 200px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.9rem;
+}
+
+#caption-input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.submit-btn {
+    background: var(--primary-green);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    font-family: 'Special Elite', cursive;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.submit-btn:hover { background: #365c40; }
+
+/* Centered Auth Box */
+.auth-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 400px; 
+    margin: 0 auto;
+}
+
+.auth-box h2 {
+    margin-bottom: 20px;
+    color: var(--primary-red);
+}
+
+#auth-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; 
+    width: 100%;
+}
+
+#auth-form input {
+    width: 100%;
+    max-width: 280px;
+    padding: 10px;
+    font-family: 'Courier Prime', monospace;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#auth-submit-btn {
+    width: 100%;
+    max-width: 280px;
+    margin-top: 10px;
+}
+
+footer {
+    margin-top: auto;
+    font-size: 0.9rem;
+    color: var(--primary-red);
+    font-family: 'Special Elite', cursive;
+    text-align: center;
+    padding: 15px;
+}
+
+@media (max-width: 768px) {
+    .map-container { padding: 10px; }
+    .modal-content { padding: 15px; }
+}
