@@ -128,89 +128,149 @@ function updateStatePattern(stateId, imgUrl, svgDefs) {
 
 
 
-// Handles rendering polaroids and delete buttons
-
+// Handles rendering polaroids, edit buttons, and delete buttons
 function renderGallery(stateName, container) {
-
     container.innerHTML = '';
-
     const data = stateGalleries[stateName] || defaultGallery;
 
-
+    if (data.length === 0) {
+        container.innerHTML = '<p style="text-align:center; width:100%;">No memories yet for this state!</p>';
+        return;
+    }
 
     data.forEach(item => {
-
         const polaroidDiv = document.createElement('div');
-
         polaroidDiv.className = 'polaroid';
-
-       
-
-        let deleteBtnHTML = '';
-
+        
+        let actionButtonsHTML = '';
         if (item.id) {
-
-            deleteBtnHTML = `<button class="delete-btn" data-id="${item.id}">X</button>`;
-
+            // Delete at top-right, Edit at bottom-right
+            actionButtonsHTML = `
+                <button class="delete-btn" data-id="${item.id}" title="Delete Memory">✕</button>
+                <button class="edit-btn" data-id="${item.id}">Edit</button>
+            `;
         }
-
-
 
         polaroidDiv.innerHTML = `
-
-            ${deleteBtnHTML}
-
+            ${actionButtonsHTML}
             <img src="${item.img}" alt="${stateName} photo">
-
-            <p>${item.desc}</p>
-
+            <p class="caption-text">${item.desc || ''}</p>
         `;
 
-
-
-        // Attach delete listener if applicable
-
         if (item.id) {
-
             const delBtn = polaroidDiv.querySelector('.delete-btn');
+            const editBtn = polaroidDiv.querySelector('.edit-btn');
+            const captionText = polaroidDiv.querySelector('.caption-text');
 
+            // --- Delete Handler ---
             delBtn.addEventListener('click', async (e) => {
-
                 e.stopPropagation();
-
-               
-
-                if(confirm("Are you sure you want to delete this memory?")) {
-
-                    const { error } = await supabaseClient.from('state_memories').delete().eq('id', item.id);
+                
+                if (confirm("Are you sure you want to delete this memory?")) {
+                    const { error } = await supabaseClient
+                        .from('state_memories')
+                        .delete()
+                        .eq('id', item.id);
 
                     if (error) {
-
                         alert("Error deleting image: " + error.message);
-
                     } else {
-
                         await window.loadUserMemories();
-
                         renderGallery(stateName, container);
-
                     }
-
                 }
-
             });
 
+            // --- Edit Handler ---
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Swap caption text with inline edit form
+                captionText.style.display = 'none';
+                editBtn.style.display = 'none';
+
+                const editContainer = document.createElement('div');
+                editContainer.className = 'edit-container';
+                editContainer.innerHTML = `
+                    <input type="text" class="edit-input" value="${item.desc || ''}" />
+                    <div class="edit-actions">
+                        <button class="save-btn">Save</button>
+                        <button class="cancel-btn">Cancel</button>
+                    </div>
+                `;
+
+                polaroidDiv.appendChild(editContainer);
+
+                const saveBtn = editContainer.querySelector('.save-btn');
+                const cancelBtn = editContainer.querySelector('.cancel-btn');
+                const editInput = editContainer.querySelector('.edit-input');
+
+                // Save Update to Supabase
+                saveBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const newCaption = editInput.value.trim();
+
+                    saveBtn.textContent = "Saving...";
+                    saveBtn.disabled = true;
+
+                    const { error } = await supabaseClient
+                        .from('state_memories')
+                        .update({ caption: newCaption })
+                        .eq('id', item.id);
+
+                    if (error) {
+                        alert("Error updating memory: " + error.message);
+                        saveBtn.textContent = "Save";
+                        saveBtn.disabled = false;
+                    } else {
+                        await window.loadUserMemories();
+                        renderGallery(stateName, container);
+                    }
+                });
+
+                // Cancel Edit
+                cancelBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    editContainer.remove();
+                    captionText.style.display = 'block';
+                    editBtn.style.display = 'block';
+                });
+            });
         }
 
-
-
         container.appendChild(polaroidDiv);
-
     });
-
 }
 
+// --- Inline Edit Logic ---
+async function editMemory(item, stateName, container) {
+    const newCaption = prompt("Update caption:", item.desc);
+    if (newCaption === null) return; // User canceled
 
+    // Optional: Ask if they want to update the image URL
+    const changeImage = confirm("Do you also want to update the image URL?");
+    let newImageUrl = item.img;
+    
+    if (changeImage) {
+        const urlInput = prompt("Enter new image URL:", item.img);
+        if (urlInput) newImageUrl = urlInput.trim();
+    }
+
+    const { error } = await supabaseClient
+        .from('state_memories')
+        .update({ 
+            caption: newCaption.trim(),
+            image_url: newImageUrl 
+        })
+        .eq('id', item.id);
+
+    if (error) {
+        alert("Error updating memory: " + error.message);
+    } else {
+        await window.loadUserMemories();
+        renderGallery(stateName, container);
+    }
+}
 
 // --- 3. DOM Initialization & Database Logic ---
 
