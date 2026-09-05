@@ -437,15 +437,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         state.addEventListener('mousemove', (e) => {
-
-            if(hoverPreview) {
-
-                hoverPreview.style.left = (e.pageX + 15) + 'px';
-
-                hoverPreview.style.top = (e.pageY - 200) + 'px';
-
+            if (hoverPreview) {
+                // Keeps the preview card stuck closely to the cursor regardless of screen size
+                const offset = 12; // Tightly controlled distance in pixels
+                
+                hoverPreview.style.position = 'fixed';
+                hoverPreview.style.left = `${e.clientX + 40}px`;
+                
+                // Positions preview directly above cursor; flips below if near top of screen
+                if (e.clientY - 170 < 0) {
+                    hoverPreview.style.top = `${e.clientY + offset}px`;
+                } else {
+                    hoverPreview.style.top = `${e.clientY - 80}px`; 
+                }
             }
-
         });
 
 
