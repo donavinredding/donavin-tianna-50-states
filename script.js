@@ -1,134 +1,100 @@
 // --- 1. Configurations & State ---
 
 const SUPABASE_URL = 'https://mxkawqbvtckdfffddeey.supabase.co';
-
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a2F3cWJ2dGNrZGZmZmRkZWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1Mzc5NjQsImV4cCI6MjEwNDExMzk2NH0.39RyTqPylHgSq0J_aqbzxqvyL_eM9KWkLKkwtSsSFrc';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-
-
-// Factory function to always return a fresh copy of your default data
-
 function getBaseGalleries() {
-
     return {
-
-        "California": [
-
-            { img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80", desc: "Yosemite family camping trip!" },
-
-            { img: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=600&q=80", desc: "San Francisco cable car ride." }
-
-        ],
-
-        "Texas": [
-
-            { img: "https://images.unsplash.com/photo-1531219434158-a578ca3275f1?auto=format&fit=crop&w=600&q=80", desc: "Austin barbecue weekend." }
-
-        ]
-
+        "California": [],
+        "Texas": []
     };
-
 }
 
-
-
-const defaultGallery = [
-
-    { img: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80", desc: "Exploring scenic backroads!" }
-
-];
-
-
+const defaultGallery = [];
 
 let stateGalleries = getBaseGalleries();
-
 let activeStateName = null;
-
 let activeStatePath = null;
-
 let intervalId = null;
 
-
+// Track dragged element index across drag operations
+let draggedIndex = null;
 
 // --- 2. Core Functions ---
 
 function getOrCreateDefs(svgMap) {
-
     let defs = svgMap.querySelector('defs');
-
     if (!defs) {
-
         defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-
         defs.id = 'state-patterns';
-
         svgMap.prepend(defs);
-
     }
-
     return defs;
-
 }
-
-
 
 function updateStatePattern(stateId, imgUrl, svgDefs) {
-
     const patternId = `pattern-${stateId}`;
-
     let pattern = document.getElementById(patternId);
 
-
-
     if (!pattern) {
-
         pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-
         pattern.setAttribute('id', patternId);
-
         pattern.setAttribute('patternUnits', 'objectBoundingBox');
-
-        pattern.setAttribute('patternContentUnits', 'userSpaceOnUse');
-
         pattern.setAttribute('width', '1');
-
         pattern.setAttribute('height', '1');
 
-
-
         const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-
         image.setAttribute('x', '0');
-
         image.setAttribute('y', '0');
-
-        image.setAttribute('width', '100%');
-
-        image.setAttribute('height', '100%');
-
+        image.setAttribute('width', '1');
+        image.setAttribute('height', '1');
         image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 
-
-
         pattern.appendChild(image);
-
         svgDefs.appendChild(pattern);
-
     }
 
-
-
     pattern.querySelector('image').setAttribute('href', imgUrl);
-
     return patternId;
-
 }
 
+// Rotates an image asset using Canvas to preserve aspect ratios before cropping
+function getRotatedImageDataUrl(src, angleDegrees, callback) {
+    if (!angleDegrees || angleDegrees === 0) {
+        callback(src);
+        return;
+    }
 
+    const img = new Image();
+    img.crossOrigin = "anonymous"; // Prevents CORS issues with external images
+    img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
-// Handles rendering polaroids, edit buttons, and delete buttons
+        // Swap width/height for 90/270 degree orientations
+        if (angleDegrees === 90 || angleDegrees === 270) {
+            canvas.width = img.height;
+            canvas.height = img.width;
+        } else {
+            canvas.width = img.width;
+            canvas.height = img.height;
+        }
+
+        // Translate and rotate canvas context
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((angleDegrees * Math.PI) / 180);
+
+        // Draw image centered
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+        callback(canvas.toDataURL());
+    };
+    img.src = src;
+}
+
+// --- Updated renderGallery Function with Rotation ---
 function renderGallery(stateName, container) {
     container.innerHTML = '';
     const data = stateGalleries[stateName] || defaultGallery;
@@ -138,54 +104,156 @@ function renderGallery(stateName, container) {
         return;
     }
 
-    data.forEach(item => {
+    data.forEach((item, index) => {
         const polaroidDiv = document.createElement('div');
         polaroidDiv.className = 'polaroid';
+        polaroidDiv.dataset.index = index;
         
-        let actionButtonsHTML = '';
+        if (item.rotation === undefined) item.rotation = 0;
+
+        let topButtonsHTML = '';
+        let bottomRotateHTML = '';
+
         if (item.id) {
-            // Delete at top-right, Edit at bottom-right
-            actionButtonsHTML = `
+            // Drag handle top-left, Delete top-right
+            topButtonsHTML = `
+                <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
                 <button class="delete-btn" data-id="${item.id}" title="Delete Memory">✕</button>
-                <button class="edit-btn" data-id="${item.id}">Edit</button>
+            `;
+            // Rotate button bottom-left
+            bottomRotateHTML = `
+                <button class="rotate-btn" data-id="${item.id}" title="Rotate Image">↻</button>
             `;
         }
 
+        // Helper class to adjust image scale when sideways
+        const rotationClass = (item.rotation === 90 || item.rotation === 270) ? `rotated-${item.rotation}` : '';
+
         polaroidDiv.innerHTML = `
-            ${actionButtonsHTML}
-            <img src="${item.img}" alt="${stateName} photo">
+            ${topButtonsHTML}
+            <div class="img-wrapper">
+                <img src="${item.img}" 
+                     class="polaroid-img ${rotationClass}" 
+                     style="transform: rotate(${item.rotation}deg);" 
+                     alt="${stateName} photo">
+                ${bottomRotateHTML}
+            </div>
             <p class="caption-text">${item.desc || ''}</p>
+            ${item.id ? `<button class="edit-btn" data-id="${item.id}">Edit</button>` : ''}
         `;
 
+        const imgElement = polaroidDiv.querySelector('.polaroid-img');
+
+        // Lightbox Full-Size View
+        imgElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openLightbox(item.img, item.desc, item.rotation);
+        });
+
+        // Rotation Logic
+        if (item.id) {
+            const rotateBtn = polaroidDiv.querySelector('.rotate-btn');
+            rotateBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+
+                item.rotation = (item.rotation + 90) % 360;
+                imgElement.style.transform = `rotate(${item.rotation}deg)`;
+
+                // Toggle aspect adjustment classes for sideways orientations
+                imgElement.classList.remove('rotated-90', 'rotated-270');
+                if (item.rotation === 90 || item.rotation === 270) {
+                    imgElement.classList.add(`rotated-${item.rotation}`);
+                }
+
+                // Update database
+                const { error } = await supabaseClient
+                    .from('state_memories')
+                    .update({ rotation: item.rotation })
+                    .eq('id', item.id);
+
+                if (error) {
+                    console.error("Error updating rotation:", error.message);
+                }
+            });
+        }
+
+        // --- Drag & Drop Setup ---
+        const handle = polaroidDiv.querySelector('.drag-handle');
+        if (handle) {
+            handle.addEventListener('mousedown', () => polaroidDiv.setAttribute('draggable', 'true'));
+            handle.addEventListener('mouseup', () => polaroidDiv.setAttribute('draggable', 'false'));
+            handle.addEventListener('touchstart', () => polaroidDiv.setAttribute('draggable', 'true'), { passive: true });
+            handle.addEventListener('touchend', () => polaroidDiv.setAttribute('draggable', 'false'));
+        }
+
+        polaroidDiv.addEventListener('dragstart', (e) => {
+            draggedIndex = index;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', index);
+            polaroidDiv.classList.add('dragging');
+        });
+
+        polaroidDiv.addEventListener('dragend', () => {
+            polaroidDiv.classList.remove('dragging');
+            polaroidDiv.setAttribute('draggable', 'false');
+            container.querySelectorAll('.polaroid').forEach(card => card.classList.remove('drag-over'));
+        });
+
+        polaroidDiv.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            polaroidDiv.classList.add('drag-over');
+        });
+
+        polaroidDiv.addEventListener('dragleave', () => {
+            polaroidDiv.classList.remove('drag-over');
+        });
+
+        polaroidDiv.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            polaroidDiv.classList.remove('drag-over');
+
+            const targetIndex = parseInt(polaroidDiv.dataset.index, 10);
+
+            if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                const galleryArray = stateGalleries[stateName];
+                const [movedItem] = galleryArray.splice(draggedIndex, 1);
+                galleryArray.splice(targetIndex, 0, movedItem);
+
+                galleryArray.forEach((item, idx) => item.order_index = idx);
+
+                renderGallery(stateName, container);
+
+                const updates = galleryArray.map((item, idx) => ({
+                    id: item.id,
+                    order_index: idx,
+                    rotation: item.rotation || 0
+                }));
+
+                await supabaseClient.rpc('update_memory_positions', { payload: updates });
+            }
+        });
+
+        // --- Delete & Edit Event Listeners ---
         if (item.id) {
             const delBtn = polaroidDiv.querySelector('.delete-btn');
             const editBtn = polaroidDiv.querySelector('.edit-btn');
             const captionText = polaroidDiv.querySelector('.caption-text');
 
-            // --- Delete Handler ---
             delBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                
                 if (confirm("Are you sure you want to delete this memory?")) {
-                    const { error } = await supabaseClient
-                        .from('state_memories')
-                        .delete()
-                        .eq('id', item.id);
-
-                    if (error) {
-                        alert("Error deleting image: " + error.message);
-                    } else {
+                    const { error } = await supabaseClient.from('state_memories').delete().eq('id', item.id);
+                    if (!error) {
                         await window.loadUserMemories();
                         renderGallery(stateName, container);
                     }
                 }
             });
 
-            // --- Edit Handler ---
             editBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-
-                // Swap caption text with inline edit form
                 captionText.style.display = 'none';
                 editBtn.style.display = 'none';
 
@@ -201,35 +269,18 @@ function renderGallery(stateName, container) {
 
                 polaroidDiv.appendChild(editContainer);
 
-                const saveBtn = editContainer.querySelector('.save-btn');
-                const cancelBtn = editContainer.querySelector('.cancel-btn');
-                const editInput = editContainer.querySelector('.edit-input');
-
-                // Save Update to Supabase
-                saveBtn.addEventListener('click', async (e) => {
+                editContainer.querySelector('.save-btn').addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    const newCaption = editInput.value.trim();
+                    const newCaption = editContainer.querySelector('.edit-input').value.trim();
 
-                    saveBtn.textContent = "Saving...";
-                    saveBtn.disabled = true;
-
-                    const { error } = await supabaseClient
-                        .from('state_memories')
-                        .update({ caption: newCaption })
-                        .eq('id', item.id);
-
-                    if (error) {
-                        alert("Error updating memory: " + error.message);
-                        saveBtn.textContent = "Save";
-                        saveBtn.disabled = false;
-                    } else {
+                    const { error } = await supabaseClient.from('state_memories').update({ caption: newCaption }).eq('id', item.id);
+                    if (!error) {
                         await window.loadUserMemories();
                         renderGallery(stateName, container);
                     }
                 });
 
-                // Cancel Edit
-                cancelBtn.addEventListener('click', (e) => {
+                editContainer.querySelector('.cancel-btn').addEventListener('click', (e) => {
                     e.stopPropagation();
                     editContainer.remove();
                     captionText.style.display = 'block';
@@ -242,209 +293,150 @@ function renderGallery(stateName, container) {
     });
 }
 
-// --- Inline Edit Logic ---
-async function editMemory(item, stateName, container) {
-    const newCaption = prompt("Update caption:", item.desc);
-    if (newCaption === null) return; // User canceled
+// --- Lightbox Helper with Rotation ---
+function openLightbox(imgUrl, caption, rotation = 0) {
+    let lightbox = document.getElementById('lightbox-modal');
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'lightbox-modal';
+        lightbox.className = 'lightbox-modal';
+        lightbox.innerHTML = `
+            <span class="lightbox-close">&times;</span>
+            <img class="lightbox-content" id="lightbox-img">
+            <div id="lightbox-caption"></div>
+        `;
+        document.body.appendChild(lightbox);
 
-    // Optional: Ask if they want to update the image URL
-    const changeImage = confirm("Do you also want to update the image URL?");
-    let newImageUrl = item.img;
-    
-    if (changeImage) {
-        const urlInput = prompt("Enter new image URL:", item.img);
-        if (urlInput) newImageUrl = urlInput.trim();
+        lightbox.addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox-modal' || e.target.className === 'lightbox-close') {
+                lightbox.classList.remove('active');
+            }
+        });
     }
 
-    const { error } = await supabaseClient
-        .from('state_memories')
-        .update({ 
-            caption: newCaption.trim(),
-            image_url: newImageUrl 
-        })
-        .eq('id', item.id);
+    const img = document.getElementById('lightbox-img');
+    img.src = imgUrl;
+    img.style.transform = `rotate(${rotation}deg)`;
+    document.getElementById('lightbox-caption').textContent = caption || '';
+    lightbox.classList.add('active');
+}
 
-    if (error) {
-        alert("Error updating memory: " + error.message);
-    } else {
-        await window.loadUserMemories();
-        renderGallery(stateName, container);
+// Lightbox helper function to open full uncropped image
+function openLightbox(imgUrl, caption) {
+    let lightbox = document.getElementById('lightbox-modal');
+    if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'lightbox-modal';
+        lightbox.className = 'lightbox-modal';
+        lightbox.innerHTML = `
+            <span class="lightbox-close">&times;</span>
+            <img class="lightbox-content" id="lightbox-img">
+            <div id="lightbox-caption"></div>
+        `;
+        document.body.appendChild(lightbox);
+
+        lightbox.addEventListener('click', (e) => {
+            if (e.target.id === 'lightbox-modal' || e.target.className === 'lightbox-close') {
+                lightbox.classList.remove('active');
+            }
+        });
     }
+
+    document.getElementById('lightbox-img').src = imgUrl;
+    document.getElementById('lightbox-caption').textContent = caption || '';
+    lightbox.classList.add('active');
 }
 
 // --- 3. DOM Initialization & Database Logic ---
 
 document.addEventListener("DOMContentLoaded", () => {
-
     const svgMap = document.querySelector('.us-map');
-
     const states = document.querySelectorAll('.state');
-
     const svgDefs = getOrCreateDefs(svgMap);
 
-   
-
-    // UI Elements
-
     const hoverPreview = document.getElementById('hover-preview');
-
     const previewImg = document.getElementById('preview-img');
-
     const previewTitle = document.getElementById('preview-title');
-
     const modal = document.getElementById('gallery-modal');
-
     const closeModal = document.getElementById('close-modal');
-
     const modalStateTitle = document.getElementById('modal-state-title');
-
     const polaroidContainer = document.getElementById('polaroid-container');
 
-   
-
-    // Forms
-
     const addMemoryForm = document.getElementById('add-memory-form');
-
     const authForm = document.getElementById('auth-form');
 
-
-
-    // Make loadUserMemories globally accessible
-
     window.loadUserMemories = async function() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
 
-        const { data: { user } } = await supabaseClient.auth.getUser();
+    // Fetch memories sorted by order_index ascending
+    const { data, error } = await supabaseClient
+        .from('state_memories')
+        .select('*')
+        .order('order_index', { ascending: true });
 
-        if (!user) return;
+    if (error) return console.error("Database fetch error:", error);
 
+    stateGalleries = getBaseGalleries();
 
-
-        const { data, error } = await supabaseClient.from('state_memories').select('*');
-
-        if (error) return console.error("Database fetch error:", error);
-
-
-
-        // Reset state from factory before adding database items to prevent duplicates
-
-        stateGalleries = getBaseGalleries();
-
-
-
-        data.forEach(item => {
-
-            if (!stateGalleries[item.state_name]) stateGalleries[item.state_name] = [];
-
-            stateGalleries[item.state_name].unshift({
-
-                id: item.id,
-
-                img: item.image_url,
-
-                desc: item.caption
-
-            });
-
+    data.forEach(item => {
+        if (!stateGalleries[item.state_name]) stateGalleries[item.state_name] = [];
+        stateGalleries[item.state_name].push({
+            id: item.id,
+            img: item.image_url,
+            desc: item.caption,
+            order_index: item.order_index,
+            rotation: item.rotation || 0
         });
-
-
-
-        // Update map visuals
-
-        states.forEach(state => {
-
-            const stateId = state.id;
-
-            const stateName = state.getAttribute('data-name') || stateId;
-
-            const stateData = stateGalleries[stateName];
-
-
-
-            if (stateData && stateData.length > 0) {
-
-                const patternId = updateStatePattern(stateId, stateData[0].img, svgDefs);
-
-                state.style.fill = `url(#${patternId})`;
-
-            } else {
-
-                state.style.fill = "";
-
-            }
-
-        });
-
-    }
-
-
-
-    // --- Map Interactions ---
+    });
 
     states.forEach(state => {
-
         const stateId = state.id;
-
         const stateName = state.getAttribute('data-name') || stateId;
+        const stateData = stateGalleries[stateName];
 
+        if (stateData && stateData.length > 0) {
+            const patternId = updateStatePattern(stateId, stateData[0].img, svgDefs);
+            state.style.fill = `url(#${patternId})`;
+        } else {
+            state.style.fill = "";
+        }
+    });
+}
+
+    states.forEach(state => {
+        const stateId = state.id;
+        const stateName = state.getAttribute('data-name') || stateId;
         const data = stateGalleries[stateName] || defaultGallery;
 
-
-
         if (data.length > 0) {
-
             const patternId = updateStatePattern(stateId, data[0].img, svgDefs);
-
             state.style.fill = `url(#${patternId})`;
-
         }
 
-
-
         state.addEventListener('mouseenter', () => {
-
             if(!hoverPreview || !previewImg || !previewTitle) return;
-
             previewTitle.textContent = stateName;
-
-           
-
+            
             const currentData = stateGalleries[stateName] || defaultGallery;
-
             let currentIndex = 0;
-
             previewImg.src = currentData[currentIndex].img;
-
             hoverPreview.style.display = 'block';
 
-
-
             if (currentData.length > 1) {
-
                 intervalId = setInterval(() => {
-
                     currentIndex = (currentIndex + 1) % currentData.length;
-
                     previewImg.src = currentData[currentIndex].img;
-
                 }, 1500);
-
             }
-
         });
-
-
 
         state.addEventListener('mousemove', (e) => {
             if (hoverPreview) {
-                // Keeps the preview card stuck closely to the cursor regardless of screen size
-                const offset = 12; // Tightly controlled distance in pixels
-                
+                const offset = 12;
                 hoverPreview.style.position = 'fixed';
                 hoverPreview.style.left = `${e.clientX + 40}px`;
                 
-                // Positions preview directly above cursor; flips below if near top of screen
                 if (e.clientY - 170 < 0) {
                     hoverPreview.style.top = `${e.clientY + offset}px`;
                 } else {
@@ -453,213 +445,104 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-
-
         state.addEventListener('mouseleave', () => {
-
             if(hoverPreview) hoverPreview.style.display = 'none';
-
             if (intervalId) clearInterval(intervalId);
-
         });
-
-
 
         state.addEventListener('click', () => {
-
             activeStateName = stateName;
-
             activeStatePath = state;
-
             if(modalStateTitle) modalStateTitle.textContent = `${stateName} Gallery`;
-
             if(polaroidContainer) renderGallery(stateName, polaroidContainer);
-
             if(modal) modal.classList.add('active');
-
         });
-
     });
 
-
-
-    // --- Auth Handling ---
-
     if (authForm) {
-
         authForm.addEventListener('submit', async (e) => {
-
             e.preventDefault();
-
             const email = document.getElementById('auth-email').value;
-
             const password = document.getElementById('auth-password').value;
-
-
 
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-
-
             if (error) {
-
                 alert(error.message);
-
             } else {
-
                 const authModal = document.getElementById('auth-modal');
-
                 if(authModal) authModal.classList.remove('active');
-
                 await loadUserMemories();
-
             }
-
         });
-
     }
 
-
-
-    // --- Memory Upload Handling ---
-
     if (addMemoryForm) {
-
         addMemoryForm.addEventListener('submit', async (e) => {
-
             e.preventDefault();
-
-           
-
+            
             const submitBtn = e.target.querySelector('button[type="submit"]');
-
             const originalBtnText = submitBtn.textContent;
-
             submitBtn.textContent = "Uploading...";
-
             submitBtn.disabled = true;
 
-
-
             const imageFileInput = document.getElementById('image-file-input');
-
             const captionInput = document.getElementById('caption-input');
-
             const file = imageFileInput.files[0];
-
             const caption = captionInput.value.trim();
 
-
-
             const { data: { user } } = await supabaseClient.auth.getUser();
-
             if (!user) {
-
                 alert('Please log in first!');
-
                 submitBtn.textContent = originalBtnText;
-
                 submitBtn.disabled = false;
-
                 return;
-
             }
-
-
 
             const filePath = `${user.id}/${Date.now()}_${file.name}`;
-
             const { error: storageError } = await supabaseClient.storage.from('memories').upload(filePath, file);
-
-           
-
+            
             if (storageError) {
-
                 alert(storageError.message);
-
                 submitBtn.textContent = originalBtnText;
-
                 submitBtn.disabled = false;
-
                 return;
-
             }
-
-
 
             const { data: { publicUrl } } = supabaseClient.storage.from('memories').getPublicUrl(filePath);
 
-
-
             const { error: dbError } = await supabaseClient.from('state_memories').insert([{
-
                 user_id: user.id,
-
                 state_name: activeStateName,
-
                 image_url: publicUrl,
-
                 caption: caption
-
             }]);
 
-
-
             if (!dbError) {
-
                 await window.loadUserMemories();
-
                 renderGallery(activeStateName, polaroidContainer);
-
                 addMemoryForm.reset();
-
             } else {
-
                 alert(dbError.message);
-
             }
 
-
-
             submitBtn.textContent = originalBtnText;
-
             submitBtn.disabled = false;
-
         });
-
     }
-
-
-
-    // --- Modal Utilities & Session Boot ---
 
     if(closeModal && modal) {
-
         closeModal.addEventListener('click', () => modal.classList.remove('active'));
-
         modal.addEventListener('click', (e) => {
-
             if (e.target === modal) modal.classList.remove('active');
-
         });
-
     }
 
-
-
     supabaseClient.auth.getUser().then(({ data: { user } }) => {
-
         if (user) {
-
             const authModal = document.getElementById('auth-modal');
-
             if (authModal) authModal.classList.remove('active');
-
             window.loadUserMemories();
-
         }
-
     });
-
-}); 
-
+});

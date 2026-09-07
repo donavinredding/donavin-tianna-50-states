@@ -77,13 +77,13 @@ svg.us-map {
 }
 
 .state {
-    fill: #ffffff; /* <--- Add this line */
+    fill: #ffffff;
     cursor: pointer;
     stroke: #000000;
     stroke-width: 4px;
     stroke-linejoin: round;
     pointer-events: visiblePainted;
-    filter: sepia(1) hue-rotate(70deg) saturate(2) opacity(1) contrast(0.5);
+    /* Removed: filter: sepia(1) hue-rotate(70deg) saturate(2) opacity(1) contrast(0.5); */
     transition: filter 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
 }
 
@@ -207,6 +207,87 @@ svg pattern image {
     border: 1px solid #dcd7cc;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
+    cursor: grab;
+}
+
+.polaroid:active {
+    cursor: grabbing;
+
+}.polaroid.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+}
+
+.polaroid.drag-over {
+    border: 2px dashed #9E2A2B;
+    transform: scale(1.02);
+}
+
+/* Drag handle styling */
+.drag-handle {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    cursor: grab;
+    font-size: 16px;
+    color: #666;
+    user-select: none;
+    touch-action: none;
+    padding: 2px 4px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.polaroid-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+/* Lightbox overlay for full uncropped images */
+.lightbox-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.lightbox-modal.active {
+    display: flex;
+}
+
+.lightbox-content {
+    max-width: 90%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+#lightbox-caption {
+    color: #fff;
+    margin-top: 12px;
+    font-size: 1.1rem;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
 }
 
 .polaroid:nth-child(odd) { transform: rotate(2deg); }
@@ -217,12 +298,49 @@ svg pattern image {
     z-index: 10;
 }
 
+.img-wrapper {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1e1e1e;
+    position: relative;
+}
+
 .polaroid img {
     width: 100%;
     height: 200px;
     object-fit: cover;
     object-position: center;
     border-bottom: 1px solid #eee;
+}
+
+/* Rotate Button Styling */
+.rotate-btn {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 3px 7px;
+    z-index: 5;
+    transition: background-color 0.2s ease;
+}
+
+.rotate-btn:hover {
+    background: #ffffff;
+}
+
+/* Adjust scale for 90/270 deg rotation so sides don't get cropped */
+.polaroid-img.rotated-90,
+.polaroid-img.rotated-270 {
+    max-width: 180px; /* Constrains rotated width to parent height */
+    max-height: 100%;
 }
 
 .polaroid p {
