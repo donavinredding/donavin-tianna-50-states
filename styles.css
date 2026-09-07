@@ -1,17 +1,41 @@
 :root {
-    --bg-color: #f4eee1;
-    --primary-red: #9E2A2B;
-    --primary-green: #4A7C59;
-    --primary-orange: #E09F3E;
+    --bg-color: #E2D6CA;          /* Cream background */
+    --primary-red: #66021E;       /* Deep Red */
+    --primary-green: #6B8071;     /* Sage Green */
+    --primary-orange: #B75109;    /* Warm Orange */
+    --primary-tan: #BC9E84;       /* Tan Accent */
     --text-dark: #2b2b2b;
     --polaroid-bg: #ffffff;
-    --shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    --shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    /* Discreet scrollbars for Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-tan) transparent;
+}
+
+/* Discreet WebKit Scrollbars (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--primary-tan);
+    border-radius: 10px;
+    opacity: 0.6;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--primary-orange);
 }
 
 body {
@@ -22,16 +46,16 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 20px 10px;
     overflow-x: hidden;
-    background-image: radial-gradient(#e3dccb 1px, transparent 1px);
+    background-image: radial-gradient(var(--primary-tan) 1px, transparent 1px);
     background-size: 20px 20px;
 }
 
 /* --- Typography & Header --- */
 header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
     border-bottom: 3px dashed var(--primary-red);
     padding-bottom: 15px;
     width: 100%;
@@ -40,7 +64,7 @@ header {
 
 h1 {
     font-family: 'Special Elite', cursive;
-    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-size: clamp(1.8rem, 5vw, 3rem);
     color: var(--primary-red);
     letter-spacing: 2px;
     text-shadow: 2px 2px 0px var(--primary-orange);
@@ -48,7 +72,7 @@ h1 {
 }
 
 p.subtitle {
-    font-size: clamp(0.9rem, 2vw, 1.1rem);
+    font-size: clamp(0.85rem, 2.5vw, 1.1rem);
     color: var(--primary-green);
     font-weight: 700;
     text-transform: uppercase;
@@ -59,13 +83,13 @@ p.subtitle {
 .map-container {
     width: 100%;
     max-width: 1100px;
-    background: rgba(255, 255, 255, 0.6);
-    border: 4px solid var(--text-dark);
+    background: rgba(255, 255, 255, 0.85);
+    border: 3px solid var(--text-dark);
     border-radius: 12px;
-    padding: 20px;
+    padding: 15px;
     box-shadow: var(--shadow);
     position: relative;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 svg.us-map {
@@ -73,24 +97,23 @@ svg.us-map {
     height: auto;
     display: block;
     margin: 0 auto;
-    overflow: visible; /* Stops Alaska from being cut off */
+    overflow: visible;
 }
 
 .state {
-    fill: #ffffff;
+    fill: var(--primary-green);
     cursor: pointer;
-    stroke: #000000;
-    stroke-width: 4px;
+    stroke: var(--text-dark);
+    stroke-width: 2px;
     stroke-linejoin: round;
     pointer-events: visiblePainted;
-    /* Removed: filter: sepia(1) hue-rotate(70deg) saturate(2) opacity(1) contrast(0.5); */
-    transition: filter 0.3s ease, stroke 0.3s ease, stroke-width 0.3s ease;
+    transition: fill 0.2s ease, stroke 0.2s ease;
 }
 
 .state:hover {
-    stroke: #142417;
-    filter: none;
-    stroke-width: 1px;
+    stroke: var(--primary-red);
+    fill: var(--primary-green);
+    stroke-width: 2.5px;
 }
 
 #states-group {
@@ -98,8 +121,6 @@ svg.us-map {
 }
 
 svg pattern image {
-    width: 100%;
-    height: 100%;
     object-fit: cover;
 }
 
@@ -108,7 +129,7 @@ svg pattern image {
     position: absolute;
     background: var(--polaroid-bg);
     border: 3px solid var(--text-dark);
-    padding: 10px 10px 30px 10px;
+    padding: 8px 8px 24px 8px;
     box-shadow: var(--shadow);
     width: 160px;
     pointer-events: none;
@@ -123,107 +144,460 @@ svg pattern image {
 
 #hover-preview img {
     width: 100%;
-    height: 120px;
+    height: 110px;
     object-fit: cover;
-    border: 1px solid #ccc;
+    border: 1px solid var(--primary-tan);
+    background-color: var(--bg-color);
 }
 
 #hover-preview .preview-title {
     font-family: 'Special Elite', cursive;
     font-size: 0.85rem;
     text-align: center;
-    margin-top: 8px;
+    margin-top: 6px;
     color: var(--text-dark);
 }
 
-/* --- Modal Gallery --- */
-.modal {
+/* --- Modal Gallery & Overlays --- */
+.modal, .modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(43, 43, 43, 0.85);
+    background: rgba(43, 43, 43, 0.75);
+    backdrop-filter: blur(3px);
     display: flex;
-    justify-content: center; align-items: center;
+    justify-content: center; 
+    align-items: center;
     z-index: 1000;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.3s ease;
-    padding: 20px;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    padding: 15px;
 }
 
-.modal.active {
+.modal.active, .modal-overlay.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
 }
 
 .modal-content {
     background: var(--bg-color);
-    border: 5px solid var(--primary-red);
+    border: 3px solid var(--primary-red);
     width: 100%;
     max-width: 900px;
-    max-height: 85vh;
+    max-height: 88vh;
     border-radius: 8px;
-    padding: 30px;
+    padding: 25px 20px;
     overflow-y: auto;
     position: relative;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+    animation: modalPop 0.25s ease;
 }
 
-.close-btn {
-    position: absolute;
-    top: 15px; right: 20px;
-    background: var(--primary-red);
-    color: white;
-    border: none;
-    font-family: 'Special Elite', cursive;
-    font-size: 1.2rem;
-    padding: 5px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.2s;
+@keyframes modalPop {
+    0% { transform: scale(0.95); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
-
-.close-btn:hover { background: var(--text-dark); }
 
 .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-family: 'Special Elite', cursive;
-    font-size: 2rem;
+    font-size: clamp(1.4rem, 4vw, 2rem);
     color: var(--primary-red);
     margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px dashed var(--primary-tan);
     text-align: center;
 }
 
-/* --- Polaroids & Delete Button --- */
+.modal-content h2, 
+#gallery-modal h2 {
+    word-break: break-word;
+    color: var(--primary-red);
+}
+
+/* --- Polaroids & Dynamic Image Frames --- */
 .polaroid-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 25px;
-    padding: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    padding: 10px 5px;
 }
 
 .polaroid {
     background: var(--polaroid-bg);
-    padding: 12px 12px 35px 12px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    border: 1px solid #dcd7cc;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: 10px 10px 30px 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+    border: 1px solid var(--primary-tan);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
     position: relative;
     cursor: grab;
 }
 
-.polaroid:active {
-    cursor: grabbing;
+.polaroid:nth-child(odd) { transform: rotate(1.5deg); }
+.polaroid:nth-child(even) { transform: rotate(-1.5deg); }
+.polaroid:hover {
+    transform: scale(1.03) rotate(0deg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    z-index: 10;
+}
 
-}.polaroid.dragging {
+.polaroid:active { cursor: grabbing; }
+
+.polaroid.dragging {
     opacity: 0.4;
     transform: scale(0.95);
 }
 
 .polaroid.drag-over {
-    border: 2px dashed #9E2A2B;
+    border: 2px dashed var(--primary-red);
     transform: scale(1.02);
 }
 
-/* Drag handle styling */
+.img-wrapper {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f7f3ed;
+    border: 1px solid #e0d8cd;
+    position: relative;
+}
+
+.polaroid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.polaroid-img {
+    max-width: 100%;
+    max-height: 100%;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+}
+
+.polaroid-img.rotated-90,
+.polaroid-img.rotated-270 {
+    max-width: 180px;
+    max-height: 100%;
+}
+
+.polaroid p {
+    font-family: 'Special Elite', cursive;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    text-align: center;
+    margin-top: 10px;
+    word-break: break-word;
+}
+
+/* Lightbox Modal */
+.lightbox-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.lightbox-modal.active { display: flex; }
+
+.lightbox-content {
+    max-width: 95%;
+    max-height: 80vh;
+    object-fit: contain;
+    border: 3px solid var(--polaroid-bg);
+    border-radius: 4px;
+}
+
+#lightbox-caption {
+    color: #ffffff;
+    margin-top: 12px;
+    font-size: 1rem;
+    font-family: 'Special Elite', cursive;
+    text-align: center;
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: #ffffff;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* --- Form Elements & Upload Queue --- */
+.add-memory-container, .plans-container {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px dashed var(--primary-red);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 12px auto 30px auto;
+    width: 100%;
+    max-width: 1080px; /* Clean breakpoint control for desktop */
+}
+
+.add-memory-container .form-title, .plans-title {
+    font-family: 'Special Elite', cursive;
+    font-size: 1.2rem;
+    color: var(--primary-red);
+    margin-bottom: 12px;
+}
+
+#add-memory-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.custom-file-upload {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    border: 2px dashed var(--primary-tan);
+    border-radius: 6px;
+    background-color: var(--bg-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.custom-file-upload:hover,
+.custom-file-upload.dragover {
+    background-color: #d8caa9;
+    border-color: var(--primary-green);
+}
+
+.upload-icon { font-size: 1.8rem; margin-bottom: 4px; }
+.upload-text { font-size: 0.9rem; color: var(--text-dark); font-weight: 700; }
+.upload-hint { font-size: 0.75rem; color: #666; margin-top: 2px; }
+#image-file-input { display: none; }
+
+.upload-queue-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.active-queue-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #ffffff;
+    border: 2px solid var(--primary-orange);
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.active-preview-wrapper {
+    width: 100%;
+    max-width: 260px;
+    height: 180px;
+    margin-bottom: 12px;
+    border: 1px solid var(--primary-tan);
+    background-color: #f7f3ed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.active-preview-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.queue-controls {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    flex-wrap: wrap;
+}
+
+.queue-thumbnails {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 8px 4px;
+    width: 100%;
+}
+
+.thumbnail-card {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--primary-tan);
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.thumbnail-card img { width: 100%; height: 100%; object-fit: cover; }
+
+.thumbnail-card .remove-thumb {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: var(--primary-red);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.queue-count {
+    font-size: 0.8rem;
+    color: var(--primary-red);
+    font-weight: bold;
+    text-align: right;
+    width: 100%;
+}
+
+#caption-input {
+    flex: 1 1 200px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.9rem;
+    padding: 8px 12px;
+    border: 1px solid var(--primary-tan);
+    border-radius: 4px;
+    width: 100%;
+}
+
+#caption-input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+}
+
+/* --- Action Buttons & Form Controls --- */
+.submit-btn, 
+.save-btn, 
+#auth-submit-btn,
+.open-modal-btn {
+    background-color: var(--primary-green);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 12px 20px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    display: block;
+    width: 100%;
+    text-align: center;
+}
+
+.open-modal-btn {
+    margin-top: 10px;
+    margin-bottom: 8px;
+    background-color: var(--primary-orange);
+}
+
+.submit-btn {
+    margin-top: 12px;
+}
+
+.submit-btn:hover, 
+.save-btn:hover, 
+#auth-submit-btn:hover,
+.open-modal-btn:hover {
+    background-color: var(--primary-red);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.cancel-btn {
+    background: transparent;
+    color: var(--text-dark);
+    border: 1px solid var(--primary-tan);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    background: var(--primary-tan);
+    color: #ffffff;
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 6px 12px;
+    font-family: 'Special Elite', cursive;
+    background: transparent;
+    color: var(--primary-red);
+    border: 1px solid var(--primary-red);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    background: var(--primary-red);
+    color: #ffffff;
+}
+
+/* Polaroids Specific Controls */
+.polaroid .rotate-btn,
+.polaroid .delete-btn,
+.polaroid .drag-handle {
+    opacity: 0.8;
+    transition: opacity 0.2s ease-in-out;
+}
+
+@media (min-width: 769px) {
+    .polaroid .rotate-btn,
+    .polaroid .delete-btn,
+    .polaroid .drag-handle {
+        opacity: 0;
+        pointer-events: none;
+    }
+    .polaroid:hover .rotate-btn,
+    .polaroid:hover .delete-btn,
+    .polaroid:hover .drag-handle {
+        opacity: 1;
+        pointer-events: auto;
+    }
+}
+
 .drag-handle {
     position: absolute;
     top: 6px;
@@ -236,200 +610,19 @@ svg pattern image {
     padding: 2px 4px;
 }
 
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-.polaroid-img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-
-/* Lightbox overlay for full uncropped images */
-.lightbox-modal {
-    display: none;
-    position: fixed;
-    z-index: 10000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-}
-
-.lightbox-modal.active {
-    display: flex;
-}
-
-.lightbox-content {
-    max-width: 90%;
-    max-height: 80vh;
-    object-fit: contain;
-    border-radius: 4px;
-}
-
-#lightbox-caption {
-    color: #fff;
-    margin-top: 12px;
-    font-size: 1.1rem;
-}
-
-.lightbox-close {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    color: #fff;
-    font-size: 35px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.polaroid:nth-child(odd) { transform: rotate(2deg); }
-.polaroid:nth-child(even) { transform: rotate(-2deg); }
-.polaroid:hover {
-    transform: scale(1.05) rotate(0deg);
-    box-shadow: 0 12px 25px rgba(0,0,0,0.3);
-    z-index: 10;
-}
-
-.img-wrapper {
-    width: 100%;
-    height: 180px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #1e1e1e;
-    position: relative;
-}
-
-.polaroid img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    object-position: center;
-    border-bottom: 1px solid #eee;
-}
-
-/* Rotate Button Styling */
 .rotate-btn {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
+    bottom: 4px;
+    left: 4px;
     background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #ccc;
+    border: 1px solid var(--primary-tan);
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
-    padding: 3px 7px;
+    padding: 4px 8px;
     z-index: 5;
-    transition: background-color 0.2s ease;
 }
 
-.rotate-btn:hover {
-    background: #ffffff;
-}
-
-/* Adjust scale for 90/270 deg rotation so sides don't get cropped */
-.polaroid-img.rotated-90,
-.polaroid-img.rotated-270 {
-    max-width: 180px; /* Constrains rotated width to parent height */
-    max-height: 100%;
-}
-
-.polaroid p {
-    font-family: 'Special Elite', cursive;
-    font-size: 0.95rem;
-    color: var(--text-dark);
-    text-align: center;
-    margin-top: 12px;
-}
-
-/* ==========================================================================
-   GLOBAL & MODAL BUTTONS (Clean & Minimal)
-   ========================================================================== */
-
-/* Primary Action Buttons (Submit, Save, Close, Auth) */
-.submit-btn, 
-.close-btn, 
-.save-btn, 
-#auth-submit-btn {
-    background-color: var(--text-dark);
-    color: var(--polaroid-bg);
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-family: 'Courier Prime', monospace;
-    font-size: 0.85rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
-}
-
-.submit-btn:hover, 
-.close-btn:hover, 
-.save-btn:hover, 
-#auth-submit-btn:hover {
-    background-color: var(--primary-green);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-.submit-btn:active, 
-.save-btn:active {
-    transform: translateY(0);
-}
-
-/* Secondary / Cancel Buttons */
-.cancel-btn {
-    background: transparent;
-    color: #666;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-family: 'Courier Prime', monospace;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.cancel-btn:hover {
-    background: #e5e5e5;
-    color: var(--text-dark);
-}
-
-/* Modal Close Button Override (Top-Right Pin) */
-.close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    padding: 6px 12px;
-    font-family: 'Special Elite', cursive;
-    background: transparent;
-    color: var(--text-dark);
-    border: 1px solid var(--text-dark);
-}
-
-.close-btn:hover {
-    background: var(--primary-red);
-    color: #fff;
-    border-color: var(--primary-red);
-}
-
-
-/* ==========================================================================
-   POLAROID ACTION BUTTONS (Floating Minimal Badges)
-   ========================================================================== */
-
-/* Delete Button - Top Right Floating Badge */
 .delete-btn {
     position: absolute;
     top: -8px;
@@ -438,7 +631,7 @@ svg pattern image {
     height: 28px;
     background-color: var(--polaroid-bg);
     color: var(--primary-red);
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--primary-red);
     border-radius: 50%;
     font-family: 'Courier Prime', monospace;
     font-size: 0.85rem;
@@ -447,71 +640,44 @@ svg pattern image {
     display: flex;
     justify-content: center;
     align-items: center;
-    opacity: 0;
-    transform: scale(0.8);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 20;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
-/* Edit Button - Bottom Right Floating Badge */
 .edit-btn {
     position: absolute;
-    bottom: 12px;
-    right: 12px;
+    bottom: 5px;
+    right: 5px;
     padding: 4px 10px;
     background-color: var(--polaroid-bg);
     color: var(--text-dark);
-    border: 1px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--primary-tan);
     border-radius: 20px;
     font-family: 'Courier Prime', monospace;
     font-size: 0.75rem;
     font-weight: 700;
     cursor: pointer;
-    opacity: 0;
-    transform: translateY(4px);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 20;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
 
-/* Reveal buttons gracefully on Polaroid hover */
-.polaroid:hover .delete-btn {
-    opacity: 1;
-    transform: scale(1);
-}
-
-.polaroid:hover .edit-btn {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Hover States for Badges */
 .delete-btn:hover {
     background-color: var(--primary-red);
     color: #ffffff;
-    border-color: var(--primary-red);
-    transform: scale(1.1) !important;
 }
 
 .edit-btn:hover {
     background-color: var(--primary-orange);
     color: #ffffff;
     border-color: var(--primary-orange);
-    transform: translateY(-2px) !important;
 }
 
-
-/* ==========================================================================
-   INLINE EDIT FORM STYLING
-   ========================================================================== */
-
+/* Edit Inline Controls */
 .edit-container {
     display: flex;
     flex-direction: column;
     gap: 8px;
     margin-top: 10px;
-    padding: 0 4px;
 }
 
 .edit-input {
@@ -519,17 +685,13 @@ svg pattern image {
     padding: 6px 10px;
     font-family: 'Courier Prime', monospace;
     font-size: 0.85rem;
-    border: 1px solid #ddd;
+    border: 1px solid var(--primary-tan);
     border-radius: 4px;
-    background: #fafafa;
+    background: #ffffff;
     outline: none;
-    transition: border-color 0.2s ease;
 }
 
-.edit-input:focus {
-    border-color: var(--primary-orange);
-    background: #fff;
-}
+.edit-input:focus { border-color: var(--primary-orange); }
 
 .edit-actions {
     display: flex;
@@ -537,61 +699,14 @@ svg pattern image {
     justify-content: flex-end;
 }
 
-/* --- Forms & Buttons --- */
-.add-memory-container {
-    background: rgba(255, 255, 255, 0.7);
-    border: 2px dashed var(--primary-red);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 25px;
-}
-
-.add-memory-container .form-title {
-    font-family: 'Special Elite', cursive;
-    font-size: 1.1rem;
-    color: var(--text-dark);
-    margin-bottom: 10px;
-}
-
-#add-memory-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-}
-
-#caption-input, #image-file-input {
-    flex: 1 1 200px;
-    font-family: 'Courier Prime', monospace;
-    font-size: 0.9rem;
-}
-
-#caption-input {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.submit-btn {
-    background: var(--primary-green);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    font-family: 'Special Elite', cursive;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background 0.2s;
-}
-
-.submit-btn:hover { background: #365c40; }
-
-/* Centered Auth Box */
+/* --- Auth Box --- */
 .auth-box {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
+    width: 100%;
     max-width: 400px; 
     margin: 0 auto;
 }
@@ -611,30 +726,260 @@ svg pattern image {
 
 #auth-form input {
     width: 100%;
-    max-width: 280px;
     padding: 10px;
     font-family: 'Courier Prime', monospace;
-    border: 1px solid #ccc;
+    border: 1px solid var(--primary-tan);
     border-radius: 4px;
+    background: #ffffff;
 }
 
-#auth-submit-btn {
+#auth-form input:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+}
+
+#auth-submit-btn { width: 100%; margin-top: 10px; }
+
+/* --- Travel Checklist & Plans Section --- */
+.state-checklist-section {
+    margin: 10px auto 40px auto;
+    padding: 0 10px;
     width: 100%;
-    max-width: 280px;
+    max-width: 1100px;
+}
+
+.state-checklist-section h2 {
+    text-align: center;
+    font-family: 'Special Elite', cursive;
+    color: var(--primary-red);
+    margin-bottom: 20px;
+    font-size: clamp(1.3rem, 4vw, 1.8rem);
+}
+
+.checklist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+.checklist-card {
+    background: #ffffff;
+    border: 2px solid var(--primary-tan);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.checklist-card.highlight-card {
+    border-color: var(--primary-orange);
+    background: #fffdfa;
+}
+
+.checklist-card h3 {
+    font-size: 1.1rem;
+    color: var(--primary-red);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--bg-color);
+}
+
+.state-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 350px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.state-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: var(--bg-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    gap: 8px;
+}
+
+.state-list li .btn-action {
+    background: var(--primary-green);
+    color: #ffffff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.state-list li .btn-action:hover { background: var(--primary-orange); }
+
+.state-list li .btn-finish {
+    background: var(--primary-red);
+    color: white;
+}
+
+.state-list li .btn-finish:hover { background: #4d0116; }
+
+.plans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.plan-card {
+    background: #ffffff;
+    border: 1px solid var(--primary-tan);
+    border-radius: 6px;
+    padding: 12px 15px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    width: 100%;
+}
+
+.plan-card p {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+    white-space: pre-wrap;
+}
+
+.plan-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 0.85rem;
+}
+
+.plan-links a {
+    color: var(--primary-orange);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.plan-links a:hover { text-decoration: underline; }
+
+.map-preview-frame {
+    width: 100%;
+    height: 180px;
+    border: 1px solid var(--primary-tan);
+    border-radius: 4px;
     margin-top: 10px;
+}
+
+.plan-card .delete-plan-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    color: var(--primary-red);
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-plan-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.add-plan-form textarea,
+.form-group textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 10px 12px;
+    border: 1px solid var(--primary-tan);
+    border-radius: 4px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.9rem;
+    background: #ffffff;
+    color: var(--text-dark);
+    resize: vertical;
+}
+
+.plan-inputs-row input,
+.form-group input {
+    width: 100%;
+    height: 42px;
+    padding: 8px 12px;
+    border: 1px solid var(--primary-tan);
+    border-radius: 4px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.85rem;
+    background: #ffffff;
+    color: var(--text-dark);
+}
+
+.add-plan-form textarea:focus,
+.plan-inputs-row input:focus,
+.form-group input:focus, 
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-orange);
+}
+
+/* Stretches inputs side-by-side on desktop */
+.plan-inputs-row {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+}
+
+.plan-inputs-row .form-group {
+    flex: 1;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    font-weight: 700;
+}
+
+#state-plan-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
 }
 
 footer {
     margin-top: auto;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--primary-red);
     font-family: 'Special Elite', cursive;
     text-align: center;
     padding: 15px;
 }
 
-@media (max-width: 768px) {
-    .map-container { padding: 10px; }
-    .modal-content { padding: 15px; }
+/* --- Responsive Adjustments --- */
+@media (max-width: 600px) {
+    body { padding: 10px 5px; }
+    .map-container { padding: 8px; }
+    .modal-content { padding: 15px 10px; }
+    .polaroid-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+    }
+    .queue-controls { flex-direction: column; }
+    .plan-inputs-row { flex-direction: column; gap: 10px; }
 }
-

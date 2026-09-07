@@ -5,22 +5,33 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function getBaseGalleries() {
-    return {
-        "California": [],
-        "Texas": []
-    };
-}
-
 const defaultGallery = [];
 
-let stateGalleries = getBaseGalleries();
+let stateGalleries = {};
 let activeStateName = null;
 let activeStatePath = null;
 let intervalId = null;
 
 // Track dragged element index across drag operations
 let draggedIndex = null;
+
+// Multi-file Queue State
+let uploadQueue = [];
+
+// Local tracking set for states designated as "The Next State(s)"
+let nextStateTargets = new Set(JSON.parse(localStorage.getItem('nextStateTargets') || '[]'));
+
+// All US States array for checking full list
+const ALL_STATES = [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", 
+    "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", 
+    "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", 
+    "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", 
+    "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", 
+    "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", 
+    "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", 
+    "Wisconsin", "Wyoming"
+];
 
 // --- 2. Core Functions ---
 
@@ -37,65 +48,192 @@ function getOrCreateDefs(svgMap) {
 function updateStatePattern(stateId, imgUrl, svgDefs) {
     const patternId = `pattern-${stateId}`;
     let pattern = document.getElementById(patternId);
+    const statePath = document.getElementById(stateId);
+
+    if (!statePath) return patternId;
+    const bbox = statePath.getBBox();
 
     if (!pattern) {
         pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
         pattern.setAttribute('id', patternId);
-        pattern.setAttribute('patternUnits', 'objectBoundingBox');
-        pattern.setAttribute('width', '1');
-        pattern.setAttribute('height', '1');
+        pattern.setAttribute('patternUnits', 'userSpaceOnUse');
 
         const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-        image.setAttribute('x', '0');
-        image.setAttribute('y', '0');
-        image.setAttribute('width', '1');
-        image.setAttribute('height', '1');
         image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
 
         pattern.appendChild(image);
         svgDefs.appendChild(pattern);
     }
 
-    pattern.querySelector('image').setAttribute('href', imgUrl);
+    pattern.setAttribute('x', bbox.x);
+    pattern.setAttribute('y', bbox.y);
+    pattern.setAttribute('width', bbox.width);
+    pattern.setAttribute('height', bbox.height);
+
+    const image = pattern.querySelector('image');
+    image.setAttribute('x', '0');
+    image.setAttribute('y', '0');
+    image.setAttribute('width', bbox.width);
+    image.setAttribute('height', bbox.height);
+    image.setAttribute('href', imgUrl);
+
     return patternId;
 }
 
-// Rotates an image asset using Canvas to preserve aspect ratios before cropping
-function getRotatedImageDataUrl(src, angleDegrees, callback) {
-    if (!angleDegrees || angleDegrees === 0) {
-        callback(src);
+function updateChecklists() {
+    const nextList = document.getElementById('next-states-list');
+    const notVisitedList = document.getElementById('not-visited-list');
+    const visitedList = document.getElementById('visited-list');
+
+    if (!nextList || !notVisitedList || !visitedList) return;
+
+    nextList.innerHTML = '';
+    notVisitedList.innerHTML = '';
+    visitedList.innerHTML = '';
+
+    ALL_STATES.forEach(stateName => {
+        const hasMemories = stateGalleries[stateName] && stateGalleries[stateName].length > 0;
+        const isNext = nextStateTargets.has(stateName);
+
+        const li = document.createElement('li');
+        
+        // 1. Next State(s) Category
+        if (isNext) {
+            li.innerHTML = `
+                <span>${stateName} ${hasMemories ? '📸' : ''}</span>
+                <div>
+                    ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ''}
+                    <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>
+                </div>
+            `;
+            nextList.appendChild(li);
+        } 
+        // 2. Visited States Category
+        else if (hasMemories) {
+            li.innerHTML = `<span>${stateName} (${stateGalleries[stateName].length} photos)</span>`;
+            visitedList.appendChild(li);
+        } 
+        // 3. Not Visited Category
+        else {
+            li.innerHTML = `
+                <span>${stateName}</span>
+                <button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Plan Trip</button>
+            `;
+            notVisitedList.appendChild(li);
+        }
+    });
+}
+
+// --- Modal Visibility Controls ---
+
+window.openStatePlanModal = function() {
+    const modal = document.getElementById('state-plan-modal');
+    const stateInput = document.getElementById('modal-state-name');
+    
+    if (modal) {
+        if (stateInput && activeStateName) {
+            stateInput.value = activeStateName;
+        }
+        modal.classList.add('active');
+    }
+};
+
+window.closeStatePlanModal = function() {
+    const modal = document.getElementById('state-plan-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+};
+
+window.handleModalBackdropClick = function(event) {
+    if (event.target.id === 'state-plan-modal') {
+        window.closeStatePlanModal();
+    }
+};
+
+// --- Modal Form Submission Handler ---
+
+window.submitStatePlan = async function(event) {
+    event.preventDefault();
+
+    const stateNameInput = document.getElementById('modal-state-name');
+    const locationInput = document.getElementById('modal-location');
+    const detailsInput = document.getElementById('modal-details');
+
+    const rawStateName = stateNameInput ? stateNameInput.value.trim() : '';
+    const location = locationInput ? locationInput.value.trim() : '';
+    const details = detailsInput ? detailsInput.value.trim() : '';
+
+    if (!rawStateName) {
+        alert('Please enter a state name.');
         return;
     }
 
-    const img = new Image();
-    img.crossOrigin = "anonymous"; // Prevents CORS issues with external images
-    img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
+    const formattedStateName = rawStateName.charAt(0).toUpperCase() + rawStateName.slice(1);
 
-        // Swap width/height for 90/270 degree orientations
-        if (angleDegrees === 90 || angleDegrees === 270) {
-            canvas.width = img.height;
-            canvas.height = img.width;
-        } else {
-            canvas.width = img.width;
-            canvas.height = img.height;
+    let planTextCombined = '';
+    if (location && details) {
+        planTextCombined = `📍 ${location}: ${details}`;
+    } else if (location) {
+        planTextCombined = `📍 ${location}`;
+    } else {
+        planTextCombined = details;
+    }
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) {
+        alert('Please log in to save trip plans!');
+        return;
+    }
+
+    const { error } = await supabaseClient.from('state_plans').insert([{
+        user_id: user.id,
+        state_name: formattedStateName,
+        plan_text: planTextCombined
+    }]);
+
+    if (!error) {
+        if (typeof nextStateTargets !== 'undefined') {
+            nextStateTargets.add(formattedStateName);
+            localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+            if (typeof updateChecklists === 'function') {
+                updateChecklists();
+            }
         }
 
-        // Translate and rotate canvas context
-        ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate((angleDegrees * Math.PI) / 180);
+        if (activeStateName && activeStateName.toLowerCase() === formattedStateName.toLowerCase()) {
+            if (typeof loadStatePlans === 'function') {
+                loadStatePlans(activeStateName);
+            }
+        }
 
-        // Draw image centered
-        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        const form = document.getElementById('state-plan-form');
+        if (form) form.reset();
+        window.closeStatePlanModal();
+    } else {
+        alert(`Error saving plan: ${error.message}`);
+    }
+};
 
-        callback(canvas.toDataURL());
-    };
-    img.src = src;
-}
+// Global action handlers for checklist UI buttons
+window.toggleNextTarget = function(stateName) {
+    if (nextStateTargets.has(stateName)) {
+        nextStateTargets.delete(stateName);
+    } else {
+        nextStateTargets.add(stateName);
+    }
+    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+    updateChecklists();
+};
 
-// --- Updated renderGallery Function with Rotation ---
+window.finishTrip = function(stateName) {
+    nextStateTargets.delete(stateName);
+    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+    updateChecklists();
+};
+
 function renderGallery(stateName, container) {
+    if (!container) return;
     container.innerHTML = '';
     const data = stateGalleries[stateName] || defaultGallery;
 
@@ -115,18 +253,15 @@ function renderGallery(stateName, container) {
         let bottomRotateHTML = '';
 
         if (item.id) {
-            // Drag handle top-left, Delete top-right
             topButtonsHTML = `
                 <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
                 <button class="delete-btn" data-id="${item.id}" title="Delete Memory">✕</button>
             `;
-            // Rotate button bottom-left
             bottomRotateHTML = `
                 <button class="rotate-btn" data-id="${item.id}" title="Rotate Image">↻</button>
             `;
         }
 
-        // Helper class to adjust image scale when sideways
         const rotationClass = (item.rotation === 90 || item.rotation === 270) ? `rotated-${item.rotation}` : '';
 
         polaroidDiv.innerHTML = `
@@ -144,40 +279,42 @@ function renderGallery(stateName, container) {
 
         const imgElement = polaroidDiv.querySelector('.polaroid-img');
 
-        // Lightbox Full-Size View
-        imgElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openLightbox(item.img, item.desc, item.rotation);
-        });
+        // Lightbox View
+        if (imgElement) {
+            imgElement.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openLightbox(item.img, item.desc, item.rotation);
+            });
+        }
 
         // Rotation Logic
         if (item.id) {
             const rotateBtn = polaroidDiv.querySelector('.rotate-btn');
-            rotateBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
+            if (rotateBtn) {
+                rotateBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
 
-                item.rotation = (item.rotation + 90) % 360;
-                imgElement.style.transform = `rotate(${item.rotation}deg)`;
+                    item.rotation = (item.rotation + 90) % 360;
+                    imgElement.style.transform = `rotate(${item.rotation}deg)`;
 
-                // Toggle aspect adjustment classes for sideways orientations
-                imgElement.classList.remove('rotated-90', 'rotated-270');
-                if (item.rotation === 90 || item.rotation === 270) {
-                    imgElement.classList.add(`rotated-${item.rotation}`);
-                }
+                    imgElement.classList.remove('rotated-90', 'rotated-270');
+                    if (item.rotation === 90 || item.rotation === 270) {
+                        imgElement.classList.add(`rotated-${item.rotation}`);
+                    }
 
-                // Update database
-                const { error } = await supabaseClient
-                    .from('state_memories')
-                    .update({ rotation: item.rotation })
-                    .eq('id', item.id);
+                    const { error } = await supabaseClient
+                        .from('state_memories')
+                        .update({ rotation: item.rotation })
+                        .eq('id', item.id);
 
-                if (error) {
-                    console.error("Error updating rotation:", error.message);
-                }
-            });
+                    if (error) {
+                        console.error("Error updating rotation:", error.message);
+                    }
+                });
+            }
         }
 
-        // --- Drag & Drop Setup ---
+        // Drag & Drop Setup
         const handle = polaroidDiv.querySelector('.drag-handle');
         if (handle) {
             handle.addEventListener('mousedown', () => polaroidDiv.setAttribute('draggable', 'true'));
@@ -189,7 +326,7 @@ function renderGallery(stateName, container) {
         polaroidDiv.addEventListener('dragstart', (e) => {
             draggedIndex = index;
             e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', index);
+            e.dataTransfer.setData('text/plain', index.toString());
             polaroidDiv.classList.add('dragging');
         });
 
@@ -235,65 +372,68 @@ function renderGallery(stateName, container) {
             }
         });
 
-        // --- Delete & Edit Event Listeners ---
+        // Delete & Edit Listeners
         if (item.id) {
             const delBtn = polaroidDiv.querySelector('.delete-btn');
             const editBtn = polaroidDiv.querySelector('.edit-btn');
             const captionText = polaroidDiv.querySelector('.caption-text');
 
-            delBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (confirm("Are you sure you want to delete this memory?")) {
-                    const { error } = await supabaseClient.from('state_memories').delete().eq('id', item.id);
-                    if (!error) {
-                        await window.loadUserMemories();
-                        renderGallery(stateName, container);
-                    }
-                }
-            });
-
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                captionText.style.display = 'none';
-                editBtn.style.display = 'none';
-
-                const editContainer = document.createElement('div');
-                editContainer.className = 'edit-container';
-                editContainer.innerHTML = `
-                    <input type="text" class="edit-input" value="${item.desc || ''}" />
-                    <div class="edit-actions">
-                        <button class="save-btn">Save</button>
-                        <button class="cancel-btn">Cancel</button>
-                    </div>
-                `;
-
-                polaroidDiv.appendChild(editContainer);
-
-                editContainer.querySelector('.save-btn').addEventListener('click', async (e) => {
+            if (delBtn) {
+                delBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    const newCaption = editContainer.querySelector('.edit-input').value.trim();
-
-                    const { error } = await supabaseClient.from('state_memories').update({ caption: newCaption }).eq('id', item.id);
-                    if (!error) {
-                        await window.loadUserMemories();
-                        renderGallery(stateName, container);
+                    if (confirm("Are you sure you want to delete this memory?")) {
+                        const { error } = await supabaseClient.from('state_memories').delete().eq('id', item.id);
+                        if (!error) {
+                            await window.loadUserMemories();
+                            renderGallery(stateName, container);
+                        }
                     }
                 });
+            }
 
-                editContainer.querySelector('.cancel-btn').addEventListener('click', (e) => {
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    editContainer.remove();
-                    captionText.style.display = 'block';
-                    editBtn.style.display = 'block';
+                    captionText.style.display = 'none';
+                    editBtn.style.display = 'none';
+
+                    const editContainer = document.createElement('div');
+                    editContainer.className = 'edit-container';
+                    editContainer.innerHTML = `
+                        <input type="text" class="edit-input" value="${item.desc || ''}" />
+                        <div class="edit-actions">
+                            <button class="save-btn">Save</button>
+                            <button class="cancel-btn">Cancel</button>
+                        </div>
+                    `;
+
+                    polaroidDiv.appendChild(editContainer);
+
+                    editContainer.querySelector('.save-btn').addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const newCaption = editContainer.querySelector('.edit-input').value.trim();
+
+                        const { error } = await supabaseClient.from('state_memories').update({ caption: newCaption }).eq('id', item.id);
+                        if (!error) {
+                            await window.loadUserMemories();
+                            renderGallery(stateName, container);
+                        }
+                    });
+
+                    editContainer.querySelector('.cancel-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editContainer.remove();
+                        captionText.style.display = 'block';
+                        editBtn.style.display = 'block';
+                    });
                 });
-            });
+            }
         }
 
         container.appendChild(polaroidDiv);
     });
 }
 
-// --- Lightbox Helper with Rotation ---
 function openLightbox(imgUrl, caption, rotation = 0) {
     let lightbox = document.getElementById('lightbox-modal');
     if (!lightbox) {
@@ -321,38 +461,12 @@ function openLightbox(imgUrl, caption, rotation = 0) {
     lightbox.classList.add('active');
 }
 
-// Lightbox helper function to open full uncropped image
-function openLightbox(imgUrl, caption) {
-    let lightbox = document.getElementById('lightbox-modal');
-    if (!lightbox) {
-        lightbox = document.createElement('div');
-        lightbox.id = 'lightbox-modal';
-        lightbox.className = 'lightbox-modal';
-        lightbox.innerHTML = `
-            <span class="lightbox-close">&times;</span>
-            <img class="lightbox-content" id="lightbox-img">
-            <div id="lightbox-caption"></div>
-        `;
-        document.body.appendChild(lightbox);
-
-        lightbox.addEventListener('click', (e) => {
-            if (e.target.id === 'lightbox-modal' || e.target.className === 'lightbox-close') {
-                lightbox.classList.remove('active');
-            }
-        });
-    }
-
-    document.getElementById('lightbox-img').src = imgUrl;
-    document.getElementById('lightbox-caption').textContent = caption || '';
-    lightbox.classList.add('active');
-}
-
 // --- 3. DOM Initialization & Database Logic ---
 
 document.addEventListener("DOMContentLoaded", () => {
     const svgMap = document.querySelector('.us-map');
     const states = document.querySelectorAll('.state');
-    const svgDefs = getOrCreateDefs(svgMap);
+    const svgDefs = svgMap ? getOrCreateDefs(svgMap) : null;
 
     const hoverPreview = document.getElementById('hover-preview');
     const previewImg = document.getElementById('preview-img');
@@ -365,54 +479,58 @@ document.addEventListener("DOMContentLoaded", () => {
     const addMemoryForm = document.getElementById('add-memory-form');
     const authForm = document.getElementById('auth-form');
 
+    // Queue Elements
+    const fileInput = document.getElementById('image-file-input');
+    const dropZone = document.getElementById('drop-zone');
+    const queueContainer = document.getElementById('upload-queue-container');
+    const activePreviewImg = document.getElementById('active-preview-img');
+    const captionInput = document.getElementById('caption-input');
+    const queueThumbnails = document.getElementById('queue-thumbnails');
+    const queueCountText = document.getElementById('queue-count-text');
+
     window.loadUserMemories = async function() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
 
-    // Fetch memories sorted by order_index ascending
-    const { data, error } = await supabaseClient
-        .from('state_memories')
-        .select('*')
-        .order('order_index', { ascending: true });
+        const { data, error } = await supabaseClient
+            .from('state_memories')
+            .select('*')
+            .order('order_index', { ascending: true });
 
-    if (error) return console.error("Database fetch error:", error);
+        if (error) return console.error("Database fetch error:", error);
 
-    stateGalleries = getBaseGalleries();
+        stateGalleries = {};
 
-    data.forEach(item => {
-        if (!stateGalleries[item.state_name]) stateGalleries[item.state_name] = [];
-        stateGalleries[item.state_name].push({
-            id: item.id,
-            img: item.image_url,
-            desc: item.caption,
-            order_index: item.order_index,
-            rotation: item.rotation || 0
+        data.forEach(item => {
+            if (!stateGalleries[item.state_name]) stateGalleries[item.state_name] = [];
+            stateGalleries[item.state_name].push({
+                id: item.id,
+                img: item.image_url,
+                desc: item.caption,
+                order_index: item.order_index,
+                rotation: item.rotation || 0
+            });
         });
-    });
+
+        states.forEach(state => {
+            const stateId = state.id;
+            const stateName = state.getAttribute('data-name') || stateId;
+            const stateData = stateGalleries[stateName];
+
+            if (stateData && stateData.length > 0 && svgDefs) {
+                const patternId = updateStatePattern(stateId, stateData[0].img, svgDefs);
+                state.style.fill = `url(#${patternId})`;
+            } else {
+                state.style.fill = "";
+            }
+        });
+
+        updateChecklists();
+    };
 
     states.forEach(state => {
         const stateId = state.id;
         const stateName = state.getAttribute('data-name') || stateId;
-        const stateData = stateGalleries[stateName];
-
-        if (stateData && stateData.length > 0) {
-            const patternId = updateStatePattern(stateId, stateData[0].img, svgDefs);
-            state.style.fill = `url(#${patternId})`;
-        } else {
-            state.style.fill = "";
-        }
-    });
-}
-
-    states.forEach(state => {
-        const stateId = state.id;
-        const stateName = state.getAttribute('data-name') || stateId;
-        const data = stateGalleries[stateName] || defaultGallery;
-
-        if (data.length > 0) {
-            const patternId = updateStatePattern(stateId, data[0].img, svgDefs);
-            state.style.fill = `url(#${patternId})`;
-        }
 
         state.addEventListener('mouseenter', () => {
             if(!hoverPreview || !previewImg || !previewTitle) return;
@@ -420,14 +538,16 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const currentData = stateGalleries[stateName] || defaultGallery;
             let currentIndex = 0;
-            previewImg.src = currentData[currentIndex].img;
-            hoverPreview.style.display = 'block';
+            if(currentData.length > 0) {
+                previewImg.src = currentData[currentIndex].img;
+                hoverPreview.style.display = 'block';
 
-            if (currentData.length > 1) {
-                intervalId = setInterval(() => {
-                    currentIndex = (currentIndex + 1) % currentData.length;
-                    previewImg.src = currentData[currentIndex].img;
-                }, 1500);
+                if (currentData.length > 1) {
+                    intervalId = setInterval(() => {
+                        currentIndex = (currentIndex + 1) % currentData.length;
+                        previewImg.src = currentData[currentIndex].img;
+                    }, 1500);
+                }
             }
         });
 
@@ -455,6 +575,9 @@ document.addEventListener("DOMContentLoaded", () => {
             activeStatePath = state;
             if(modalStateTitle) modalStateTitle.textContent = `${stateName} Gallery`;
             if(polaroidContainer) renderGallery(stateName, polaroidContainer);
+            
+            loadStatePlans(stateName);
+
             if(modal) modal.classList.add('active');
         });
     });
@@ -462,17 +585,208 @@ document.addEventListener("DOMContentLoaded", () => {
     if (authForm) {
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
+            const emailInput = document.getElementById('auth-email');
+            const passwordInput = document.getElementById('auth-password');
+            if (!emailInput || !passwordInput) return;
 
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            const { error } = await supabaseClient.auth.signInWithPassword({ 
+                email: emailInput.value, 
+                password: passwordInput.value 
+            });
 
             if (error) {
                 alert(error.message);
             } else {
                 const authModal = document.getElementById('auth-modal');
                 if(authModal) authModal.classList.remove('active');
-                await loadUserMemories();
+                await window.loadUserMemories();
+            }
+        });
+    }
+
+    // --- Google Maps Link Converter ---
+    function getGoogleMapsEmbedUrl(url) {
+        if (!url) return null;
+        
+        if (url.includes('maps/embed')) return url;
+
+        const match = url.match(/place\/([^\/]+)/);
+        if (match && match[1]) {
+            const placeName = decodeURIComponent(match[1].replace(/\+/g, ' '));
+            return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
+        }
+
+        return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
+    }
+
+    // --- Render & Fetch Plans ---
+    async function loadStatePlans(stateName) {
+        const plansList = document.getElementById('plans-list');
+        if (!plansList) return;
+
+        plansList.innerHTML = '<p style="font-size:0.85rem; color:#777;">Loading plans...</p>';
+
+        const { data, error } = await supabaseClient
+            .from('state_plans')
+            .select('*')
+            .eq('state_name', stateName)
+            .order('created_at', { ascending: true });
+
+        if (error) {
+            console.error("Error loading plans:", error);
+            plansList.innerHTML = '';
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            plansList.innerHTML = '<p style="font-size:0.85rem; color:#777;">No plans added yet for this state.</p>';
+            return;
+        }
+
+        plansList.innerHTML = '';
+
+        data.forEach(plan => {
+            const card = document.createElement('div');
+            card.className = 'plan-card';
+
+            let linksHTML = '';
+            if (plan.link_url) {
+                linksHTML += `<a href="${plan.link_url}" target="_blank" rel="noopener">🌐 Website Link</a>`;
+            }
+            if (plan.map_url) {
+                linksHTML += `<a href="${plan.map_url}" target="_blank" rel="noopener">📍 Open in Google Maps</a>`;
+            }
+
+            const embedMapUrl = getGoogleMapsEmbedUrl(plan.map_url);
+            let mapIframeHTML = '';
+            if (embedMapUrl) {
+                mapIframeHTML = `<iframe class="map-preview-frame" src="${embedMapUrl}" loading="lazy" allowfullscreen></iframe>`;
+            }
+
+            card.innerHTML = `
+                <button class="delete-plan-btn" title="Delete Plan">✕</button>
+                <p>${plan.plan_text}</p>
+                ${linksHTML ? `<div class="plan-links">${linksHTML}</div>` : ''}
+                ${mapIframeHTML}
+            `;
+
+            const delPlanBtn = card.querySelector('.delete-plan-btn');
+            if (delPlanBtn) {
+                delPlanBtn.addEventListener('click', async () => {
+                    if (confirm("Delete this plan item?")) {
+                        await supabaseClient.from('state_plans').delete().eq('id', plan.id);
+                        loadStatePlans(stateName);
+                    }
+                });
+            }
+
+            plansList.appendChild(card);
+        });
+    }
+
+    const addPlanForm = document.getElementById('add-plan-form');
+    if (addPlanForm) {
+        addPlanForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const planTextInput = document.getElementById('plan-text-input');
+            const planLinkInput = document.getElementById('plan-link-input');
+            const planMapInput = document.getElementById('plan-map-input');
+
+            const planText = planTextInput ? planTextInput.value.trim() : '';
+            const linkUrl = planLinkInput ? planLinkInput.value.trim() : '';
+            const mapUrl = planMapInput ? planMapInput.value.trim() : '';
+
+            const { data: { user } } = await supabaseClient.auth.getUser();
+            if (!user) return alert("Please log in to save trip plans!");
+
+            const { error } = await supabaseClient.from('state_plans').insert([{
+                user_id: user.id,
+                state_name: activeStateName,
+                plan_text: planText,
+                link_url: linkUrl,
+                map_url: mapUrl
+            }]);
+
+            if (!error) {
+                addPlanForm.reset();
+                loadStatePlans(activeStateName);
+            } else {
+                alert(error.message);
+            }
+        });
+    }
+
+    // --- Queue Management Functions ---
+    function handleFiles(files) {
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        if (imageFiles.length === 0) return;
+
+        uploadQueue = uploadQueue.concat(imageFiles);
+        updateQueueUI();
+    }
+
+    function updateQueueUI() {
+        if (!queueContainer) return;
+
+        if (uploadQueue.length === 0) {
+            queueContainer.style.display = 'none';
+            if(fileInput) fileInput.value = '';
+            return;
+        }
+
+        queueContainer.style.display = 'flex';
+        if (queueCountText) queueCountText.textContent = `Images remaining: ${uploadQueue.length}`;
+
+        const activeFile = uploadQueue[0];
+        if (activePreviewImg) activePreviewImg.src = URL.createObjectURL(activeFile);
+        if (captionInput) {
+            captionInput.value = '';
+            captionInput.focus();
+        }
+
+        if (queueThumbnails) {
+            queueThumbnails.innerHTML = '';
+            uploadQueue.slice(1).forEach((file, index) => {
+                const thumbDiv = document.createElement('div');
+                thumbDiv.className = 'thumbnail-card';
+                
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-thumb';
+                removeBtn.innerHTML = '✕';
+                removeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    uploadQueue.splice(index + 1, 1);
+                    updateQueueUI();
+                });
+
+                thumbDiv.appendChild(img);
+                thumbDiv.appendChild(removeBtn);
+                queueThumbnails.appendChild(thumbDiv);
+            });
+        }
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
+    }
+
+    if (dropZone) {
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFiles(Array.from(e.dataTransfer.files));
             }
         });
     }
@@ -480,32 +794,37 @@ document.addEventListener("DOMContentLoaded", () => {
     if (addMemoryForm) {
         addMemoryForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.textContent;
-            submitBtn.textContent = "Uploading...";
-            submitBtn.disabled = true;
+            if (uploadQueue.length === 0) return;
 
-            const imageFileInput = document.getElementById('image-file-input');
-            const captionInput = document.getElementById('caption-input');
-            const file = imageFileInput.files[0];
-            const caption = captionInput.value.trim();
+            const submitBtn = addMemoryForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) {
+                submitBtn.textContent = "Uploading...";
+                submitBtn.disabled = true;
+            }
+
+            const currentFile = uploadQueue[0];
+            const caption = captionInput ? captionInput.value.trim() : '';
 
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) {
                 alert('Please log in first!');
-                submitBtn.textContent = originalBtnText;
-                submitBtn.disabled = false;
+                if (submitBtn) {
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                }
                 return;
             }
 
-            const filePath = `${user.id}/${Date.now()}_${file.name}`;
-            const { error: storageError } = await supabaseClient.storage.from('memories').upload(filePath, file);
+            const filePath = `${user.id}/${Date.now()}_${currentFile.name}`;
+            const { error: storageError } = await supabaseClient.storage.from('memories').upload(filePath, currentFile);
             
             if (storageError) {
                 alert(storageError.message);
-                submitBtn.textContent = originalBtnText;
-                submitBtn.disabled = false;
+                if (submitBtn) {
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                }
                 return;
             }
 
@@ -521,13 +840,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!dbError) {
                 await window.loadUserMemories();
                 renderGallery(activeStateName, polaroidContainer);
-                addMemoryForm.reset();
+                uploadQueue.shift();
+                updateQueueUI();
             } else {
                 alert(dbError.message);
             }
 
-            submitBtn.textContent = originalBtnText;
-            submitBtn.disabled = false;
+            if (submitBtn) {
+                submitBtn.textContent = originalBtnText;
+                submitBtn.disabled = false;
+            }
         });
     }
 
@@ -543,6 +865,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const authModal = document.getElementById('auth-modal');
             if (authModal) authModal.classList.remove('active');
             window.loadUserMemories();
+        } else {
+            updateChecklists();
         }
     });
 });

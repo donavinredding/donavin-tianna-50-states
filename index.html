@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Donavin's and Tianna's 50 State Gallery</title>
+    <link rel="icon" type="image/svg+xml" href="./svg/dnt.svg">
     <link
         href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap"
         rel="stylesheet">
@@ -299,17 +300,110 @@
             <h2 id="modal-state-title" class="modal-header">State Gallery</h2>
 
             <div class="add-memory-container">
-                <h3 class="form-title">Add New Memory</h3>
-                <form id="add-memory-form">
-                    <input type="text" id="caption-input" placeholder="Memory description (e.g. Grand Canyon hike)" required />
-                    <input type="file" id="image-file-input" accept="image/*" required />
-                    <button type="submit" class="submit-btn">+ Add Photo</button>
-                </form>
+                <div class="form-title">Add New Memories</div>
+
+                <!-- Drag & Drop Upload Zone -->
+                <label for="image-file-input" class="custom-file-upload" id="drop-zone">
+                    <span class="upload-icon">📷</span>
+                    <span class="upload-text">Click or Drag & Drop Photos Here</span>
+                    <span class="upload-hint">You can select multiple images at once</span>
+                    <input type="file" id="image-file-input" accept="image/*" multiple />
+                </label>
+
+                <!-- Upload Queue Section (Hidden until files selected) -->
+                <div class="upload-queue-container" id="upload-queue-container" style="display: none;">
+                    <div class="queue-count" id="queue-count-text">Images remaining: 0</div>
+                    
+                    <!-- Outlined Primary Photo View -->
+                    <div class="active-queue-item">
+                        <div class="active-preview-wrapper">
+                            <img id="active-preview-img" src="" alt="Active upload preview" />
+                        </div>
+                        <form id="add-memory-form" class="queue-controls">
+                            <input type="text" id="caption-input" placeholder="Memory description (optional)..." autocomplete="off" />
+                            <button type="submit" class="submit-btn">+ Add Photo</button>
+                        </form>
+                    </div>
+
+                    <!-- Thumbnails for remaining queue -->
+                    <div class="queue-thumbnails" id="queue-thumbnails"></div>
+                </div>
             </div>
 
             <div id="polaroid-container" class="polaroid-grid"></div>
         </div>
     </div>
+
+    <!-- Trip Planner & Notes Section -->
+    <div class="plans-container">
+        <h3 class="plans-title">📌 Trip Plans & Locations</h3>
+        
+        <!-- Saved Plans List -->
+        <div id="plans-list" class="plans-list"></div>
+
+        <!-- Add New Plan Form -->
+        <form id="add-plan-form" class="add-plan-form">
+            <textarea id="plan-text-input" placeholder="Write down itinerary ideas, places to visit, or notes..." rows="2" required></textarea>
+            <div class="plan-inputs-row">
+                <input type="url" id="plan-link-input" placeholder="Website Link (e.g. https://example.com)">
+                <input type="url" id="plan-map-input" placeholder="Google Maps Link (e.g. https://maps.google.com/...)">
+                <button type="submit" class="submit-btn">+ Add Plan</button>
+            </div>
+        </form>
+
+        <!-- Trigger Button -->
+        <button class="open-modal-btn" onclick="openStatePlanModal()">+ Add State & Plan</button>
+    </div>
+
+<!-- Mobile-Friendly Modal Overlay (Moved outside for clean DOM structuring) -->
+<div id="state-plan-modal" class="modal-overlay" onclick="handleModalBackdropClick(event)">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Next State & Plan</h3>
+            <button class="close-btn" onclick="closeStatePlanModal()">&times;</button>
+        </div>
+        <form id="state-plan-form" onsubmit="submitStatePlan(event)">
+            <div class="form-group">
+                <label for="modal-state-name">State Name *</label>
+                <input type="text" id="modal-state-name" required placeholder="e.g., Colorado">
+            </div>
+            <div class="form-group">
+                <label for="modal-location">Location / Spot</label>
+                <input type="text" id="modal-location" placeholder="e.g., Rocky Mountain National Park">
+            </div>
+            <div class="form-group">
+                <label for="modal-details">Plan Details</label>
+                <textarea id="modal-details" rows="3" placeholder="What are we doing here?"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Save to Cloud</button>
+        </form>
+    </div>
+</div>
+
+    <!-- State Checklist Tracker Section -->
+    <section class="state-checklist-section">
+        <h2>State Travel Tracker</h2>
+        
+        <div class="checklist-grid">
+            <!-- Next Trip Section -->
+            <div class="checklist-card highlight-card">
+                <h3>🚀 The Next State(s)</h3>
+                <ul id="next-states-list" class="state-list"></ul>
+            </div>
+
+            <!-- Not Visited Section -->
+            <div class="checklist-card">
+                <h3>📌 Haven't Visited Yet</h3>
+                <ul id="not-visited-list" class="state-list"></ul>
+            </div>
+
+            <!-- Visited Section -->
+            <div class="checklist-card">
+                <h3>✅ Already Visited</h3>
+                <ul id="visited-list" class="state-list"></ul>
+            </div>
+        </div>
+    </section>
 
     <footer>
         <p>Created for Donavin & Tianna's Travels</p>
