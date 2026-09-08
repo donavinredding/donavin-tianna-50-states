@@ -68,6 +68,64 @@ p.subtitle {
     letter-spacing: 1px;
 }
 
+/* --- Scrapbook Progress Bar --- */
+.progress-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+    background: #ffffff;
+    border: 2px solid var(--text-dark);
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-family: 'Special Elite', cursive;
+    font-size: 0.95rem;
+    color: var(--primary-red);
+}
+
+.progress-track {
+    width: 100%;
+    height: 22px;
+    background-color: var(--bg-color);
+    border: 2px solid var(--primary-tan);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%; /* Dynamically update via inline style or JavaScript (e.g., style="width: 65%;") */
+    background-color: var(--primary-green);
+    background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.25) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.25) 50%,
+        rgba(255, 255, 255, 0.25) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 24px 24px;
+    border-radius: 10px;
+    transition: width 0.4s ease-in-out, background-color 0.3s ease;
+    animation: progressStripes 2s linear infinite;
+}
+
+@keyframes progressStripes {
+    0% { background-position: 0 0; }
+    100% { background-position: 24px 0; }
+}
+
 /* --- Map Container & SVG --- */
 .map-container {
     width: 100%;
