@@ -71,11 +71,13 @@ function updateStatePattern(stateId, imgUrl, svgDefs) {
     pattern.setAttribute('height', bbox.height);
 
     const image = pattern.querySelector('image');
-    image.setAttribute('x', '0');
-    image.setAttribute('y', '0');
-    image.setAttribute('width', bbox.width);
-    image.setAttribute('height', bbox.height);
-    image.setAttribute('href', imgUrl);
+    if (image) {
+        image.setAttribute('x', '0');
+        image.setAttribute('y', '0');
+        image.setAttribute('width', bbox.width);
+        image.setAttribute('height', bbox.height);
+        image.setAttribute('href', imgUrl);
+    }
 
     return patternId;
 }
@@ -97,7 +99,6 @@ function updateChecklists() {
 
         const li = document.createElement('li');
         
-        // 1. Next State(s) Category
         if (isNext) {
             li.innerHTML = `
                 <span>${stateName} ${hasMemories ? '📸' : ''}</span>
@@ -107,14 +108,10 @@ function updateChecklists() {
                 </div>
             `;
             nextList.appendChild(li);
-        } 
-        // 2. Visited States Category
-        else if (hasMemories) {
+        } else if (hasMemories) {
             li.innerHTML = `<span>${stateName} (${stateGalleries[stateName].length} photos)</span>`;
             visitedList.appendChild(li);
-        } 
-        // 3. Not Visited Category
-        else {
+        } else {
             li.innerHTML = `
                 <span>${stateName}</span>
                 <button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Plan Trip</button>
@@ -124,7 +121,24 @@ function updateChecklists() {
     });
 }
 
-// --- Modal Visibility Controls ---
+// Global action handlers for checklist UI buttons
+window.toggleNextTarget = function(stateName) {
+    if (nextStateTargets.has(stateName)) {
+        nextStateTargets.delete(stateName);
+    } else {
+        nextStateTargets.add(stateName);
+    }
+    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+    updateChecklists();
+};
+
+window.finishTrip = function(stateName) {
+    nextStateTargets.delete(stateName);
+    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+    updateChecklists();
+};
+
+// --- Modal Visibility & Handlers ---
 
 window.openStatePlanModal = function() {
     const modal = document.getElementById('state-plan-modal');
@@ -150,8 +164,6 @@ window.handleModalBackdropClick = function(event) {
         window.closeStatePlanModal();
     }
 };
-
-// --- Modal Form Submission Handler ---
 
 window.submitStatePlan = async function(event) {
     event.preventDefault();
@@ -193,13 +205,9 @@ window.submitStatePlan = async function(event) {
     }]);
 
     if (!error) {
-        if (typeof nextStateTargets !== 'undefined') {
-            nextStateTargets.add(formattedStateName);
-            localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
-            if (typeof updateChecklists === 'function') {
-                updateChecklists();
-            }
-        }
+        nextStateTargets.add(formattedStateName);
+        localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+        updateChecklists();
 
         if (activeStateName && activeStateName.toLowerCase() === formattedStateName.toLowerCase()) {
             if (typeof loadStatePlans === 'function') {
@@ -207,29 +215,13 @@ window.submitStatePlan = async function(event) {
             }
         }
 
-        const form = document.getElementById('state-plan-form');
-        if (form) form.reset();
+        if (event.target && typeof event.target.reset === 'function') {
+            event.target.reset();
+        }
         window.closeStatePlanModal();
     } else {
         alert(`Error saving plan: ${error.message}`);
     }
-};
-
-// Global action handlers for checklist UI buttons
-window.toggleNextTarget = function(stateName) {
-    if (nextStateTargets.has(stateName)) {
-        nextStateTargets.delete(stateName);
-    } else {
-        nextStateTargets.add(stateName);
-    }
-    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
-    updateChecklists();
-};
-
-window.finishTrip = function(stateName) {
-    nextStateTargets.delete(stateName);
-    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
-    updateChecklists();
 };
 
 function renderGallery(stateName, container) {
@@ -279,7 +271,6 @@ function renderGallery(stateName, container) {
 
         const imgElement = polaroidDiv.querySelector('.polaroid-img');
 
-        // Lightbox View
         if (imgElement) {
             imgElement.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -287,7 +278,6 @@ function renderGallery(stateName, container) {
             });
         }
 
-        // Rotation Logic
         if (item.id) {
             const rotateBtn = polaroidDiv.querySelector('.rotate-btn');
             if (rotateBtn) {
@@ -314,7 +304,6 @@ function renderGallery(stateName, container) {
             }
         }
 
-        // Drag & Drop Setup
         const handle = polaroidDiv.querySelector('.drag-handle');
         if (handle) {
             handle.addEventListener('mousedown', () => polaroidDiv.setAttribute('draggable', 'true'));
@@ -372,7 +361,6 @@ function renderGallery(stateName, container) {
             }
         });
 
-        // Delete & Edit Listeners
         if (item.id) {
             const delBtn = polaroidDiv.querySelector('.delete-btn');
             const editBtn = polaroidDiv.querySelector('.edit-btn');
@@ -461,9 +449,121 @@ function openLightbox(imgUrl, caption, rotation = 0) {
     lightbox.classList.add('active');
 }
 
-// --- 3. DOM Initialization & Database Logic ---
+function getGoogleMapsEmbedUrl(url) {
+    if (!url) return null;
+    
+    if (url.includes('/maps/embed')) return url;
+
+    try {
+        if (url.includes('goo.gl') || url.includes('maps.app.goo.gl')) {
+            const cleanUrl = url.trim().replace(/\/$/, '');
+            const code = cleanUrl.split('/').pop();
+            return `https://maps.google.com/maps?q=${encodeURIComponent(code)}&output=embed`;
+        }
+
+        const parsedUrl = new URL(url);
+
+        if (parsedUrl.searchParams.has('q')) {
+            const query = parsedUrl.searchParams.get('q');
+            return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+        }
+
+        const pathSegments = parsedUrl.pathname.split('/');
+        const placeIndex = pathSegments.indexOf('place');
+        
+        if (placeIndex !== -1 && pathSegments[placeIndex + 1]) {
+            const placeName = decodeURIComponent(pathSegments[placeIndex + 1].replace(/\+/g, ' '));
+            return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
+        }
+
+        return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
+    } catch (e) {
+        console.error("Invalid URL format:", e);
+        return null;
+    }
+}
+
+// Interactive Map Search Controls
+const mapSearchInput = document.getElementById('map-search-input');
+const mapSearchBtn = document.getElementById('map-search-btn');
+const mapIframe = document.getElementById('map-embed-iframe');
+
+function performMapSearch() {
+    if (!mapSearchInput || !mapIframe) return;
+    const query = mapSearchInput.value.trim();
+    if (query) {
+        mapIframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
+    }
+}
+
+if (mapSearchBtn) {
+    mapSearchBtn.addEventListener('click', performMapSearch);
+}
+
+if (mapSearchInput) {
+    mapSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performMapSearch();
+        }
+    });
+}
+
+// --- Supabase Trip Notes Handlers ---
+
+async function loadTripNotes() {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabaseClient
+        .from('trip_notes')
+        .select('note_text')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    if (error) {
+        console.error('Error fetching notes:', error.message);
+        return;
+    }
+
+    const notesTextarea = document.getElementById('plan-notes');
+    if (notesTextarea) {
+        notesTextarea.value = data ? (data.note_text || '') : '';
+    }
+}
+
+async function saveTripNotes(noteText) {
+    const { data: { user } } = await supabaseClient.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabaseClient
+        .from('trip_notes')
+        .upsert({ 
+            user_id: user.id, 
+            note_text: noteText,
+            updated_at: new Date()
+        }, { onConflict: 'user_id' });
+
+    if (error) {
+        console.error('Error saving notes:', error.message);
+    }
+}
+
+// --- 3. DOM Initialization & Event Listeners ---
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Trip Notes Autosave Listener
+    const planNotes = document.getElementById('plan-notes');
+    if (planNotes) {
+        let debounceTimer;
+        planNotes.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                saveTripNotes(e.target.value);
+            }, 800);
+        });
+    }
+
     const svgMap = document.querySelector('.us-map');
     const states = document.querySelectorAll('.state');
     const svgDefs = svgMap ? getOrCreateDefs(svgMap) : null;
@@ -487,6 +587,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const captionInput = document.getElementById('caption-input');
     const queueThumbnails = document.getElementById('queue-thumbnails');
     const queueCountText = document.getElementById('queue-count-text');
+
+    // Side-by-Side Map Preview Input Listener
+    const mapInput = document.getElementById('map-url-input');
+    const mapPlaceholder = document.getElementById('map-placeholder');
+
+    if (mapInput && mapIframe && mapPlaceholder) {
+        mapInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            if (url.includes('http')) {
+                const embedUrl = getGoogleMapsEmbedUrl(url);
+                mapIframe.src = embedUrl || url;
+                mapIframe.classList.add('active');
+                mapPlaceholder.style.display = 'none';
+            } else {
+                mapIframe.src = 'about:blank';
+                mapIframe.classList.remove('active');
+                mapPlaceholder.style.display = 'flex';
+            }
+        });
+    }
 
     window.loadUserMemories = async function() {
         const { data: { user } } = await supabaseClient.auth.getUser();
@@ -600,26 +720,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 const authModal = document.getElementById('auth-modal');
                 if(authModal) authModal.classList.remove('active');
                 await window.loadUserMemories();
+                await loadTripNotes();
             }
         });
     }
 
-    // --- Google Maps Link Converter ---
-    function getGoogleMapsEmbedUrl(url) {
-        if (!url) return null;
-        
-        if (url.includes('maps/embed')) return url;
-
-        const match = url.match(/place\/([^\/]+)/);
-        if (match && match[1]) {
-            const placeName = decodeURIComponent(match[1].replace(/\+/g, ' '));
-            return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
-        }
-
-        return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
-    }
-
-    // --- Render & Fetch Plans ---
     async function loadStatePlans(stateName) {
         const plansList = document.getElementById('plans-list');
         if (!plansList) return;
@@ -717,7 +822,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // --- Queue Management Functions ---
     function handleFiles(files) {
         const imageFiles = files.filter(file => file.type.startsWith('image/'));
         if (imageFiles.length === 0) return;
@@ -860,11 +964,21 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Auth State Observer
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+            await loadTripNotes();
+            await window.loadUserMemories();
+        }
+    });
+
+    // Initial check on page load
     supabaseClient.auth.getUser().then(({ data: { user } }) => {
         if (user) {
             const authModal = document.getElementById('auth-modal');
             if (authModal) authModal.classList.remove('active');
             window.loadUserMemories();
+            loadTripNotes();
         } else {
             updateChecklists();
         }

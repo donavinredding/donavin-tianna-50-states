@@ -13,30 +13,19 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    /* Discreet scrollbars for Firefox */
     scrollbar-width: thin;
     scrollbar-color: var(--primary-tan) transparent;
 }
 
-/* Discreet WebKit Scrollbars (Chrome, Safari, Edge) */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
+/* --- Scrollbars --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
     background-color: var(--primary-tan);
     border-radius: 10px;
     opacity: 0.6;
 }
-
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--primary-orange);
-}
+::-webkit-scrollbar-thumb:hover { background-color: var(--primary-orange); }
 
 body {
     background-color: var(--bg-color);
@@ -111,18 +100,17 @@ svg.us-map {
 }
 
 .state:hover {
-    stroke: var(--primary-red);
-    fill: var(--primary-green);
-    stroke-width: 2.5px;
+    stroke: var(--primary-tan);
+    fill: var(--bg-color);
+    stroke-width: 2.8px;
+    
 }
 
 #states-group {
     transform: translate(-45.169px, -16.693px) translate(-164.944px, 26.472px) translate(186.337px, -12.091px) translate(-20.215px, 4.665px) translate(0, 0) rotate(0deg, 637.9px, 178.419px);
 }
 
-svg pattern image {
-    object-fit: cover;
-}
+svg pattern image { object-fit: cover; }
 
 /* --- Hover Preview --- */
 #hover-preview {
@@ -138,9 +126,7 @@ svg pattern image {
     transform: rotate(-3deg);
 }
 
-#hover-preview, #hover-preview * {
-    pointer-events: none !important;
-}
+#hover-preview, #hover-preview * { pointer-events: none !important; }
 
 #hover-preview img {
     width: 100%;
@@ -213,8 +199,7 @@ svg pattern image {
     text-align: center;
 }
 
-.modal-content h2, 
-#gallery-modal h2 {
+.modal-content h2, #gallery-modal h2 {
     word-break: break-word;
     color: var(--primary-red);
 }
@@ -303,10 +288,7 @@ svg pattern image {
     display: none;
     position: fixed;
     z-index: 10000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
+    left: 0; top: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.9);
     justify-content: center;
     align-items: center;
@@ -348,9 +330,9 @@ svg pattern image {
     border: 2px dashed var(--primary-red);
     border-radius: 8px;
     padding: 18px;
-    margin: 12px auto 30px auto;
+    margin: 2rem 0;
     width: 100%;
-    max-width: 1080px; /* Clean breakpoint control for desktop */
+    max-width: 1080px;
 }
 
 .add-memory-container .form-title, .plans-title {
@@ -462,14 +444,12 @@ svg pattern image {
 
 .thumbnail-card .remove-thumb {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 2px; right: 2px;
     background: var(--primary-red);
     color: #fff;
     border: none;
     border-radius: 50%;
-    width: 18px;
-    height: 18px;
+    width: 18px; height: 18px;
     font-size: 11px;
     cursor: pointer;
     display: flex;
@@ -527,9 +507,7 @@ svg pattern image {
     background-color: var(--primary-orange);
 }
 
-.submit-btn {
-    margin-top: 12px;
-}
+.submit-btn { margin-top: 12px; }
 
 .submit-btn:hover, 
 .save-btn:hover, 
@@ -559,8 +537,7 @@ svg pattern image {
 
 .close-btn {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 15px; right: 15px;
     padding: 6px 12px;
     font-family: 'Special Elite', cursive;
     background: transparent;
@@ -600,8 +577,7 @@ svg pattern image {
 
 .drag-handle {
     position: absolute;
-    top: 6px;
-    left: 8px;
+    top: 6px; left: 8px;
     cursor: grab;
     font-size: 16px;
     color: #666;
@@ -612,8 +588,7 @@ svg pattern image {
 
 .rotate-btn {
     position: absolute;
-    bottom: 4px;
-    left: 4px;
+    bottom: 4px; left: 4px;
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid var(--primary-tan);
     border-radius: 4px;
@@ -625,10 +600,8 @@ svg pattern image {
 
 .delete-btn {
     position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 28px;
-    height: 28px;
+    top: -8px; right: -8px;
+    width: 28px; height: 28px;
     background-color: var(--polaroid-bg);
     color: var(--primary-red);
     border: 1px solid var(--primary-red);
@@ -646,8 +619,7 @@ svg pattern image {
 
 .edit-btn {
     position: absolute;
-    bottom: 5px;
-    right: 5px;
+    bottom: 5px; right: 5px;
     padding: 4px 10px;
     background-color: var(--polaroid-bg);
     color: var(--text-dark);
@@ -786,8 +758,7 @@ svg pattern image {
 
 .state-list {
     list-style: none;
-    padding: 0;
-    margin: 0;
+    padding: 0; margin: 0;
     max-height: 350px;
     overflow-y: auto;
     scrollbar-gutter: stable;
@@ -820,12 +791,7 @@ svg pattern image {
 }
 
 .state-list li .btn-action:hover { background: var(--primary-orange); }
-
-.state-list li .btn-finish {
-    background: var(--primary-red);
-    color: white;
-}
-
+.state-list li .btn-finish { background: var(--primary-red); color: white; }
 .state-list li .btn-finish:hover { background: #4d0116; }
 
 .plans-list {
@@ -853,6 +819,17 @@ svg pattern image {
     white-space: pre-wrap;
 }
 
+.plan-card .delete-plan-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: transparent;
+    color: var(--primary-red);
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
 .plan-links {
     display: flex;
     flex-wrap: wrap;
@@ -869,31 +846,134 @@ svg pattern image {
 
 .plan-links a:hover { text-decoration: underline; }
 
-.map-preview-frame {
-    width: 100%;
-    height: 180px;
-    border: 1px solid var(--primary-tan);
-    border-radius: 4px;
-    margin-top: 10px;
+.plans-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
 }
 
-.plan-card .delete-plan-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: transparent;
-    color: var(--primary-red);
-    border: none;
-    font-size: 1rem;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.add-plan-form {
+/* Left Side: Lined Notepad */
+.notepad-side {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    background: #fffdf8;
+    border: 1px solid #e2dcd0;
+    border-left: 4px solid var(--primary-red);
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Expanded Textarea */
+#plan-notes {
     width: 100%;
+    min-height: 420px;
+    flex-grow: 1;
+    resize: vertical;
+    padding: 1rem;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #333;
+    background: repeating-linear-gradient(
+        #fffdf8,
+        #fffdf8 30px,
+        #e5e0d8 31px
+    );
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+#plan-notes:focus {
+    outline: none;
+    border-color: #777;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Right Side: Map Viewer */
+.map-side {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e2dcd0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.map-search-bar { margin-bottom: 1rem; }
+
+.search-input-wrapper {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-input-wrapper input {
+    flex-grow: 1;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.search-input-wrapper button,
+.search-input-wrapper .submit-btn {
+    white-space: nowrap;
+    padding: 0.65rem 1.25rem;
+    cursor: pointer;
+}
+
+.map-frame-wrapper {
+    flex-grow: 1;
+    min-height: 380px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd;
+    position: relative;
+    background-color: var(--bg-color);
+}
+
+.map-frame-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+.map-placeholder-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+    color: #777;
+    font-size: 0.85rem;
+    font-family: 'Courier Prime', monospace;
+}
+
+/* Form inputs & Layout */
+.add-plan-form, #state-plan-form {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 1rem;
+    width: 100%;
+}
+
+.notes-group, .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    color: var(--text-dark);
+    font-weight: 700;
 }
 
 .add-plan-form textarea,
@@ -909,6 +989,15 @@ svg pattern image {
     color: var(--text-dark);
     resize: vertical;
 }
+
+.plan-inputs-row {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+}
+
+.plan-inputs-row .form-group { flex: 1; }
 
 .plan-inputs-row input,
 .form-group input {
@@ -931,38 +1020,6 @@ svg pattern image {
     border-color: var(--primary-orange);
 }
 
-/* Stretches inputs side-by-side on desktop */
-.plan-inputs-row {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-    width: 100%;
-}
-
-.plan-inputs-row .form-group {
-    flex: 1;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    width: 100%;
-}
-
-.form-group label {
-    font-size: 0.85rem;
-    color: var(--text-dark);
-    font-weight: 700;
-}
-
-#state-plan-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    width: 100%;
-}
-
 footer {
     margin-top: auto;
     font-size: 0.85rem;
@@ -973,13 +1030,16 @@ footer {
 }
 
 /* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .plans-wrapper { grid-template-columns: 1fr; gap: 20px; }
+    #plan-notes, .map-frame-wrapper { min-height: 280px; }
+}
+
 @media (max-width: 600px) {
     body { padding: 10px 5px; }
     .map-container { padding: 8px; }
     .modal-content { padding: 15px 10px; }
-    .polaroid-grid {
-        grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
-    }
+    .polaroid-grid { grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); }
     .queue-controls { flex-direction: column; }
     .plan-inputs-row { flex-direction: column; gap: 10px; }
 }
