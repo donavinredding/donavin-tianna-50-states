@@ -969,13 +969,13 @@ svg pattern image { object-fit: cover; }
 
 .search-input-wrapper {
     display: flex;
+    flex-direction: column; /* Stacks elements vertically */
     gap: 0.5rem;
     width: 100%;
 }
 
 .search-input-wrapper input {
-    flex-grow: 1;
-    min-width: 0;
+    width: 100%;
     padding: 0.65rem 0.85rem;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -984,10 +984,12 @@ svg pattern image { object-fit: cover; }
 
 .search-input-wrapper button,
 .search-input-wrapper .submit-btn {
+    width: 100%; /* Stretches the button to match the input width */
     white-space: nowrap;
     padding: 0.65rem 1.25rem;
     cursor: pointer;
 }
+
 
 .map-frame-wrapper {
     flex-grow: 1;
