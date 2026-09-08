@@ -103,7 +103,6 @@ svg.us-map {
     stroke: var(--primary-tan);
     fill: var(--bg-color);
     stroke-width: 2.8px;
-    
 }
 
 #states-group {
@@ -851,6 +850,7 @@ svg pattern image { object-fit: cover; }
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
     align-items: stretch;
+    width: 100%;
 }
 
 /* Left Side: Lined Notepad */
@@ -863,6 +863,7 @@ svg pattern image { object-fit: cover; }
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    width: 100%;
 }
 
 /* Expanded Textarea */
@@ -900,17 +901,23 @@ svg pattern image { object-fit: cover; }
     border-radius: 8px;
     padding: 1.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    width: 100%;
 }
 
-.map-search-bar { margin-bottom: 1rem; }
+.map-search-bar { 
+    margin-bottom: 1rem; 
+    width: 100%;
+}
 
 .search-input-wrapper {
     display: flex;
     gap: 0.5rem;
+    width: 100%;
 }
 
 .search-input-wrapper input {
     flex-grow: 1;
+    min-width: 0;
     padding: 0.65rem 0.85rem;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -932,6 +939,7 @@ svg pattern image { object-fit: cover; }
     border: 1px solid #ddd;
     position: relative;
     background-color: var(--bg-color);
+    width: 100%;
 }
 
 .map-frame-wrapper iframe {
@@ -1031,8 +1039,13 @@ footer {
 
 /* --- Responsive Adjustments --- */
 @media (max-width: 768px) {
-    .plans-wrapper { grid-template-columns: 1fr; gap: 20px; }
-    #plan-notes, .map-frame-wrapper { min-height: 280px; }
+    .plans-wrapper { 
+        grid-template-columns: 1fr; 
+        gap: 20px; 
+    }
+    #plan-notes, .map-frame-wrapper { 
+        min-height: 280px; 
+    }
 }
 
 @media (max-width: 600px) {
@@ -1042,4 +1055,8 @@ footer {
     .polaroid-grid { grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); }
     .queue-controls { flex-direction: column; }
     .plan-inputs-row { flex-direction: column; gap: 10px; }
+    .notepad-side, .map-side { padding: 1rem; }
+    .search-input-wrapper { flex-direction: column; }
+    .search-input-wrapper button, 
+    .search-input-wrapper .submit-btn { width: 100%; }
 }
