@@ -726,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const plansList = document.getElementById('plans-list');
     if (!plansList) return;
 
-    plansList.innerHTML = '<p style="font-size:0.85rem; color:#777;">Loading plans...</p>';
+    plansList.innerHTML = '<p style="font-size:0.85rem; color:#777;">Loading plans... </p>';
 
     const { data, error } = await supabaseClient
       .from('state_plans')
