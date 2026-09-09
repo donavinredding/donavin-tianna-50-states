@@ -302,8 +302,7 @@ svg pattern image { object-fit: cover; }
 /* Sticky & Right-Aligned Close Button */
 .close-btn {
     position: sticky;
-    top: 20px; left: 0;
-    margin: 20px 20px 0px 90%;
+    top: 0.9rem; left: 40rem;
     padding: 6px 14px;
     font-family: 'Special Elite', cursive;
     background: var(--bg-color);

@@ -1055,4 +1055,97 @@ document.addEventListener("DOMContentLoaded", () => {
       updateChecklists();
     }
   });
+
+ // --- Smooth Dynamic Auto-Scroll Logic ---
+
+  let autoScrollFrame = null;
+  let currentDragY = null;
+
+  // Helper function: Finds the actual element that has scrollbars
+  function getScrollableParent(element) {
+    if (!element) return document.scrollingElement || document.documentElement;
+    
+    let style = window.getComputedStyle(element);
+    let overflowY = style.getPropertyValue('overflow-y');
+    let isScrollable = (overflowY === 'auto' || overflowY === 'scroll') && element.scrollHeight > element.clientHeight;
+
+    if (isScrollable) {
+      return element;
+    }
+    return getScrollableParent(element.parentElement);
+  }
+
+  function startAutoScroll(container) {
+    if (autoScrollFrame) return;
+
+    function scrollLoop() {
+      if (!container || currentDragY === null) {
+        autoScrollFrame = null;
+        return;
+      }
+
+      // Detect real-time bounds of the scroll container
+      const containerRect = container === document.documentElement || container === document.body
+        ? { top: 0, bottom: window.innerHeight }
+        : container.getBoundingClientRect();
+
+      // Detection radius (increase or decrease as needed)
+      const threshold = 150; 
+      const maxScrollSpeed = 25; 
+
+      const distanceFromTop = currentDragY - containerRect.top;
+      const distanceFromBottom = containerRect.bottom - currentDragY;
+
+      if (distanceFromTop < threshold) {
+        // SCROLL UP
+        const rawIntensity = (threshold - distanceFromTop) / threshold;
+        const intensity = Math.min(1.5, Math.max(0.1, rawIntensity)); // Caps speed when mouse leaves box
+        
+        container.scrollTop -= Math.ceil(intensity * maxScrollSpeed);
+        autoScrollFrame = requestAnimationFrame(scrollLoop);
+      } 
+      else if (distanceFromBottom < threshold) {
+        // SCROLL DOWN
+        const rawIntensity = (threshold - distanceFromBottom) / threshold;
+        const intensity = Math.min(1.5, Math.max(0.1, rawIntensity));
+
+        container.scrollTop += Math.ceil(intensity * maxScrollSpeed);
+        autoScrollFrame = requestAnimationFrame(scrollLoop);
+      } 
+      else {
+        autoScrollFrame = null;
+      }
+    }
+
+    autoScrollFrame = requestAnimationFrame(scrollLoop);
+  }
+
+  function stopAutoScroll() {
+    if (autoScrollFrame) {
+      cancelAnimationFrame(autoScrollFrame);
+      autoScrollFrame = null;
+    }
+    currentDragY = null;
+  }
+
+  // Window-level listener captures drag positions anywhere on screen
+  window.addEventListener('dragover', (e) => {
+    // Only scroll if we are in Edit Mode and dragging
+    if (isEditMode && draggedIndex !== null) {
+      e.preventDefault(); 
+      currentDragY = e.clientY;
+
+      // Automatically find whatever element actually scrolls
+      const polaroidContainer = document.getElementById('polaroid-container');
+      const targetScrollContainer = getScrollableParent(polaroidContainer);
+
+      if (targetScrollContainer) {
+        startAutoScroll(targetScrollContainer);
+      }
+    }
+  });
+
+  document.addEventListener('dragend', stopAutoScroll);
+  document.addEventListener('mouseleave', stopAutoScroll);
+  document.addEventListener('drop', stopAutoScroll);
 });
