@@ -17,6 +17,11 @@
     scrollbar-color: var(--primary-tan) transparent;
 }
 
+/* --- Scroll Lock Rule --- */
+body.scroll-lock {
+    overflow: hidden;
+}
+
 /* --- Scrollbars --- */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -66,6 +71,65 @@ p.subtitle {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
+}
+
+/* --- Scrapbook Progress Bar --- */
+.progress-container {
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+    background: #ffffff;
+    border: 2px solid var(--text-dark);
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.progress-header {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-family: 'Special Elite', cursive;
+    font-size: 0.95rem;
+    color: var(--primary-red);
+}
+
+.progress-track {
+    width: 100%;
+    height: 22px;
+    background-color: var(--bg-color);
+    border: 2px solid var(--primary-tan);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: var(--primary-green);
+    background-image: linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.25) 25%,
+        transparent 25%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.25) 50%,
+        rgba(255, 255, 255, 0.25) 75%,
+        transparent 75%,
+        transparent
+    );
+    background-size: 24px 24px;
+    border-radius: 10px;
+    transition: width 0.4s ease-in-out, background-color 0.3s ease;
+    animation: progressStripes 2s linear infinite;
+}
+
+@keyframes progressStripes {
+    0% { background-position: 0 0; }
+    100% { background-position: 24px 0; }
 }
 
 /* --- Map Container & SVG --- */
@@ -173,7 +237,7 @@ svg pattern image { object-fit: cover; }
     max-width: 900px;
     max-height: 88vh;
     border-radius: 8px;
-    padding: 25px 20px;
+    padding: 0px 20px 25px 20px;
     overflow-y: auto;
     position: relative;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
@@ -185,22 +249,83 @@ svg pattern image { object-fit: cover; }
     100% { transform: scale(1); opacity: 1; }
 }
 
+/* Sticky Header with Close & Edit Mode Buttons */
 .modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     font-family: 'Special Elite', cursive;
-    font-size: clamp(1.4rem, 4vw, 2rem);
+    font-size: clamp(1.2rem, 3.5vw, 1.8rem);
     color: var(--primary-red);
-    margin-bottom: 20px;
-    padding-bottom: 10px;
+    margin: 0 -20px 20px -20px;
+    padding: 15px 20px;
     border-bottom: 2px dashed var(--primary-tan);
-    text-align: center;
+    text-align: left;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.modal-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.btn-edit-toggle {
+    background: var(--primary-tan);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-edit-toggle:hover {
+    background: var(--primary-orange);
+}
+
+.btn-edit-toggle.active {
+    background: var(--primary-red);
+    color: #ffffff;
+}
+
+/* Sticky & Right-Aligned Close Button */
+.close-btn {
+    position: sticky;
+    top: 20px; left: 0;
+    margin: 20px 20px 0px 90%;
+    padding: 6px 14px;
+    font-family: 'Special Elite', cursive;
+    background: var(--bg-color);
+    color: var(--primary-red);
+    border: 1px solid var(--primary-red);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    z-index: 101;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.close-btn:hover {
+    background: var(--primary-red);
+    color: #ffffff;
 }
 
 .modal-content h2, #gallery-modal h2 {
     word-break: break-word;
     color: var(--primary-red);
+    margin: 0;
 }
 
 /* --- Polaroids & Dynamic Image Frames --- */
@@ -218,7 +343,7 @@ svg pattern image { object-fit: cover; }
     border: 1px solid var(--primary-tan);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
     position: relative;
-    cursor: grab;
+    cursor: default;
 }
 
 .polaroid:nth-child(odd) { transform: rotate(1.5deg); }
@@ -229,7 +354,13 @@ svg pattern image { object-fit: cover; }
     z-index: 10;
 }
 
-.polaroid:active { cursor: grabbing; }
+/* Edit Mode Specific Polaroid Styles */
+.edit-mode-active .polaroid {
+    cursor: grab;
+    border: 2px dashed var(--primary-orange);
+}
+
+.edit-mode-active .polaroid:active { cursor: grabbing; }
 
 .polaroid.dragging {
     opacity: 0.4;
@@ -534,44 +665,20 @@ svg pattern image { object-fit: cover; }
     color: #ffffff;
 }
 
-.close-btn {
-    position: absolute;
-    top: 15px; right: 15px;
-    padding: 6px 12px;
-    font-family: 'Special Elite', cursive;
-    background: transparent;
-    color: var(--primary-red);
-    border: 1px solid var(--primary-red);
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-.close-btn:hover {
-    background: var(--primary-red);
-    color: #ffffff;
-}
-
-/* Polaroids Specific Controls */
+/* Polaroid Buttons: Hidden by default; visible ONLY in Edit Mode */
 .polaroid .rotate-btn,
 .polaroid .delete-btn,
-.polaroid .drag-handle {
-    opacity: 0.8;
-    transition: opacity 0.2s ease-in-out;
+.polaroid .drag-handle,
+.polaroid .edit-btn {
+    display: none;
 }
 
-@media (min-width: 769px) {
-    .polaroid .rotate-btn,
-    .polaroid .delete-btn,
-    .polaroid .drag-handle {
-        opacity: 0;
-        pointer-events: none;
-    }
-    .polaroid:hover .rotate-btn,
-    .polaroid:hover .delete-btn,
-    .polaroid:hover .drag-handle {
-        opacity: 1;
-        pointer-events: auto;
-    }
+.edit-mode-active .polaroid .rotate-btn,
+.edit-mode-active .polaroid .delete-btn,
+.edit-mode-active .polaroid .drag-handle,
+.edit-mode-active .polaroid .edit-btn {
+    display: flex;
+    opacity: 1;
 }
 
 .drag-handle {
@@ -595,6 +702,8 @@ svg pattern image { object-fit: cover; }
     cursor: pointer;
     padding: 4px 8px;
     z-index: 5;
+    align-items: center;
+    justify-content: center;
 }
 
 .delete-btn {
@@ -609,9 +718,8 @@ svg pattern image { object-fit: cover; }
     font-size: 0.85rem;
     font-weight: bold;
     cursor: pointer;
-    display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     z-index: 20;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
 }
@@ -630,6 +738,8 @@ svg pattern image { object-fit: cover; }
     cursor: pointer;
     z-index: 20;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    align-items: center;
+    justify-content: center;
 }
 
 .delete-btn:hover {
@@ -866,7 +976,6 @@ svg pattern image { object-fit: cover; }
     width: 100%;
 }
 
-/* Expanded Textarea */
 #plan-notes {
     width: 100%;
     min-height: 420px;
@@ -911,13 +1020,13 @@ svg pattern image { object-fit: cover; }
 
 .search-input-wrapper {
     display: flex;
+    flex-direction: column;
     gap: 0.5rem;
     width: 100%;
 }
 
 .search-input-wrapper input {
-    flex-grow: 1;
-    min-width: 0;
+    width: 100%;
     padding: 0.65rem 0.85rem;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -926,6 +1035,7 @@ svg pattern image { object-fit: cover; }
 
 .search-input-wrapper button,
 .search-input-wrapper .submit-btn {
+    width: 100%;
     white-space: nowrap;
     padding: 0.65rem 1.25rem;
     cursor: pointer;
@@ -1051,7 +1161,8 @@ footer {
 @media (max-width: 600px) {
     body { padding: 10px 5px; }
     .map-container { padding: 8px; }
-    .modal-content { padding: 15px 10px; }
+    .modal-content { padding: 0 10px 15px 10px; }
+    .modal-header { margin: 0 -10px 15px -10px; padding: 12px 10px; }
     .polaroid-grid { grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); }
     .queue-controls { flex-direction: column; }
     .plan-inputs-row { flex-direction: column; gap: 10px; }
