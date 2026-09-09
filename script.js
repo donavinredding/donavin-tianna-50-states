@@ -33,6 +33,28 @@ const ALL_STATES = [
     "Wisconsin", "Wyoming"
 ];
 
+const TOTAL_STATES = 50;
+
+function updateProgress(completedCount) {
+    const percentage = Math.round((completedCount / TOTAL_STATES) * 100);
+    
+    // Update the header text
+    const progressText = document.getElementById('progress-text');
+    if (progressText) {
+        progressText.textContent = `${completedCount} / ${TOTAL_STATES} (${percentage}%)`;
+    }
+    
+    // Update the progress bar width
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${percentage}%`;
+    }
+}
+
+// Call this function inside your state completion event handler:
+// e.g., updateProgress(currentCompletedStatesCount);
+
+
 // --- 2. Core Functions ---
 
 function getOrCreateDefs(svgMap) {
