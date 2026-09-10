@@ -820,6 +820,10 @@ svg pattern image { object-fit: cover; }
 
 #auth-submit-btn { width: 100%; margin-top: 10px; }
 
+#auth-title {
+    padding-top: 30px;
+}
+
 /* --- Travel Checklist & Plans Section --- */
 .state-checklist-section {
     margin: 10px auto 40px auto;
