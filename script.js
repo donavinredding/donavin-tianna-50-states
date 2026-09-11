@@ -1055,6 +1055,49 @@ document.addEventListener("DOMContentLoaded", () => {
       updateChecklists();
     }
   });
+ // Dutch Bros Near Me
+  document.getElementById('locate-btn').addEventListener('click', function () {
+  const mapFrame = document.getElementById('dutch-map');
+  const status = document.getElementById('geo-status');
+  const dirLink = document.getElementById('directions-link');
+
+  // Avoid re-running if map is already loaded
+  if (mapFrame.src !== 'about:blank' && mapFrame.src !== '') return;
+
+  if (!navigator.geolocation) {
+    status.textContent = 'Geolocation is not supported by your browser.';
+    loadDefaultMap(mapFrame, dirLink);
+    return;
+  }
+
+  status.textContent = 'Locating...';
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const userLat = position.coords.latitude;
+      const userLng = position.coords.longitude;
+
+      // Center map on user's area
+      mapFrame.src = `https://maps.google.com/maps?q=Dutch+Bros&ll=${userLat},${userLng}&z=7&output=embed`;
+
+      // Set direct driving route link
+      dirLink.href = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=Dutch+Bros&travelmode=driving`;
+      dirLink.style.display = 'inline-block';
+
+      status.textContent = '';
+    },
+    (error) => {
+      status.textContent = 'Unable to retrieve location. Displaying general map.';
+      loadDefaultMap(mapFrame, dirLink);
+    }
+  );
+});
+
+function loadDefaultMap(iframeElement, linkElement) {
+  iframeElement.src = 'https://maps.google.com/maps?q=Dutch+Bros&z=10&output=embed';
+  linkElement.href = 'https://www.google.com/maps/dir/?api=1&destination=Dutch+Bros&travelmode=driving';
+  linkElement.style.display = 'inline-block';
+}
 
  // --- Smooth Dynamic Auto-Scroll Logic ---
 
