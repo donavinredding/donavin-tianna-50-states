@@ -12,12 +12,8 @@ jobs:
     steps:
       - name: Ping Supabase REST API
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          URL="${SUPABASE_URL:-https://mxkawqbvtckdfffddeey.supabase.co}"
-          URL="${URL%/}"
-          
-          curl -i -X GET "${URL}/rest/v1/" \
+          curl -i -X GET "https://mxkawqbvtckdfffddeey.supabase.co/rest/v1/" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
