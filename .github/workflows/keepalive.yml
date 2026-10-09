@@ -15,8 +15,10 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          # Clean up trailing slashes if present
-          URL="${SUPABASE_URL%/}"
+          # Use secret if present, otherwise fall back to direct project URL
+          URL="${SUPABASE_URL:-https://mxkawqbvtckdfffddeey.supabase.co}"
+          URL="${URL%/}"
+          
           curl -i -X GET "${URL}/rest/v1/" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_ANON_KEY}"
