@@ -51,10 +51,6 @@ function ghHeaders(extra = {}) {
   return headers;
 }
 
-function isAdmin() {
-  return !!localStorage.getItem(GH_CONFIG.tokenKey);
-}
-
 function encodeGhPath(path) {
   return path.split("/").map(encodeURIComponent).join("/");
 }
