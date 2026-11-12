@@ -1,77 +1,334 @@
-// --- 1. Configurations & State ---
+/* ============================================================
+   50 States Gallery — GitHub Contents API edition
+   Reads ./data.json on load. Admin writes go straight to the repo.
+   ============================================================ */
 
-const SUPABASE_URL = 'https://mxkawqbvtckdfffddeey.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14a2F3cWJ2dGNrZGZmZmRkZWV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1Mzc5NjQsImV4cCI6MjEwNDExMzk2NH0.39RyTqPylHgSq0J_aqbzxqvyL_eM9KWkLKkwtSsSFrc';
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-const defaultGallery = [];
-
-let stateGalleries = {};
-let activeStateName = null;
-let activeStatePath = null;
-let intervalId = null;
-
-// Track dragged element index across drag operations
-let draggedIndex = null;
-
-// Global flag for Edit Mode inside the gallery modal
-let isEditMode = false;
-
-// Multi-file Queue State
-let uploadQueue = [];
-
-// Local tracking set for states designated as "The Next State(s)"
-let nextStateTargets = new Set(JSON.parse(localStorage.getItem('nextStateTargets') || '[]'));
-
-// All US States array for checking full list
-const ALL_STATES = [
-  "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut",
-  "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
-  "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
-  "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire",
-  "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
-  "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
-  "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia",
-  "Wisconsin", "Wyoming"
-];
+/* ---------- 1. Config ---------- */
+const GH_CONFIG = {
+  owner: "donavinredding",
+  repo: "donavin-tianna-50-states",      // ← CHANGE THIS to your repo name
+  branch: "main",
+  dataPath: "data.json",
+  imagesDir: "images",
+  tokenKey: "gh_publish_token"
+};
 
 const TOTAL_STATES = 50;
 
-// --- Scroll Lock Helper Functions ---
+const ALL_STATES = [
+  "Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut",
+  "Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa",
+  "Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan",
+  "Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire",
+  "New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio",
+  "Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota",
+  "Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia",
+  "Wisconsin","Wyoming"
+];
 
-function lockScroll() {
-  document.body.classList.add("scroll-lock");
+/* ---------- 2. App state ---------- */
+let stateGalleries = {};          // { "Texas": [ {img, desc, rotation} ] }
+let tripNotesText = "";
+let nextStateTargets = new Set();
+
+let activeStateName = null;
+let intervalId = null;
+let draggedIndex = null;
+let isEditMode = false;
+let uploadQueue = [];
+
+/* ============================================================
+   3. GitHub Contents API helpers
+   ============================================================ */
+
+const ghApiBase = () =>
+  `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents`;
+
+function ghHeaders(extra = {}) {
+  const headers = { Accept: "application/vnd.github+json", ...extra };
+  const token = localStorage.getItem(GH_CONFIG.tokenKey);
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
 }
 
+function isAdmin() {
+  return !!localStorage.getItem(GH_CONFIG.tokenKey);
+}
+
+function encodeGhPath(path) {
+  return path.split("/").map(encodeURIComponent).join("/");
+}
+
+async function ghGetFile(path) {
+  const res = await fetch(
+    `${ghApiBase()}/${encodeGhPath(path)}?ref=${GH_CONFIG.branch}&t=${Date.now()}`,
+    { headers: ghHeaders(), cache: "no-store" }
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GitHub GET ${path} failed (${res.status})`);
+  return res.json();
+}
+
+async function ghPutFile(path, base64Content, message, sha) {
+  const body = { message, content: base64Content, branch: GH_CONFIG.branch };
+  if (sha) body.sha = sha;
+  const res = await fetch(`${ghApiBase()}/${encodeGhPath(path)}`, {
+    method: "PUT",
+    headers: ghHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json()).message || ""; } catch {}
+    throw new Error(`GitHub PUT ${path} failed (${res.status}${detail ? ": " + detail : ""})`);
+  }
+  return res.json();
+}
+
+async function ghDeleteFile(path, message) {
+  const file = await ghGetFile(path);
+  if (!file) return;
+  const res = await fetch(`${ghApiBase()}/${encodeGhPath(path)}`, {
+    method: "DELETE",
+    headers: ghHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ message, sha: file.sha, branch: GH_CONFIG.branch })
+  });
+  if (!res.ok) throw new Error(`GitHub DELETE ${path} failed (${res.status})`);
+}
+
+/* UTF-8 safe base64 (handles emoji, accents, etc.) */
+function toBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = "";
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+/* ============================================================
+   4. Loading & saving data.json
+   ============================================================ */
+
+async function loadSiteData() {
+  try {
+    const res = await fetch(`./data.json?t=${Date.now()}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`data.json (${res.status})`);
+    const data = await res.json();
+    stateGalleries = data.states || {};
+    tripNotesText = data.tripNotes || "";
+    nextStateTargets = new Set(data.nextStateTargets || []);
+  } catch (err) {
+    console.warn("Could not load data.json — starting empty.", err);
+    stateGalleries = {};
+    tripNotesText = "";
+    nextStateTargets = new Set();
+  }
+
+  const notesEl = document.getElementById("plan-notes");
+  if (notesEl && document.activeElement !== notesEl) notesEl.value = tripNotesText;
+
+  paintStatePatterns();
+  updateChecklists();
+
+  if (activeStateName) {
+    const container = document.getElementById("polaroid-container");
+    if (container) renderGallery(activeStateName, container);
+  }
+}
+
+/* Serialize saves so two quick edits can't fight over the same SHA */
+let saveChain = Promise.resolve();
+
+function queueSave(message) {
+  saveChain = saveChain
+    .catch(() => {})
+    .then(() => saveSiteData(message))
+    .catch(err => {
+      console.error("Save failed:", err);
+      setPublishStatus(`❌ ${err.message}`);
+    });
+  return saveChain;
+}
+
+async function saveSiteData(message = "Update site data") {
+  const payload = JSON.stringify(
+    {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      nextStateTargets: [...nextStateTargets],
+      tripNotes: tripNotesText,
+      states: stateGalleries
+    },
+    null,
+    2
+  );
+  const existing = await ghGetFile(GH_CONFIG.dataPath);
+  await ghPutFile(GH_CONFIG.dataPath, toBase64(payload), message, existing ? existing.sha : null);
+  setPublishStatus("✅ Saved to GitHub — live site updates in ~30–60 s.");
+}
+
+/* ============================================================
+   5. Image upload (compress → base64 → PUT into /images)
+   ============================================================ */
+
+function compressImage(file, maxDim = 1400, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      const scale = Math.min(1, maxDim / Math.max(width, height));
+      width = Math.round(width * scale);
+      height = Math.round(height * scale);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read image")); };
+    img.src = url;
+  });
+}
+
+async function uploadImageToRepo(file, stateName) {
+  const dataUrl = await compressImage(file);
+  const base64 = dataUrl.split(",")[1];
+  const slug = stateName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const path = `${GH_CONFIG.imagesDir}/${slug}/${name}`;
+  await ghPutFile(path, base64, `Add photo — ${stateName}`, null);
+  return path;
+}
+
+/* ============================================================
+   6. Admin panel
+   ============================================================ */
+
+function setPublishStatus(text) {
+  const el = document.getElementById("publish-status");
+  if (el) el.textContent = text;
+  console.log("[publisher]", text);
+}
+
+function updateAdminUI() {
+  const admin = isAdmin();
+  document.body.classList.toggle("admin-unlocked", admin);
+
+  const status = document.getElementById("admin-status");
+  if (status) status.textContent = admin ? "🔓 Unlocked on this browser" : "🔒 Locked";
+
+  const notesEl = document.getElementById("plan-notes");
+  if (notesEl) notesEl.readOnly = !admin;
+
+  if (!admin) {
+    isEditMode = false;
+    const btn = document.getElementById("toggle-edit-btn");
+    if (btn) { btn.classList.remove("active"); btn.textContent = "Edit Mode ✏️"; }
+  }
+}
+
+async function toggleAdminPanel() {
+  const panel = document.getElementById("admin-panel");
+  if (!panel) return;
+  const opening = !panel.classList.contains("open");
+  panel.classList.toggle("open", opening);
+  if (!opening) return;
+
+  updateAdminUI();
+  try {
+    const res = await fetch(`./data.json?t=${Date.now()}`, { cache: "no-store" });
+    if (res.ok) {
+      const el = document.getElementById("json-editor");
+      if (el) el.value = await res.text();
+    }
+  } catch { /* no data.json yet — that's fine */ }
+}
+
+function closeAdminPanel() {
+  const panel = document.getElementById("admin-panel");
+  if (panel) panel.classList.remove("open");
+}
+
+async function unlockAdmin() {
+  if (isAdmin()) {
+    setPublishStatus("🔓 Already unlocked on this browser.");
+    await loadSiteData();
+    return;
+  }
+
+  const token = prompt("Paste your GitHub fine-grained token (Contents: Read & write):");
+  if (!token || !token.trim()) return;
+  localStorage.setItem(GH_CONFIG.tokenKey, token.trim());
+
+  setPublishStatus("⏳ Verifying token…");
+  try {
+    const res = await fetch(
+      `${ghApiBase()}/${encodeGhPath(GH_CONFIG.dataPath)}?ref=${GH_CONFIG.branch}`,
+      { headers: ghHeaders(), cache: "no-store" }
+    );
+    if (res.status === 401 || res.status === 403) throw new Error("GitHub rejected the token");
+    if (!res.ok && res.status !== 404) throw new Error(`GitHub returned ${res.status}`);
+  } catch (err) {
+    localStorage.removeItem(GH_CONFIG.tokenKey);
+    updateAdminUI();
+    setPublishStatus("❌ " + err.message);
+    return;
+  }
+
+  updateAdminUI();
+  setPublishStatus("🔓 Unlocked — admin tools are now visible.");
+  await loadSiteData();
+}
+
+function lockAdmin() {
+  localStorage.removeItem(GH_CONFIG.tokenKey);
+  updateAdminUI();
+  setPublishStatus("🔒 Locked. Token removed from this browser.");
+}
+
+async function publishRawJson() {
+  if (!isAdmin()) return alert("Unlock with your token first (⚙️).");
+  const el = document.getElementById("json-editor");
+  if (!el) return;
+
+  let parsed;
+  try {
+    parsed = JSON.parse(el.value);
+  } catch (e) {
+    setPublishStatus("❌ Invalid JSON: " + e.message);
+    return;
+  }
+
+  stateGalleries = parsed.states || {};
+  tripNotesText = parsed.tripNotes || "";
+  nextStateTargets = new Set(parsed.nextStateTargets || []);
+
+  setPublishStatus("⏳ Publishing…");
+  await queueSave("Update data.json via admin editor");
+  await loadSiteData();
+}
+
+/* ============================================================
+   7. Map painting, checklists, progress
+   ============================================================ */
+
+function lockScroll() { document.body.classList.add("scroll-lock"); }
 function unlockScroll() {
-  const activeModals = document.querySelectorAll(".modal.active, .modal-overlay.active, .lightbox-modal.active");
-  if (activeModals.length === 0) {
+  if (document.querySelectorAll(".modal.active, .modal-overlay.active, .lightbox-modal.active").length === 0) {
     document.body.classList.remove("scroll-lock");
   }
 }
 
-function updateProgress(completedCount) {
-  const percentage = Math.round((completedCount / TOTAL_STATES) * 100);
-
-  const progressText = document.getElementById('progress-text');
-  if (progressText) {
-    progressText.textContent = `${completedCount} / ${TOTAL_STATES} (${percentage}%)`;
-  }
-
-  const progressBar = document.getElementById('progress-bar');
-  if (progressBar) {
-    progressBar.style.width = `${percentage}%`;
-  }
-}
-
-// --- 2. Core Functions ---
-
 function getOrCreateDefs(svgMap) {
-  let defs = svgMap.querySelector('defs');
+  let defs = svgMap.querySelector("defs");
   if (!defs) {
-    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    defs.id = 'state-patterns';
+    defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    defs.id = "state-patterns";
     svgMap.prepend(defs);
   }
   return defs;
@@ -81,189 +338,129 @@ function updateStatePattern(stateId, imgUrl, svgDefs) {
   const patternId = `pattern-${stateId}`;
   let pattern = document.getElementById(patternId);
   const statePath = document.getElementById(stateId);
-
   if (!statePath) return patternId;
+
   const bbox = statePath.getBBox();
 
   if (!pattern) {
-    pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
-    pattern.setAttribute('id', patternId);
-    pattern.setAttribute('patternUnits', 'userSpaceOnUse');
-
-    const image = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-    image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
-
+    pattern = document.createElementNS("http://www.w3.org/2000/svg", "pattern");
+    pattern.setAttribute("id", patternId);
+    pattern.setAttribute("patternUnits", "userSpaceOnUse");
+    const image = document.createElementNS("http://www.w3.org/2000/svg", "image");
+    image.setAttribute("preserveAspectRatio", "xMidYMid slice");
     pattern.appendChild(image);
     svgDefs.appendChild(pattern);
   }
 
-  pattern.setAttribute('x', bbox.x);
-  pattern.setAttribute('y', bbox.y);
-  pattern.setAttribute('width', bbox.width);
-  pattern.setAttribute('height', bbox.height);
+  pattern.setAttribute("x", bbox.x);
+  pattern.setAttribute("y", bbox.y);
+  pattern.setAttribute("width", bbox.width);
+  pattern.setAttribute("height", bbox.height);
 
-  const image = pattern.querySelector('image');
+  const image = pattern.querySelector("image");
   if (image) {
-    image.setAttribute('x', '0');
-    image.setAttribute('y', '0');
-    image.setAttribute('width', bbox.width);
-    image.setAttribute('height', bbox.height);
-    image.setAttribute('href', imgUrl);
+    image.setAttribute("x", "0");
+    image.setAttribute("y", "0");
+    image.setAttribute("width", bbox.width);
+    image.setAttribute("height", bbox.height);
+    image.setAttribute("href", imgUrl);
   }
-
   return patternId;
 }
 
-function updateChecklists() {
-  const nextList = document.getElementById('next-states-list');
-  const notVisitedList = document.getElementById('not-visited-list');
-  const visitedList = document.getElementById('visited-list');
+function paintStatePatterns() {
+  const svgMap = document.querySelector(".us-map");
+  if (!svgMap) return;
+  const svgDefs = getOrCreateDefs(svgMap);
 
+  document.querySelectorAll(".state").forEach(state => {
+    const stateName = state.getAttribute("data-name") || state.id;
+    const photos = stateGalleries[stateName];
+    if (photos && photos.length && svgDefs) {
+      const pid = updateStatePattern(state.id, photos[0].img, svgDefs);
+      state.style.fill = `url(#${pid})`;
+    } else {
+      state.style.fill = "";
+    }
+  });
+}
+
+function updateProgress(completedCount) {
+  const percentage = Math.round((completedCount / TOTAL_STATES) * 100);
+  const progressText = document.getElementById("progress-text");
+  if (progressText) progressText.textContent = `${completedCount} / ${TOTAL_STATES} (${percentage}%)`;
+  const progressBar = document.getElementById("progress-bar");
+  if (progressBar) progressBar.style.width = `${percentage}%`;
+}
+
+function updateChecklists() {
+  const nextList = document.getElementById("next-states-list");
+  const notVisitedList = document.getElementById("not-visited-list");
+  const visitedList = document.getElementById("visited-list");
   if (!nextList || !notVisitedList || !visitedList) return;
 
-  nextList.innerHTML = '';
-  notVisitedList.innerHTML = '';
-  visitedList.innerHTML = '';
+  nextList.innerHTML = "";
+  notVisitedList.innerHTML = "";
+  visitedList.innerHTML = "";
 
-  let completedCount = 0;
+  const admin = isAdmin();
+  let visitedCount = 0;
 
   ALL_STATES.forEach(stateName => {
-    const hasMemories = stateGalleries[stateName] && stateGalleries[stateName].length > 0;
+    const photos = stateGalleries[stateName] || [];
+    const hasMemories = photos.length > 0;
     const isNext = nextStateTargets.has(stateName);
+    if (hasMemories) visitedCount++;
 
-    const li = document.createElement('li');
+    const li = document.createElement("li");
 
     if (isNext) {
-      li.innerHTML = `<span>${stateName}</span> ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ''} <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>`;
-      nextList.appendChild(li); 
-    } else if (hasMemories) { 
-      completedCount++;
-      li.innerHTML = `<span>${stateName} (${stateGalleries[stateName].length} photos)</span>`; 
-      visitedList.appendChild(li); 
-    } else { 
-      li.innerHTML = `<span>${stateName}</span> <button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Plan Trip</button>`;
+      li.innerHTML = `<span>${stateName}</span>` + (admin
+        ? `<span style="display:flex;gap:6px;">
+             ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ""}
+             <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>
+           </span>`
+        : "");
+      nextList.appendChild(li);
+    } else if (hasMemories) {
+      li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>`;
+      visitedList.appendChild(li);
+    } else {
+      li.innerHTML = `<span>${stateName}</span>` + (admin
+        ? `<button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Plan Trip</button>`
+        : "");
       notVisitedList.appendChild(li);
     }
   });
 
-  updateProgress(completedCount);
+  updateProgress(visitedCount);
 }
 
-window.toggleNextTarget = function(stateName) {
-  if (nextStateTargets.has(stateName)) {
-    nextStateTargets.delete(stateName);
-  } else {
-    nextStateTargets.add(stateName);
-  }
-  localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
+window.toggleNextTarget = function (stateName) {
+  if (!isAdmin()) return;
+  if (nextStateTargets.has(stateName)) nextStateTargets.delete(stateName);
+  else nextStateTargets.add(stateName);
   updateChecklists();
+  queueSave(`Toggle next-trip target: ${stateName}`);
 };
 
-window.finishTrip = function(stateName) {
+window.finishTrip = function (stateName) {
+  if (!isAdmin()) return;
   nextStateTargets.delete(stateName);
-  localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
   updateChecklists();
+  queueSave(`Finish trip: ${stateName}`);
 };
 
-// --- Modal Visibility & Handlers ---
-
-window.openStatePlanModal = function() {
-  const modal = document.getElementById('state-plan-modal');
-  const stateInput = document.getElementById('modal-state-name');
-
-  if (modal) {
-    if (stateInput && activeStateName) {
-      stateInput.value = activeStateName;
-    }
-    modal.classList.add('active');
-    lockScroll();
-  }
-};
-
-window.closeStatePlanModal = function() {
-  const modal = document.getElementById('state-plan-modal');
-  if (modal) {
-    modal.classList.remove('active');
-    unlockScroll();
-  }
-};
-
-window.handleModalBackdropClick = function(event) {
-  if (event.target.id === 'state-plan-modal') {
-    window.closeStatePlanModal();
-  }
-};
-
-window.submitStatePlan = async function(event) {
-  event.preventDefault();
-
-  const stateNameInput = document.getElementById('modal-state-name');
-  const locationInput = document.getElementById('modal-location');
-  const detailsInput = document.getElementById('modal-details');
-
-  const rawStateName = stateNameInput ? stateNameInput.value.trim() : '';
-  const location = locationInput ? locationInput.value.trim() : '';
-  const details = detailsInput ? detailsInput.value.trim() : '';
-
-  if (!rawStateName) {
-    alert('Please enter a state name.');
-    return;
-  }
-
-  const formattedStateName = rawStateName.charAt(0).toUpperCase() + rawStateName.slice(1);
-
-  let planTextCombined = '';
-  if (location && details) {
-    planTextCombined = `📍 ${location}: ${details}`;
-  } else if (location) {
-    planTextCombined = `📍 ${location}`;
-  } else {
-    planTextCombined = details;
-  }
-
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) {
-    alert('Please log in to save trip plans!');
-    return;
-  }
-
-  const { error } = await supabaseClient.from('state_plans').insert([{
-    user_id: user.id,
-    state_name: formattedStateName,
-    plan_text: planTextCombined
-  }]);
-
-  if (!error) {
-    nextStateTargets.add(formattedStateName);
-    localStorage.setItem('nextStateTargets', JSON.stringify([...nextStateTargets]));
-    updateChecklists();
-
-    if (activeStateName && activeStateName.toLowerCase() === formattedStateName.toLowerCase()) {
-      if (typeof loadStatePlans === 'function') {
-        loadStatePlans(activeStateName);
-      }
-    }
-
-    if (event.target && typeof event.target.reset === 'function') {
-      event.target.reset();
-    }
-    window.closeStatePlanModal();
-  } else {
-    alert(`Error saving plan: ${error.message}`);
-  }
-};
+/* ============================================================
+   8. Gallery rendering
+   ============================================================ */
 
 function renderGallery(stateName, container) {
   if (!container) return;
-  container.innerHTML = '';
-  const data = stateGalleries[stateName] || defaultGallery;
+  container.innerHTML = "";
+  const data = stateGalleries[stateName] || [];
 
-  // Toggle edit-mode class on container for CSS targeting
-  if (isEditMode) {
-    container.classList.add('edit-mode-active');
-  } else {
-    container.classList.remove('edit-mode-active');
-  }
+  container.classList.toggle("edit-mode-active", isEditMode);
 
   if (data.length === 0) {
     container.innerHTML = '<p style="text-align:center; width:100%;">No memories yet for this state!</p>';
@@ -271,625 +468,336 @@ function renderGallery(stateName, container) {
   }
 
   data.forEach((item, index) => {
-    const polaroidDiv = document.createElement('div');
-    polaroidDiv.className = 'polaroid';
+    const polaroidDiv = document.createElement("div");
+    polaroidDiv.className = "polaroid";
     polaroidDiv.dataset.index = index;
 
     if (item.rotation === undefined) item.rotation = 0;
 
-    let topButtonsHTML = '';
-    let bottomRotateHTML = '';
-
-    if (item.id) {
-      topButtonsHTML = `<div class="drag-handle" title="Drag to reorder">⋮⋮</div> <button class="delete-btn" data-id="${item.id}" title="Delete Memory">✕</button>`;
-      bottomRotateHTML = `<button class="rotate-btn" data-id="${item.id}" title="Rotate Image">↻</button>`;
-    }
-
-    const rotationClass = (item.rotation === 90 || item.rotation === 270) ? `rotated-${item.rotation}` : '';
+    const rotationClass = (item.rotation === 90 || item.rotation === 270)
+      ? `rotated-${item.rotation}` : "";
 
     polaroidDiv.innerHTML = `
-      ${topButtonsHTML}
+      <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
+      <button class="delete-btn" title="Delete Memory">✕</button>
       <div class="img-wrapper">
-        <img src="${item.img}" class="polaroid-img ${rotationClass}" style="transform: rotate(${item.rotation}deg);" alt="${stateName} photo">
+        <img src="${item.img}" class="polaroid-img ${rotationClass}"
+             style="transform: rotate(${item.rotation}deg);" alt="${stateName} photo">
       </div>
-      <p class="caption-text">${item.desc || ''}</p>
-      ${bottomRotateHTML}
-      ${item.id ? `<button class="edit-btn" data-id="${item.id}">Edit</button>` : ''}
+      <p class="caption-text">${item.desc || ""}</p>
+      <button class="rotate-btn" title="Rotate Image">↻</button>
+      <button class="edit-btn">Edit</button>
     `;
 
-    const imgElement = polaroidDiv.querySelector('.polaroid-img');
+    const imgElement = polaroidDiv.querySelector(".polaroid-img");
+    imgElement.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openLightbox(item.img, item.desc, item.rotation);
+    });
 
-    if (imgElement) {
-      imgElement.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openLightbox(item.img, item.desc, item.rotation);
-      });
-    }
+    /* Rotate */
+    polaroidDiv.querySelector(".rotate-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!isAdmin()) return;
+      item.rotation = ((item.rotation || 0) + 90) % 360;
+      renderGallery(stateName, container);
+      queueSave(`Rotate photo in ${stateName}`);
+    });
 
-    if (item.id) {
-      const rotateBtn = polaroidDiv.querySelector('.rotate-btn');
-      if (rotateBtn) {
-        rotateBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
+    /* Drag handle – only makes card draggable in edit mode */
+    const handle = polaroidDiv.querySelector(".drag-handle");
+    handle.addEventListener("mousedown", () => { if (isEditMode) polaroidDiv.setAttribute("draggable", "true"); });
+    handle.addEventListener("mouseup", () => polaroidDiv.setAttribute("draggable", "false"));
+    handle.addEventListener("touchstart", () => { if (isEditMode) polaroidDiv.setAttribute("draggable", "true"); }, { passive: true });
+    handle.addEventListener("touchend", () => polaroidDiv.setAttribute("draggable", "false"));
 
-          item.rotation = (item.rotation + 90) % 360;
-          imgElement.style.transform = `rotate(${item.rotation}deg)`;
-
-          imgElement.classList.remove('rotated-90', 'rotated-270');
-          if (item.rotation === 90 || item.rotation === 270) {
-            imgElement.classList.add(`rotated-${item.rotation}`);
-          }
-
-          const { error } = await supabaseClient
-            .from('state_memories')
-            .update({ rotation: item.rotation })
-            .eq('id', item.id);
-
-          if (error) {
-            console.error("Error updating rotation:", error.message);
-          }
-        });
-      }
-    }
-
-    // Drag-and-drop setup (only interactive when Edit Mode is active)
-    const handle = polaroidDiv.querySelector('.drag-handle');
-    if (handle) {
-      handle.addEventListener('mousedown', () => {
-        if (isEditMode) polaroidDiv.setAttribute('draggable', 'true');
-      });
-      handle.addEventListener('mouseup', () => polaroidDiv.setAttribute('draggable', 'false'));
-      handle.addEventListener('touchstart', () => {
-        if (isEditMode) polaroidDiv.setAttribute('draggable', 'true');
-      }, { passive: true });
-      handle.addEventListener('touchend', () => polaroidDiv.setAttribute('draggable', 'false'));
-    }
-
-    polaroidDiv.addEventListener('dragstart', (e) => {
-      if (!isEditMode) {
-        e.preventDefault();
-        return;
-      }
+    polaroidDiv.addEventListener("dragstart", (e) => {
+      if (!isEditMode) { e.preventDefault(); return; }
       draggedIndex = index;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', index.toString());
-      polaroidDiv.classList.add('dragging');
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(index));
+      polaroidDiv.classList.add("dragging");
     });
 
-    polaroidDiv.addEventListener('dragend', () => {
-      polaroidDiv.classList.remove('dragging');
-      polaroidDiv.setAttribute('draggable', 'false');
-      container.querySelectorAll('.polaroid').forEach(card => card.classList.remove('drag-over'));
+    polaroidDiv.addEventListener("dragend", () => {
+      polaroidDiv.classList.remove("dragging");
+      polaroidDiv.setAttribute("draggable", "false");
+      container.querySelectorAll(".polaroid").forEach(c => c.classList.remove("drag-over"));
     });
 
-    polaroidDiv.addEventListener('dragover', (e) => {
+    polaroidDiv.addEventListener("dragover", (e) => {
       if (!isEditMode) return;
       e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      polaroidDiv.classList.add('drag-over');
+      e.dataTransfer.dropEffect = "move";
+      polaroidDiv.classList.add("drag-over");
     });
 
-    polaroidDiv.addEventListener('dragleave', () => {
-      polaroidDiv.classList.remove('drag-over');
-    });
+    polaroidDiv.addEventListener("dragleave", () => polaroidDiv.classList.remove("drag-over"));
 
-    polaroidDiv.addEventListener('drop', async (e) => {
+    polaroidDiv.addEventListener("drop", (e) => {
       if (!isEditMode) return;
       e.preventDefault();
       e.stopPropagation();
-      polaroidDiv.classList.remove('drag-over');
+      polaroidDiv.classList.remove("drag-over");
 
       const targetIndex = parseInt(polaroidDiv.dataset.index, 10);
+      if (draggedIndex === null || draggedIndex === targetIndex) return;
 
-      if (draggedIndex !== null && draggedIndex !== targetIndex) {
-        const galleryArray = stateGalleries[stateName];
-        const [movedItem] = galleryArray.splice(draggedIndex, 1);
-        galleryArray.splice(targetIndex, 0, movedItem);
+      const arr = stateGalleries[stateName];
+      const [moved] = arr.splice(draggedIndex, 1);
+      arr.splice(targetIndex, 0, moved);
+      draggedIndex = null;
 
-        galleryArray.forEach((item, idx) => item.order_index = idx);
+      renderGallery(stateName, container);
+      queueSave(`Reorder photos in ${stateName}`);
+    });
 
-        renderGallery(stateName, container);
+    /* Delete */
+    polaroidDiv.querySelector(".delete-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!isAdmin()) return;
+      if (!confirm("Are you sure you want to delete this memory?")) return;
 
-        const updates = galleryArray.map((item, idx) => ({
-          id: item.id,
-          order_index: idx,
-          rotation: item.rotation || 0
-        }));
+      const arr = stateGalleries[stateName] || [];
+      const [removed] = arr.splice(index, 1);
 
-        await supabaseClient.rpc('update_memory_positions', { payload: updates });
+      renderGallery(stateName, container);
+      paintStatePatterns();
+      updateChecklists();
+      queueSave(`Delete memory from ${stateName}`);
+
+      if (removed && removed.img && !/^https?:/i.test(removed.img)) {
+        ghDeleteFile(removed.img, `Delete image ${removed.img}`).catch(err => console.warn(err));
       }
     });
 
-    if (item.id) {
-      const delBtn = polaroidDiv.querySelector('.delete-btn');
-      const editBtn = polaroidDiv.querySelector('.edit-btn');
-      const captionText = polaroidDiv.querySelector('.caption-text');
+    /* Edit caption */
+    const editBtn = polaroidDiv.querySelector(".edit-btn");
+    const captionText = polaroidDiv.querySelector(".caption-text");
 
-      if (delBtn) {
-        delBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          if (confirm("Are you sure you want to delete this memory?")) {
-            const { error } = await supabaseClient.from('state_memories').delete().eq('id', item.id);
-            if (!error) {
-              await window.loadUserMemories();
-              renderGallery(stateName, container);
-            }
-          }
-        });
-      }
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!isAdmin()) return;
 
-      if (editBtn) {
-        editBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          captionText.style.display = 'none';
-          editBtn.style.display = 'none';
+      captionText.style.display = "none";
+      editBtn.style.display = "none";
 
-          const editContainer = document.createElement('div');
-          editContainer.className = 'edit-container';
-          editContainer.innerHTML = `
-            <input type="text" class="edit-input" value="${item.desc || ''}" />
-            <div class="edit-actions">
-              <button class="save-btn">Save</button>
-              <button class="cancel-btn">Cancel</button>
-            </div>
-          `;
+      const editContainer = document.createElement("div");
+      editContainer.className = "edit-container";
+      editContainer.innerHTML = `
+        <input type="text" class="edit-input" value="${(item.desc || "").replace(/"/g, "&quot;")}" />
+        <div class="edit-actions">
+          <button class="save-btn">Save</button>
+          <button class="cancel-btn">Cancel</button>
+        </div>
+      `;
+      polaroidDiv.appendChild(editContainer);
 
-          polaroidDiv.appendChild(editContainer);
+      editContainer.querySelector(".save-btn").addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        item.desc = editContainer.querySelector(".edit-input").value.trim();
+        renderGallery(stateName, container);
+        queueSave(`Edit caption in ${stateName}`);
+      });
 
-          editContainer.querySelector('.save-btn').addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const newCaption = editContainer.querySelector('.edit-input').value.trim();
-
-            const { error } = await supabaseClient.from('state_memories').update({ caption: newCaption }).eq('id', item.id);
-            if (!error) {
-              await window.loadUserMemories();
-              renderGallery(stateName, container);
-            }
-          });
-
-          editContainer.querySelector('.cancel-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            editContainer.remove();
-            captionText.style.display = 'block';
-            editBtn.style.display = 'block';
-          });
-        });
-      }
-    }
+      editContainer.querySelector(".cancel-btn").addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        editContainer.remove();
+        captionText.style.display = "block";
+        editBtn.style.display = "block";
+      });
+    });
 
     container.appendChild(polaroidDiv);
   });
 }
 
+/* ============================================================
+   9. Lightbox, maps, Dutch Bros
+   ============================================================ */
+
 function openLightbox(imgUrl, caption, rotation = 0) {
-  let lightbox = document.getElementById('lightbox-modal');
+  let lightbox = document.getElementById("lightbox-modal");
   if (!lightbox) {
-    lightbox = document.createElement('div');
-    lightbox.id = 'lightbox-modal';
-    lightbox.className = 'lightbox-modal';
-    lightbox.innerHTML = `<span class="lightbox-close">&times;</span> <img class="lightbox-content" id="lightbox-img"> <div id="lightbox-caption"></div>`;
+    lightbox = document.createElement("div");
+    lightbox.id = "lightbox-modal";
+    lightbox.className = "lightbox-modal";
+    lightbox.innerHTML = `<span class="lightbox-close">&times;</span>
+      <img class="lightbox-content" id="lightbox-img">
+      <div id="lightbox-caption"></div>`;
     document.body.appendChild(lightbox);
 
-    lightbox.addEventListener('click', (e) => {
-      if (e.target.id === 'lightbox-modal' || e.target.className === 'lightbox-close') {
-        lightbox.classList.remove('active');
+    lightbox.addEventListener("click", (e) => {
+      if (e.target.id === "lightbox-modal" || e.target.className === "lightbox-close") {
+        lightbox.classList.remove("active");
         unlockScroll();
       }
     });
   }
 
-  const img = document.getElementById('lightbox-img');
+  const img = document.getElementById("lightbox-img");
   img.src = imgUrl;
   img.style.transform = `rotate(${rotation}deg)`;
-  document.getElementById('lightbox-caption').textContent = caption || '';
-  lightbox.classList.add('active');
+  document.getElementById("lightbox-caption").textContent = caption || "";
+  lightbox.classList.add("active");
   lockScroll();
 }
 
 function getGoogleMapsEmbedUrl(url) {
   if (!url) return null;
-
-  if (url.includes('/maps/embed')) return url;
-
+  if (url.includes("/maps/embed")) return url;
   try {
-    const parsedUrl = new URL(url);
-
-    if (parsedUrl.searchParams.has('q')) {
-      const query = parsedUrl.searchParams.get('q');
-      return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+    const parsed = new URL(url);
+    if (parsed.searchParams.has("q")) {
+      return `https://maps.google.com/maps?q=${encodeURIComponent(parsed.searchParams.get("q"))}&output=embed`;
     }
-
-    const pathSegments = parsedUrl.pathname.split('/');
-    const placeIndex = pathSegments.indexOf('place');
-
-    if (placeIndex !== -1 && pathSegments[placeIndex + 1]) {
-      const placeName = decodeURIComponent(pathSegments[placeIndex + 1].replace(/\+/g, ' '));
-      return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
+    const segs = parsed.pathname.split("/");
+    const i = segs.indexOf("place");
+    if (i !== -1 && segs[i + 1]) {
+      const place = decodeURIComponent(segs[i + 1].replace(/\+/g, " "));
+      return `https://maps.google.com/maps?q=${encodeURIComponent(place)}&output=embed`;
     }
-
     return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
-  } catch (e) {
-    console.error("Invalid URL format:", e);
-    return null;
-  }
+  } catch { return null; }
 }
 
-// Interactive Map Search Controls
-const mapSearchInput = document.getElementById('map-search-input');
-const mapSearchBtn = document.getElementById('map-search-btn');
-const mapIframe = document.getElementById('map-embed-iframe');
-
-function performMapSearch() {
-  if (!mapSearchInput || !mapIframe) return;
-  const query = mapSearchInput.value.trim();
-  if (query) {
-    mapIframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(query)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
-  }
+function loadDefaultDutchMap(iframeEl, linkEl) {
+  iframeEl.src = "https://maps.google.com/maps?q=Dutch+Bros&z=10&output=embed";
+  linkEl.href = "https://www.google.com/maps/dir/?api=1&destination=Dutch+Bros&travelmode=driving";
+  linkEl.style.display = "inline-flex";
 }
 
-if (mapSearchBtn) {
-  mapSearchBtn.addEventListener('click', performMapSearch);
-}
-
-if (mapSearchInput) {
-  mapSearchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      performMapSearch();
-    }
-  });
-}
-
-// --- Supabase Trip Notes Handlers ---
-
-async function loadTripNotes() {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) return;
-
-  const { data, error } = await supabaseClient
-    .from('trip_notes')
-    .select('note_text')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching notes:', error.message);
-    return;
-  }
-
-  const notesTextarea = document.getElementById('plan-notes');
-  if (notesTextarea) {
-    notesTextarea.value = data ? (data.note_text || '') : '';
-  }
-}
-
-async function saveTripNotes(noteText) {
-  const { data: { user } } = await supabaseClient.auth.getUser();
-  if (!user) return;
-
-  const { error } = await supabaseClient
-    .from('trip_notes')
-    .upsert({
-      user_id: user.id,
-      note_text: noteText,
-      updated_at: new Date()
-    }, { onConflict: 'user_id' });
-
-  if (error) {
-    console.error('Error saving notes:', error.message);
-  }
-}
-
-// --- 3. DOM Initialization & Event Listeners ---
+/* ============================================================
+   10. DOM wiring
+   ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Trip Notes Autosave Listener
-  const planNotes = document.getElementById('plan-notes');
+  updateAdminUI();
+
+  const states = document.querySelectorAll(".state");
+  const hoverPreview = document.getElementById("hover-preview");
+  const previewImg = document.getElementById("preview-img");
+  const previewTitle = document.getElementById("preview-title");
+
+  const modal = document.getElementById("gallery-modal");
+  const closeModal = document.getElementById("close-modal");
+  const toggleEditBtn = document.getElementById("toggle-edit-btn");
+  const modalStateTitle = document.getElementById("modal-state-title");
+  const polaroidContainer = document.getElementById("polaroid-container");
+
+  const addMemoryForm = document.getElementById("add-memory-form");
+  const fileInput = document.getElementById("image-file-input");
+  const dropZone = document.getElementById("drop-zone");
+  const queueContainer = document.getElementById("upload-queue-container");
+  const activePreviewImg = document.getElementById("active-preview-img");
+  const captionInput = document.getElementById("caption-input");
+  const queueThumbnails = document.getElementById("queue-thumbnails");
+  const queueCountText = document.getElementById("queue-count-text");
+
+  /* ---- Trip notes (autosave to data.json) ---- */
+  const planNotes = document.getElementById("plan-notes");
   if (planNotes) {
-    let debounceTimer;
-    planNotes.addEventListener('input', (e) => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        saveTripNotes(e.target.value);
-      }, 800);
+    let t;
+    planNotes.addEventListener("input", (e) => {
+      if (!isAdmin()) return;
+      clearTimeout(t);
+      t = setTimeout(() => {
+        tripNotesText = e.target.value;
+        queueSave("Update trip notes");
+      }, 1000);
     });
   }
 
-  const svgMap = document.querySelector('.us-map');
-  const states = document.querySelectorAll('.state');
-  const svgDefs = svgMap ? getOrCreateDefs(svgMap) : null;
+  /* ---- Map search ---- */
+  const mapSearchInput = document.getElementById("map-search-input");
+  const mapSearchBtn = document.getElementById("map-search-btn");
+  const mapIframe = document.getElementById("map-embed-iframe");
 
-  const hoverPreview = document.getElementById('hover-preview');
-  const previewImg = document.getElementById('preview-img');
-  const previewTitle = document.getElementById('preview-title');
-  const modal = document.getElementById('gallery-modal');
-  const closeModal = document.getElementById('close-modal');
-  const toggleEditBtn = document.getElementById('toggle-edit-btn');
-  const modalStateTitle = document.getElementById('modal-state-title');
-  const polaroidContainer = document.getElementById('polaroid-container');
-
-  const addMemoryForm = document.getElementById('add-memory-form');
-  const authForm = document.getElementById('auth-form');
-
-  // Queue Elements
-  const fileInput = document.getElementById('image-file-input');
-  const dropZone = document.getElementById('drop-zone');
-  const queueContainer = document.getElementById('upload-queue-container');
-  const activePreviewImg = document.getElementById('active-preview-img');
-  const captionInput = document.getElementById('caption-input');
-  const queueThumbnails = document.getElementById('queue-thumbnails');
-  const queueCountText = document.getElementById('queue-count-text');
-
-  // Side-by-Side Map Preview Input Listener
-  const mapInput = document.getElementById('map-url-input');
-  const mapPlaceholder = document.getElementById('map-placeholder');
-
-  if (mapInput && mapIframe && mapPlaceholder) {
-    mapInput.addEventListener('input', (e) => {
-      const url = e.target.value.trim();
-      if (url.includes('http')) {
-        const embedUrl = getGoogleMapsEmbedUrl(url);
-        mapIframe.src = embedUrl || url;
-        mapIframe.classList.add('active');
-        mapPlaceholder.style.display = 'none';
-      } else {
-        mapIframe.src = 'about:blank';
-        mapIframe.classList.remove('active');
-        mapPlaceholder.style.display = 'flex';
-      }
-    });
+  function performMapSearch() {
+    if (!mapSearchInput || !mapIframe) return;
+    const q = mapSearchInput.value.trim();
+    if (q) mapIframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=&z=13&ie=UTF8&iwloc=&output=embed`;
   }
+  if (mapSearchBtn) mapSearchBtn.addEventListener("click", performMapSearch);
+  if (mapSearchInput) mapSearchInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); performMapSearch(); }
+  });
 
-  // Edit Mode Button Handler
+  /* ---- Edit mode toggle ---- */
   if (toggleEditBtn) {
-    toggleEditBtn.addEventListener('click', () => {
+    toggleEditBtn.addEventListener("click", () => {
+      if (!isAdmin()) return;
       isEditMode = !isEditMode;
-      if (isEditMode) {
-        toggleEditBtn.classList.add('active');
-        toggleEditBtn.textContent = 'Done Editing ✓';
-      } else {
-        toggleEditBtn.classList.remove('active');
-        toggleEditBtn.textContent = 'Edit Mode ✏️';
-      }
-      if (activeStateName && polaroidContainer) {
-        renderGallery(activeStateName, polaroidContainer);
-      }
+      toggleEditBtn.classList.toggle("active", isEditMode);
+      toggleEditBtn.textContent = isEditMode ? "Done Editing ✓" : "Edit Mode ✏️";
+      if (activeStateName && polaroidContainer) renderGallery(activeStateName, polaroidContainer);
     });
   }
 
-  window.loadUserMemories = async function() {
-    const { data: { user } } = await supabaseClient.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabaseClient
-      .from('state_memories')
-      .select('*')
-      .order('order_index', { ascending: true });
-
-    if (error) return console.error("Database fetch error:", error);
-
-    stateGalleries = {};
-
-    data.forEach(item => {
-      if (!stateGalleries[item.state_name]) stateGalleries[item.state_name] = [];
-      stateGalleries[item.state_name].push({
-        id: item.id,
-        img: item.image_url,
-        desc: item.caption,
-        order_index: item.order_index,
-        rotation: item.rotation || 0
-      });
-    });
-
-    states.forEach(state => {
-      const stateId = state.id;
-      const stateName = state.getAttribute('data-name') || stateId;
-      const stateData = stateGalleries[stateName];
-
-      if (stateData && stateData.length > 0 && svgDefs) {
-        const patternId = updateStatePattern(stateId, stateData[0].img, svgDefs);
-        state.style.fill = `url(#${patternId})`;
-      } else {
-        state.style.fill = "";
-      }
-    });
-
-    updateChecklists();
-  };
-
+  /* ---- State hover + click ---- */
   states.forEach(state => {
-    const stateId = state.id;
-    const stateName = state.getAttribute('data-name') || stateId;
+    const stateName = state.getAttribute("data-name") || state.id;
 
-    state.addEventListener('mouseenter', () => {
-      if(!hoverPreview || !previewImg || !previewTitle) return;
+    state.addEventListener("mouseenter", () => {
+      if (!hoverPreview || !previewImg || !previewTitle) return;
       previewTitle.textContent = stateName;
 
-      const currentData = stateGalleries[stateName] || defaultGallery;
-      let currentIndex = 0;
-      if(currentData.length > 0) {
-        previewImg.src = currentData[currentIndex].img;
-        hoverPreview.style.display = 'block';
+      const photos = stateGalleries[stateName] || [];
+      if (photos.length === 0) return;
 
-        if (currentData.length > 1) {
-          intervalId = setInterval(() => {
-            currentIndex = (currentIndex + 1) % currentData.length;
-            previewImg.src = currentData[currentIndex].img;
-          }, 1500);
-        }
+      let i = 0;
+      previewImg.src = photos[i].img;
+      hoverPreview.style.display = "block";
+
+      if (photos.length > 1) {
+        intervalId = setInterval(() => {
+          i = (i + 1) % photos.length;
+          previewImg.src = photos[i].img;
+        }, 1500);
       }
     });
 
-    state.addEventListener('mousemove', (e) => {
-      if (hoverPreview) {
-        const offset = 12;
-        hoverPreview.style.position = 'fixed';
-        hoverPreview.style.left = `${e.clientX + 40}px`;
-
-        if (e.clientY - 170 < 0) {
-          hoverPreview.style.top = `${e.clientY + offset}px`; 
-        } else { 
-          hoverPreview.style.top = `${e.clientY - 80}px`;
-        }
-      }
+    state.addEventListener("mousemove", (e) => {
+      if (!hoverPreview) return;
+      hoverPreview.style.position = "fixed";
+      hoverPreview.style.left = `${e.clientX + 40}px`;
+      hoverPreview.style.top = e.clientY - 170 < 0 ? `${e.clientY + 12}px` : `${e.clientY - 80}px`;
     });
 
-    state.addEventListener('mouseleave', () => {
-      if(hoverPreview) hoverPreview.style.display = 'none';
-      if (intervalId) clearInterval(intervalId);
+    state.addEventListener("mouseleave", () => {
+      if (hoverPreview) hoverPreview.style.display = "none";
+      if (intervalId) { clearInterval(intervalId); intervalId = null; }
     });
 
-    state.addEventListener('click', () => {
+    state.addEventListener("click", () => {
       activeStateName = stateName;
-      activeStatePath = state;
 
-      // Reset edit mode when opening a new gallery modal
       isEditMode = false;
       if (toggleEditBtn) {
-        toggleEditBtn.classList.remove('active');
-        toggleEditBtn.textContent = 'Edit Mode ✏️';
+        toggleEditBtn.classList.remove("active");
+        toggleEditBtn.textContent = "Edit Mode ✏️";
       }
 
-      if(modalStateTitle) modalStateTitle.textContent = `${stateName} Gallery`;
-      if(polaroidContainer) renderGallery(stateName, polaroidContainer);
+      if (modalStateTitle) modalStateTitle.textContent = `${stateName} Gallery`;
+      if (polaroidContainer) renderGallery(stateName, polaroidContainer);
 
-      loadStatePlans(stateName);
-
-      if(modal) {
-        modal.classList.add('active');
-        lockScroll();
-      }
+      if (modal) { modal.classList.add("active"); lockScroll(); }
     });
   });
 
-  if (authForm) {
-    authForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const emailInput = document.getElementById('auth-email');
-      const passwordInput = document.getElementById('auth-password');
-      if (!emailInput || !passwordInput) return;
-
-      const { error } = await supabaseClient.auth.signInWithPassword({
-        email: emailInput.value,
-        password: passwordInput.value
-      });
-
-      if (error) {
-        alert(error.message);
-      } else {
-        const authModal = document.getElementById('auth-modal');
-        if(authModal) {
-          authModal.classList.remove('active');
-          unlockScroll();
-        }
-        await window.loadUserMemories();
-        await loadTripNotes();
-      }
+  if (closeModal && modal) {
+    closeModal.addEventListener("click", () => { modal.classList.remove("active"); unlockScroll(); });
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) { modal.classList.remove("active"); unlockScroll(); }
     });
   }
 
-  async function loadStatePlans(stateName) {
-    const plansList = document.getElementById('plans-list');
-    if (!plansList) return;
-
-    plansList.innerHTML = '<p style="font-size:0.85rem; color:#777;">Loading plans... </p>';
-
-    const { data, error } = await supabaseClient
-      .from('state_plans')
-      .select('*')
-      .eq('state_name', stateName)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error("Error loading plans:", error);
-      plansList.innerHTML = '';
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      plansList.innerHTML = '<p style="font-size:0.85rem; color:#777;">No plans added yet for this state.</p>';
-      return;
-    }
-
-    plansList.innerHTML = '';
-
-    data.forEach(plan => {
-      const card = document.createElement('div');
-      card.className = 'plan-card';
-
-      let linksHTML = '';
-      if (plan.link_url) {
-        linksHTML += `<a href="${plan.link_url}" target="_blank" rel="noopener">🌐 Website Link</a>`; 
-      } 
-      if (plan.map_url) { 
-        linksHTML += `<a href="${plan.map_url}" target="_blank" rel="noopener">📍 Open in Google Maps</a>`;
-      }
-
-      const embedMapUrl = getGoogleMapsEmbedUrl(plan.map_url);
-      let mapIframeHTML = '';
-      if (embedMapUrl) {
-        mapIframeHTML = `<iframe class="map-preview-frame" src="${embedMapUrl}" loading="lazy" allowfullscreen></iframe>`;
-      }
-
-      card.innerHTML = `
-        <button class="delete-plan-btn" title="Delete Plan">✕</button> 
-        <p>${plan.plan_text}</p>
-        ${linksHTML ? `<div class="plan-links">${linksHTML}</div>` : ''} 
-        ${mapIframeHTML}
-      `;
-
-      const delPlanBtn = card.querySelector('.delete-plan-btn');
-      if (delPlanBtn) {
-        delPlanBtn.addEventListener('click', async () => {
-          if (confirm("Delete this plan item?")) {
-            await supabaseClient.from('state_plans').delete().eq('id', plan.id);
-            loadStatePlans(stateName);
-          }
-        });
-      }
-
-      plansList.appendChild(card);
-    });
-  }
-
-  const addPlanForm = document.getElementById('add-plan-form');
-  if (addPlanForm) {
-    addPlanForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const planTextInput = document.getElementById('plan-text-input');
-      const planLinkInput = document.getElementById('plan-link-input');
-      const planMapInput = document.getElementById('plan-map-input');
-
-      const planText = planTextInput ? planTextInput.value.trim() : '';
-      const linkUrl = planLinkInput ? planLinkInput.value.trim() : '';
-      const mapUrl = planMapInput ? planMapInput.value.trim() : '';
-
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) return alert("Please log in to save trip plans!");
-
-      const { error } = await supabaseClient.from('state_plans').insert([{
-        user_id: user.id,
-        state_name: activeStateName,
-        plan_text: planText,
-        link_url: linkUrl,
-        map_url: mapUrl
-      }]);
-
-      if (!error) {
-        addPlanForm.reset();
-        loadStatePlans(activeStateName);
-      } else {
-        alert(error.message);
-      }
-    });
-  }
-
+  /* ---- Upload queue ---- */
   function handleFiles(files) {
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
-    if (imageFiles.length === 0) return;
-
-    uploadQueue = uploadQueue.concat(imageFiles);
+    if (!isAdmin()) return;
+    const imgs = files.filter(f => f.type.startsWith("image/"));
+    if (!imgs.length) return;
+    uploadQueue = uploadQueue.concat(imgs);
     updateQueueUI();
   }
 
@@ -897,298 +805,176 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!queueContainer) return;
 
     if (uploadQueue.length === 0) {
-      queueContainer.style.display = 'none';
-      if(fileInput) fileInput.value = '';
+      queueContainer.style.display = "none";
+      if (fileInput) fileInput.value = "";
       return;
     }
 
-    queueContainer.style.display = 'flex';
+    queueContainer.style.display = "flex";
     if (queueCountText) queueCountText.textContent = `Images remaining: ${uploadQueue.length}`;
 
-    const activeFile = uploadQueue[0];
-    if (activePreviewImg) activePreviewImg.src = URL.createObjectURL(activeFile);
-    if (captionInput) {
-      captionInput.value = '';
-      captionInput.focus();
-    }
+    if (activePreviewImg) activePreviewImg.src = URL.createObjectURL(uploadQueue[0]);
+    if (captionInput) { captionInput.value = ""; captionInput.focus(); }
 
     if (queueThumbnails) {
-      queueThumbnails.innerHTML = '';
+      queueThumbnails.innerHTML = "";
       uploadQueue.slice(1).forEach((file, index) => {
-        const thumbDiv = document.createElement('div');
-        thumbDiv.className = 'thumbnail-card';
+        const card = document.createElement("div");
+        card.className = "thumbnail-card";
 
-        const img = document.createElement('img');
+        const img = document.createElement("img");
         img.src = URL.createObjectURL(file);
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-thumb';
-        removeBtn.innerHTML = '✕';
-        removeBtn.addEventListener('click', (e) => {
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "remove-thumb";
+        removeBtn.textContent = "✕";
+        removeBtn.addEventListener("click", (e) => {
           e.stopPropagation();
           uploadQueue.splice(index + 1, 1);
           updateQueueUI();
         });
 
-        thumbDiv.appendChild(img);
-        thumbDiv.appendChild(removeBtn);
-        queueThumbnails.appendChild(thumbDiv);
+        card.append(img, removeBtn);
+        queueThumbnails.appendChild(card);
       });
     }
   }
 
-  if (fileInput) {
-    fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
-  }
+  if (fileInput) fileInput.addEventListener("change", (e) => handleFiles(Array.from(e.target.files)));
 
   if (dropZone) {
-    dropZone.addEventListener('dragover', (e) => {
+    dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+    dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+    dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
-      dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length > 0) {
-        handleFiles(Array.from(e.dataTransfer.files));
-      }
+      dropZone.classList.remove("dragover");
+      if (e.dataTransfer.files.length) handleFiles(Array.from(e.dataTransfer.files));
     });
   }
 
+  /* ---- Add memory (upload image + commit data.json) ---- */
   if (addMemoryForm) {
-    addMemoryForm.addEventListener('submit', async (e) => {
+    addMemoryForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (uploadQueue.length === 0) return;
+      if (!isAdmin()) return alert("Unlock admin first (⚙️).");
+      if (!activeStateName || uploadQueue.length === 0) return;
 
       const submitBtn = addMemoryForm.querySelector('button[type="submit"]');
-      const originalBtnText = submitBtn ? submitBtn.textContent : '';
-      if (submitBtn) {
-        submitBtn.textContent = "Uploading...";
-        submitBtn.disabled = true;
-      }
+      const originalText = submitBtn ? submitBtn.textContent : "";
+      if (submitBtn) { submitBtn.textContent = "Uploading…"; submitBtn.disabled = true; }
 
       const currentFile = uploadQueue[0];
-      const caption = captionInput ? captionInput.value.trim() : '';
+      const caption = captionInput ? captionInput.value.trim() : "";
 
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) {
-        alert('Please log in first!');
-        if (submitBtn) {
-          submitBtn.textContent = originalBtnText;
-          submitBtn.disabled = false;
-        }
-        return;
-      }
+      try {
+        const path = await uploadImageToRepo(currentFile, activeStateName);
 
-      const filePath = `${user.id}/${Date.now()}_${currentFile.name}`;
-      const { error: storageError } = await supabaseClient.storage.from('memories').upload(filePath, currentFile);
+        if (!stateGalleries[activeStateName]) stateGalleries[activeStateName] = [];
+        stateGalleries[activeStateName].push({ img: path, desc: caption, rotation: 0 });
 
-      if (storageError) {
-        alert(storageError.message);
-        if (submitBtn) {
-          submitBtn.textContent = originalBtnText;
-          submitBtn.disabled = false;
-        }
-        return;
-      }
-
-      const { data: { publicUrl } } = supabaseClient.storage.from('memories').getPublicUrl(filePath);
-
-      const { error: dbError } = await supabaseClient.from('state_memories').insert([{
-        user_id: user.id,
-        state_name: activeStateName,
-        image_url: publicUrl,
-        caption: caption
-      }]);
-
-      if (!dbError) {
-        await window.loadUserMemories();
         renderGallery(activeStateName, polaroidContainer);
+        paintStatePatterns();
+        updateChecklists();
+        await queueSave(`Add memory for ${activeStateName}`);
+
         uploadQueue.shift();
         updateQueueUI();
-      } else {
-        alert(dbError.message);
-      }
-
-      if (submitBtn) {
-        submitBtn.textContent = originalBtnText;
-        submitBtn.disabled = false;
+      } catch (err) {
+        console.error(err);
+        alert("Upload failed: " + err.message);
+      } finally {
+        if (submitBtn) { submitBtn.textContent = originalText; submitBtn.disabled = false; }
       }
     });
   }
 
-  if(closeModal && modal) {
-    closeModal.addEventListener('click', () => {
-      modal.classList.remove('active');
-      unlockScroll();
-    });
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.classList.remove('active');
-        unlockScroll();
+  /* ---- Dutch Bros "near me" ---- */
+  const locateBtn = document.getElementById("locate-btn");
+  const dutchMap = document.getElementById("dutch-map");
+  const geoStatus = document.getElementById("geo-status");
+  const dirLink = document.getElementById("directions-link");
+
+  if (locateBtn && dutchMap && geoStatus && dirLink) {
+    locateBtn.addEventListener("click", () => {
+      if (dutchMap.src !== "about:blank" && dutchMap.src !== "") return;
+
+      if (!navigator.geolocation) {
+        geoStatus.textContent = "Geolocation is not supported by your browser.";
+        loadDefaultDutchMap(dutchMap, dirLink);
+        return;
       }
+
+      geoStatus.textContent = "Locating…";
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude: lat, longitude: lng } = pos.coords;
+          dutchMap.src = `https://maps.google.com/maps?q=Dutch+Bros&ll=${lat},${lng}&z=7&output=embed`;
+          dirLink.href = `https://www.google.com/maps/dir/?api=1&origin=${lat},${lng}&destination=Dutch+Bros&travelmode=driving`;
+          dirLink.style.display = "inline-flex";
+          geoStatus.textContent = "";
+        },
+        () => {
+          geoStatus.textContent = "Unable to retrieve location. Showing general map.";
+          loadDefaultDutchMap(dutchMap, dirLink);
+        }
+      );
     });
   }
 
-  // Auth State Observer
-  supabaseClient.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
-      await loadTripNotes();
-      await window.loadUserMemories();
-    }
-  });
-
-  // Initial check on page load
-  supabaseClient.auth.getUser().then(({ data: { user } }) => {
-    if (user) {
-      const authModal = document.getElementById('auth-modal');
-      if (authModal) {
-        authModal.classList.remove('active');
-        unlockScroll();
-      }
-      window.loadUserMemories();
-      loadTripNotes();
-    } else {
-      updateChecklists();
-    }
-  });
- // Dutch Bros Near Me
-  document.getElementById('locate-btn').addEventListener('click', function () {
-  const mapFrame = document.getElementById('dutch-map');
-  const status = document.getElementById('geo-status');
-  const dirLink = document.getElementById('directions-link');
-
-  // Avoid re-running if map is already loaded
-  if (mapFrame.src !== 'about:blank' && mapFrame.src !== '') return;
-
-  if (!navigator.geolocation) {
-    status.textContent = 'Geolocation is not supported by your browser.';
-    loadDefaultMap(mapFrame, dirLink);
-    return;
-  }
-
-  status.textContent = 'Locating...';
-
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      const userLat = position.coords.latitude;
-      const userLng = position.coords.longitude;
-
-      // Center map on user's area
-      mapFrame.src = `https://maps.google.com/maps?q=Dutch+Bros&ll=${userLat},${userLng}&z=7&output=embed`;
-
-      // Set direct driving route link
-      dirLink.href = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=Dutch+Bros&travelmode=driving`;
-      dirLink.style.display = 'inline-block';
-
-      status.textContent = '';
-    },
-    (error) => {
-      status.textContent = 'Unable to retrieve location. Displaying general map.';
-      loadDefaultMap(mapFrame, dirLink);
-    }
-  );
-});
-
-function loadDefaultMap(iframeElement, linkElement) {
-  iframeElement.src = 'https://maps.google.com/maps?q=Dutch+Bros&z=10&output=embed';
-  linkElement.href = 'https://www.google.com/maps/dir/?api=1&destination=Dutch+Bros&travelmode=driving';
-  linkElement.style.display = 'inline-block';
-}
-
- // --- Smooth Dynamic Auto-Scroll Logic ---
-
+  /* ---- Drag auto-scroll (unchanged) ---- */
   let autoScrollFrame = null;
   let currentDragY = null;
 
-  // Helper function: Finds the actual element that has scrollbars
   function getScrollableParent(element) {
     if (!element) return document.scrollingElement || document.documentElement;
-    
-    let style = window.getComputedStyle(element);
-    let overflowY = style.getPropertyValue('overflow-y');
-    let isScrollable = (overflowY === 'auto' || overflowY === 'scroll') && element.scrollHeight > element.clientHeight;
-
-    if (isScrollable) {
-      return element;
-    }
+    const style = window.getComputedStyle(element);
+    const oy = style.getPropertyValue("overflow-y");
+    if ((oy === "auto" || oy === "scroll") && element.scrollHeight > element.clientHeight) return element;
     return getScrollableParent(element.parentElement);
   }
 
   function startAutoScroll(container) {
     if (autoScrollFrame) return;
-
-    function scrollLoop() {
-      if (!container || currentDragY === null) {
-        autoScrollFrame = null;
-        return;
-      }
-
-      // Detect real-time bounds of the scroll container
-      const containerRect = container === document.documentElement || container === document.body
+    (function loop() {
+      if (!container || currentDragY === null) { autoScrollFrame = null; return; }
+      const rect = (container === document.documentElement || container === document.body)
         ? { top: 0, bottom: window.innerHeight }
         : container.getBoundingClientRect();
+      const threshold = 150, maxSpeed = 25;
+      const fromTop = currentDragY - rect.top;
+      const fromBottom = rect.bottom - currentDragY;
 
-      // Detection radius (increase or decrease as needed)
-      const threshold = 150; 
-      const maxScrollSpeed = 25; 
-
-      const distanceFromTop = currentDragY - containerRect.top;
-      const distanceFromBottom = containerRect.bottom - currentDragY;
-
-      if (distanceFromTop < threshold) {
-        // SCROLL UP
-        const rawIntensity = (threshold - distanceFromTop) / threshold;
-        const intensity = Math.min(1.5, Math.max(0.1, rawIntensity)); // Caps speed when mouse leaves box
-        
-        container.scrollTop -= Math.ceil(intensity * maxScrollSpeed);
-        autoScrollFrame = requestAnimationFrame(scrollLoop);
-      } 
-      else if (distanceFromBottom < threshold) {
-        // SCROLL DOWN
-        const rawIntensity = (threshold - distanceFromBottom) / threshold;
-        const intensity = Math.min(1.5, Math.max(0.1, rawIntensity));
-
-        container.scrollTop += Math.ceil(intensity * maxScrollSpeed);
-        autoScrollFrame = requestAnimationFrame(scrollLoop);
-      } 
-      else {
+      if (fromTop < threshold) {
+        const intensity = Math.min(1.5, Math.max(0.1, (threshold - fromTop) / threshold));
+        container.scrollTop -= Math.ceil(intensity * maxSpeed);
+        autoScrollFrame = requestAnimationFrame(loop);
+      } else if (fromBottom < threshold) {
+        const intensity = Math.min(1.5, Math.max(0.1, (threshold - fromBottom) / threshold));
+        container.scrollTop += Math.ceil(intensity * maxSpeed);
+        autoScrollFrame = requestAnimationFrame(loop);
+      } else {
         autoScrollFrame = null;
       }
-    }
-
-    autoScrollFrame = requestAnimationFrame(scrollLoop);
+    })();
   }
 
   function stopAutoScroll() {
-    if (autoScrollFrame) {
-      cancelAnimationFrame(autoScrollFrame);
-      autoScrollFrame = null;
-    }
+    if (autoScrollFrame) { cancelAnimationFrame(autoScrollFrame); autoScrollFrame = null; }
     currentDragY = null;
   }
 
-  // Window-level listener captures drag positions anywhere on screen
-  window.addEventListener('dragover', (e) => {
-    // Only scroll if we are in Edit Mode and dragging
+  window.addEventListener("dragover", (e) => {
     if (isEditMode && draggedIndex !== null) {
-      e.preventDefault(); 
+      e.preventDefault();
       currentDragY = e.clientY;
-
-      // Automatically find whatever element actually scrolls
-      const polaroidContainer = document.getElementById('polaroid-container');
-      const targetScrollContainer = getScrollableParent(polaroidContainer);
-
-      if (targetScrollContainer) {
-        startAutoScroll(targetScrollContainer);
-      }
+      const container = getScrollableParent(document.getElementById("polaroid-container"));
+      if (container) startAutoScroll(container);
     }
   });
+  document.addEventListener("dragend", stopAutoScroll);
+  document.addEventListener("mouseleave", stopAutoScroll);
+  document.addEventListener("drop", stopAutoScroll);
 
-  document.addEventListener('dragend', stopAutoScroll);
-  document.addEventListener('mouseleave', stopAutoScroll);
-  document.addEventListener('drop', stopAutoScroll);
+  /* ---- Boot ---- */
+  loadSiteData();
 });
