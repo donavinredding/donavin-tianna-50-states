@@ -215,81 +215,82 @@ function setPublishStatus(text) {
   console.log("[publisher]", text);
 }
 
-function updateAdminUI() {
-  const admin = isAdmin();
-  document.body.classList.toggle("admin-unlocked", admin);
+let isAdminUnlocked = false;
 
-  const status = document.getElementById("admin-status");
-  if (status) status.textContent = admin ? "🔓 Unlocked on this browser" : "🔒 Locked";
+function isAdmin() {
+  return isAdminUnlocked;
+}
+
+function updateAdminUI() {
+  const hasToken = !!localStorage.getItem(GH_CONFIG.tokenKey);
+  const statusEl = document.getElementById("admin-status");
+  
+  if (isAdminUnlocked) {
+    if (statusEl) statusEl.textContent = "🔓 Unlocked on this browser";
+    document.getElementById("btn-unlock").style.display = "none";
+    document.getElementById("btn-lock").style.display = "block";
+    document.getElementById("btn-forget").style.display = "block";
+    document.body.classList.add("admin-unlocked");
+  } else {
+    if (statusEl) statusEl.textContent = hasToken ? "🔒 Locked (Token Saved)" : "🔒 Locked (No Token)";
+    document.getElementById("btn-unlock").style.display = "block";
+    document.getElementById("btn-lock").style.display = "none";
+    document.getElementById("btn-forget").style.display = hasToken ? "block" : "none";
+    document.body.classList.remove("admin-unlocked");
+  }
 
   const notesEl = document.getElementById("plan-notes");
-  if (notesEl) notesEl.readOnly = !admin;
+  if (notesEl) notesEl.readOnly = !isAdminUnlocked;
 
-  if (!admin) {
+  if (!isAdminUnlocked) {
     isEditMode = false;
     const btn = document.getElementById("toggle-edit-btn");
     if (btn) { btn.classList.remove("active"); btn.textContent = "Edit Mode ✏️"; }
   }
 }
 
-async function toggleAdminPanel() {
+function toggleAdminPanel() {
   const panel = document.getElementById("admin-panel");
   if (!panel) return;
-  const opening = !panel.classList.contains("open");
-  panel.classList.toggle("open", opening);
-  if (!opening) return;
-
-  updateAdminUI();
-  try {
-    const res = await fetch(`./data.json?t=${Date.now()}`, { cache: "no-store" });
-    if (res.ok) {
-      const el = document.getElementById("json-editor");
-      if (el) el.value = await res.text();
-    }
-  } catch { /* no data.json yet — that's fine */ }
+  const opening = panel.classList.contains("hidden");
+  panel.classList.toggle("hidden");
+  if (opening) updateAdminUI();
 }
 
-function closeAdminPanel() {
-  const panel = document.getElementById("admin-panel");
-  if (panel) panel.classList.remove("open");
+function openTokenModal() {
+  document.getElementById("token-input").value = "";
+  document.getElementById("token-modal").classList.remove("hidden");
 }
 
-async function unlockAdmin() {
-  if (isAdmin()) {
-    setPublishStatus("🔓 Already unlocked on this browser.");
-    await loadSiteData();
-    return;
-  }
-
-  const token = prompt("Paste your GitHub fine-grained token (Contents: Read & write):");
-  if (!token || !token.trim()) return;
-  localStorage.setItem(GH_CONFIG.tokenKey, token.trim());
-
-  setPublishStatus("⏳ Verifying token…");
-  try {
-    const res = await fetch(
-      `${ghApiBase()}/${encodeGhPath(GH_CONFIG.dataPath)}?ref=${GH_CONFIG.branch}`,
-      { headers: ghHeaders(), cache: "no-store" }
-    );
-    if (res.status === 401 || res.status === 403) throw new Error("GitHub rejected the token");
-    if (!res.ok && res.status !== 404) throw new Error(`GitHub returned ${res.status}`);
-  } catch (err) {
-    localStorage.removeItem(GH_CONFIG.tokenKey);
-    updateAdminUI();
-    setPublishStatus("❌ " + err.message);
-    return;
-  }
-
+function saveToken() {
+  const token = document.getElementById("token-input").value.trim();
+  if (!token) return alert("Please enter a valid token.");
+  
+  localStorage.setItem(GH_CONFIG.tokenKey, token);
+  isAdminUnlocked = true;
+  document.getElementById("token-modal").classList.add("hidden");
   updateAdminUI();
-  setPublishStatus("🔓 Unlocked — admin tools are now visible.");
-  await loadSiteData();
+  loadSiteData(); // Reload to ensure admin features render
 }
 
 function lockAdmin() {
-  localStorage.removeItem(GH_CONFIG.tokenKey);
+  isAdminUnlocked = false;
   updateAdminUI();
-  setPublishStatus("🔒 Locked. Token removed from this browser.");
+  setPublishStatus("🔒 Locked for this session. Token is safely saved.");
 }
+
+function confirmForgetToken() {
+  if (confirm("Are you sure you want to completely remove the GitHub token from this browser? You will have to paste it again next time.")) {
+    localStorage.removeItem(GH_CONFIG.tokenKey);
+    isAdminUnlocked = false;
+    updateAdminUI();
+    setPublishStatus("🗑️ Token removed from this browser.");
+  }
+}
+
+// Ensure this is at the very start of your DOMContentLoaded block:
+// isAdminUnlocked = !!localStorage.getItem(GH_CONFIG.tokenKey);
+// updateAdminUI();
 
 async function publishRawJson() {
   if (!isAdmin()) return alert("Unlock with your token first (⚙️).");
@@ -672,6 +673,7 @@ function loadDefaultDutchMap(iframeEl, linkEl) {
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
+  isAdminUnlocked = !!localStorage.getItem(GH_CONFIG.tokenKey);
   updateAdminUI();
 
   const states = document.querySelectorAll(".state");
