@@ -1,10 +1,15 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-12T19:15:34.295Z",
+  "updatedAt": "2026-11-12T19:20:33.114Z",
   "nextStateTargets": [],
   "tripNotes": "",
   "states": {
     "Oklahoma": [
+      {
+        "img": "images/oklahoma/1794510492373-av24.jpg",
+        "desc": "Home",
+        "rotation": 0
+      },
       {
         "img": "images/oklahoma/1794510247768-e712.jpg",
         "desc": "Family",
@@ -23,11 +28,6 @@
       {
         "img": "images/oklahoma/1794510275071-5w2w.jpg",
         "desc": "Light House OKC",
-        "rotation": 0
-      },
-      {
-        "img": "images/oklahoma/1794510492373-av24.jpg",
-        "desc": "Home",
         "rotation": 0
       },
       {
