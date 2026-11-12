@@ -1319,11 +1319,14 @@ footer {
 .admin-btn.secondary { background: #888; }
 .admin-btn.danger { background: var(--primary-red, #66021E); }
 
-/* Modals (for Meal Planner, it's already there, for 50-states, add this) */
+/* Modals */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
   display: flex; justify-content: center; align-items: center;
   z-index: 3000; padding: 15px;
+  opacity: 1; 
+  visibility: visible; 
+  pointer-events: auto;
 }
 .modal-overlay.hidden { display: none !important; }
 .modal-card {
