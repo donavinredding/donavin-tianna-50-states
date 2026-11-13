@@ -28,17 +28,7 @@
     <p class="subtitle">Our Family Journey Across America</p>
   </header>
 
-  <div class="time-grid">
-  <label>⏱️ Time Spent Here (Hours): 
-    <input type="number" id="locDuration" value="1.5" min="0.25" step="0.25">
-  </label>
-  <label>🕒 Preferred Arrival Time (Optional): 
-    <input type="time" id="locPreferredTime">
-  </label>
-</div>
-
-
-  <div id="planTripModal" class="modal-overlay" style="display:none;">
+  <div id="planTripModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalStateTitle">
   <div class="modal-content">
     <div class="modal-header">
       <h2 id="modalStateTitle">Plan Trip: Alabama</h2>
@@ -64,19 +54,23 @@
       <!-- Right: Add/Edit Location Form & Draggable List -->
       <div class="itinerary-section">
         
-        <!-- Detailed Add Location Card (Hidden until map is clicked) -->
         <div id="locationFormCard" class="detail-card" style="display:none;">
           <h4>New Stop Details</h4>
           <input type="text" id="locName" placeholder="Location Name (e.g., USS Alabama)" />
           <textarea id="locNotes" placeholder="Notes, reservation info, hours..."></textarea>
-          
+
           <div class="cost-grid">
             <label>🎟️ Tickets ($)<input type="number" id="costTickets" value="0" min="0" step="0.01"></label>
             <label>🅿️ Parking ($)<input type="number" id="costParking" value="0" min="0" step="0.01"></label>
             <label>🍔 Food ($)<input type="number" id="costFood" value="0" min="0" step="0.01"></label>
             <label>🛍️ Merch ($)<input type="number" id="costMerch" value="0" min="0" step="0.01"></label>
           </div>
-          
+
+          <div class="time-grid">
+            <label>⏱️ Time Spent Here (Hours)<input type="number" id="locDuration" value="1.5" min="0.25" step="0.25"></label>
+            <label>🕒 Preferred Arrival<input type="time" id="locPreferredTime"></label>
+          </div>
+
           <button onclick="saveLocationToTrip()">+ Add Location to Itinerary</button>
         </div>
 
@@ -362,10 +356,10 @@
     </div>
   </div>
 
-  <div id="gallery-modal" class="modal">
+  <div id="gallery-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-state-title">
     <div class="modal-content">
       <button class="close-btn" id="close-modal">X Close</button>
-      <h2 id="modal-state-title" class="modal-header">State Gallery</h2>
+      <h2 id="modal-state-title">State Gallery</h2>
 
       <!-- Hidden when the admin token isn't unlocked -->
       <div class="add-memory-container admin-only">

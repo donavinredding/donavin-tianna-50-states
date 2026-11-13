@@ -37,6 +37,15 @@ let draggedIndex = null;
 let isEditMode = false;
 let uploadQueue = [];
 
+
+
+function esc(str) {
+    return String(str ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        '"': "&quot;", "'": "&#39;"
+    }[c]));
+}
+
 /* ============================================================
 3. GitHub Contents API helpers
 ============================================================ */
@@ -414,17 +423,23 @@ function updateChecklists() {
         const li = document.createElement("li");
 
         if (isNext) {
-            li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
-                ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ""}
-                <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>
-            </span>` : "");
-            nextList.appendChild(li);
+        li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
+            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
+            ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ""}
+            <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>
+        </span>` : "");
+        nextList.appendChild(li);
+
         } else if (hasMemories) {
-            li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>`;
-            visitedList.appendChild(li);
+        li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>` + (admin ? `<button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>` : "");
+        visitedList.appendChild(li);
+
         } else {
-            li.innerHTML = `<span>${stateName}</span>` + (admin ? `<button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Plan Trip</button>` : "");
-            notVisitedList.appendChild(li);
+        li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
+            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
+            <button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Next</button>
+        </span>` : "");
+        notVisitedList.appendChild(li);
         }
     });
 
@@ -477,7 +492,7 @@ function renderGallery(stateName, container) {
             <div class="img-wrapper">
                 <img src="${item.img}" class="polaroid-img ${rotationClass}" style="transform: rotate(${item.rotation}deg);" alt="">
             </div>
-            <p class="caption-text">${item.desc || ""}</p>
+            <p class="caption-text">${esc(item.desc || "")}</p>
             <button class="rotate-btn" title="Rotate Image">↻</button>
             <button class="edit-btn">Edit</button>
         `;
@@ -636,24 +651,6 @@ function openLightbox(imgUrl, caption, rotation = 0) {
     document.getElementById("lightbox-caption").textContent = caption || "";
     lightbox.classList.add("active");
     lockScroll();
-}
-
-function getGoogleMapsEmbedUrl(url) {
-    if (!url) return null;
-    if (url.includes("/maps/embed")) return url;
-    try {
-        const parsed = new URL(url);
-        if (parsed.searchParams.has("q")) {
-            return `https://maps.google.com/maps?q=${encodeURIComponent(parsed.searchParams.get("q"))}&output=embed`;
-        }
-        const segs = parsed.pathname.split("/");
-        const i = segs.indexOf("place");
-        if (i !== -1 && segs[i + 1]) {
-            const place = decodeURIComponent(segs[i + 1].replace(/\+/g, " "));
-            return `https://maps.google.com/maps?q=${encodeURIComponent(place)}&output=embed`;
-        }
-        return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
-    } catch { return null; }
 }
 
 function loadDefaultDutchMap(iframeEl, linkEl) {
@@ -975,94 +972,236 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSiteData();
 });
 
-// Home coordinates (Ponca City, OK)
+/* ============================================================
+   Trip Planner — full state map, name↔code, persistence
+   ============================================================ */
+
 const HOME_COORDS = [36.7213545, -97.0531794];
 
-// State center coordinates & zoom levels
-const STATE_VIEWS = {
-  "AL": { name: "Alabama", coords: [32.8067, -86.7911], zoom: 7 },
-  "AR": { name: "Arkansas", coords: [34.9697, -92.3731], zoom: 7 },
-  "OK": { name: "Oklahoma", coords: [35.5653, -96.9289], zoom: 7 }
-  // Add remaining states here
+const STATE_NAME_TO_CODE = {
+  "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA",
+  "Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA",
+  "Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS",
+  "Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA",
+  "Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT",
+  "Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM",
+  "New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK",
+  "Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC",
+  "South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT",
+  "Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY"
 };
+
+const STATE_VIEWS = {
+  AL:{name:"Alabama",coords:[32.8067,-86.7911],zoom:7},
+  AK:{name:"Alaska",coords:[63.5887,-154.4930],zoom:4},
+  AZ:{name:"Arizona",coords:[33.7298,-111.4312],zoom:6},
+  AR:{name:"Arkansas",coords:[34.9697,-92.3731],zoom:7},
+  CA:{name:"California",coords:[36.1162,-119.6815],zoom:6},
+  CO:{name:"Colorado",coords:[39.0598,-105.3111],zoom:6},
+  CT:{name:"Connecticut",coords:[41.5978,-72.7554],zoom:8},
+  DE:{name:"Delaware",coords:[39.3185,-75.5071],zoom:9},
+  FL:{name:"Florida",coords:[27.7663,-81.6868],zoom:6},
+  GA:{name:"Georgia",coords:[33.0406,-83.6431],zoom:7},
+  HI:{name:"Hawaii",coords:[21.0943,-157.4983],zoom:7},
+  ID:{name:"Idaho",coords:[44.2405,-114.4788],zoom:6},
+  IL:{name:"Illinois",coords:[40.3495,-88.9861],zoom:6},
+  IN:{name:"Indiana",coords:[39.8494,-86.2583],zoom:7},
+  IA:{name:"Iowa",coords:[42.0115,-93.2105],zoom:7},
+  KS:{name:"Kansas",coords:[38.5266,-96.7265],zoom:7},
+  KY:{name:"Kentucky",coords:[37.6681,-84.6701],zoom:7},
+  LA:{name:"Louisiana",coords:[31.1695,-91.8678],zoom:7},
+  ME:{name:"Maine",coords:[44.6939,-69.3819],zoom:7},
+  MD:{name:"Maryland",coords:[39.0639,-76.8021],zoom:8},
+  MA:{name:"Massachusetts",coords:[42.2302,-71.5301],zoom:8},
+  MI:{name:"Michigan",coords:[43.3266,-84.5361],zoom:6},
+  MN:{name:"Minnesota",coords:[45.6945,-93.9002],zoom:6},
+  MS:{name:"Mississippi",coords:[32.7416,-89.6787],zoom:7},
+  MO:{name:"Missouri",coords:[38.4561,-92.2884],zoom:7},
+  MT:{name:"Montana",coords:[46.9219,-110.4544],zoom:6},
+  NE:{name:"Nebraska",coords:[41.1254,-98.2681],zoom:7},
+  NV:{name:"Nevada",coords:[38.3135,-117.0554],zoom:6},
+  NH:{name:"New Hampshire",coords:[43.4525,-71.5639],zoom:8},
+  NJ:{name:"New Jersey",coords:[40.2989,-74.5210],zoom:8},
+  NM:{name:"New Mexico",coords:[34.8405,-106.2485],zoom:6},
+  NY:{name:"New York",coords:[42.1657,-74.9481],zoom:6},
+  NC:{name:"North Carolina",coords:[35.6301,-79.8064],zoom:7},
+  ND:{name:"North Dakota",coords:[47.5289,-99.7840],zoom:6},
+  OH:{name:"Ohio",coords:[40.3888,-82.7649],zoom:7},
+  OK:{name:"Oklahoma",coords:[35.5653,-96.9289],zoom:7},
+  OR:{name:"Oregon",coords:[44.5720,-122.0709],zoom:7},
+  PA:{name:"Pennsylvania",coords:[40.5908,-77.2098],zoom:7},
+  RI:{name:"Rhode Island",coords:[41.6809,-71.5118],zoom:9},
+  SC:{name:"South Carolina",coords:[33.8569,-80.9450],zoom:7},
+  SD:{name:"South Dakota",coords:[44.2998,-99.4388],zoom:6},
+  TN:{name:"Tennessee",coords:[35.7478,-86.6923],zoom:7},
+  TX:{name:"Texas",coords:[31.0545,-97.5635],zoom:5},
+  UT:{name:"Utah",coords:[40.1500,-111.8624],zoom:6},
+  VT:{name:"Vermont",coords:[44.0459,-72.7107],zoom:7},
+  VA:{name:"Virginia",coords:[37.7693,-78.1700],zoom:7},
+  WA:{name:"Washington",coords:[47.4009,-121.4905],zoom:7},
+  WV:{name:"West Virginia",coords:[38.4912,-80.9545],zoom:7},
+  WI:{name:"Wisconsin",coords:[44.2685,-89.6165],zoom:6},
+  WY:{name:"Wyoming",coords:[42.7559,-107.3025],zoom:6}
+};
+
+const TRIPS_STORAGE_KEY = "savedTrips";
 
 let map, routingControl, tempMarker, pendingLatLng;
 let currentStateCode = "AL";
-let currentStops = []; // Array of location objects
+let currentStops = [];
 
-function openPlanTripModal(stateCode) {
-  currentStateCode = stateCode;
-  const stateInfo = STATE_VIEWS[stateCode] || { name: stateCode, coords: [39.8283, -98.5795], zoom: 4 };
-  
-  document.getElementById("modalStateTitle").innerText = `Plan Trip: ${stateInfo.name}`;
-  document.getElementById("planTripModal").style.display = "flex";
+/* Open the modal by name OR code */
+function openPlanTripModal(stateNameOrCode) {
+  const code = STATE_NAME_TO_CODE[stateNameOrCode] || stateNameOrCode;
+  const info = STATE_VIEWS[code] || { name: stateNameOrCode, coords: [39.8283, -98.5795], zoom: 4 };
 
-  // Initialize map if not already created
+  currentStateCode = code;
+  document.getElementById("modalStateTitle").innerText = `Plan Trip: ${info.name}`;
+  document.getElementById("planTripModal").classList.remove("hidden");
+  lockScroll();
+
+  populateSavedTripsSelect();
+
   if (!map) {
-    map = L.map('tripMap').setView(stateInfo.coords, stateInfo.zoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+    map = L.map("tripMap").setView(info.coords, info.zoom);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors"
     }).addTo(map);
 
-    // Click map to drop temporary pin and open details form
-    map.on('click', function(e) {
+    map.on("click", (e) => {
       pendingLatLng = e.latlng;
       if (tempMarker) map.removeLayer(tempMarker);
       tempMarker = L.marker(pendingLatLng).addTo(map);
       document.getElementById("locationFormCard").style.display = "block";
+
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
-      .then(res => res.json())
-      .then(data => {
-      document.getElementById("locName").value = data.name || data.display_name.split(',')[0];
-      });
+        .then((r) => r.json())
+        .then((data) => {
+          const fallback = (data.display_name || "").split(",")[0];
+          document.getElementById("locName").value = data.name || fallback || "New Stop";
+        })
+        .catch(() => { document.getElementById("locName").value = "New Stop"; });
     });
 
-    // Enable Drag-and-Drop Reordering
-    new Sortable(document.getElementById('itineraryList'), {
+    new Sortable(document.getElementById("itineraryList"), {
       animation: 150,
-      onEnd: function (evt) {
-        // Reorder array to match dragged DOM order
-        const movedItem = currentStops.splice(evt.oldIndex, 1)[0];
-        currentStops.splice(evt.newIndex, 0, movedItem);
+      onEnd(evt) {
+        const [moved] = currentStops.splice(evt.oldIndex, 1);
+        currentStops.splice(evt.newIndex, 0, moved);
         renderItinerary();
         updateRoute();
       }
     });
   } else {
-    // Fix Leaflet rendering bug inside hidden modals & zoom to state
     setTimeout(() => {
       map.invalidateSize();
-      map.setView(stateInfo.coords, stateInfo.zoom);
+      map.setView(info.coords, info.zoom);
     }, 100);
   }
 }
 
+/* Called by the ✖ button in the trip modal */
+function closeTripModal() {
+  document.getElementById("planTripModal").classList.add("hidden");
+  unlockScroll();
+
+  // Discard any half-finished pin
+  if (tempMarker && map) { map.removeLayer(tempMarker); tempMarker = null; }
+  pendingLatLng = null;
+  document.getElementById("locationFormCard").style.display = "none";
+}
+
+/* Populate the trip dropdown for the currently-open state */
+function populateSavedTripsSelect() {
+  const select = document.getElementById("savedTripsSelect");
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="new">+ Create New Trip</option>';
+
+  const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
+  Object.values(all)
+    .filter((t) => t.stateCode === currentStateCode)
+    .forEach((trip) => {
+      const opt = document.createElement("option");
+      opt.value = trip.id;
+      opt.textContent = trip.name;
+      select.appendChild(opt);
+    });
+
+  if ([...select.options].some((o) => o.value === current)) select.value = current;
+}
+
+/* Called by #savedTripsSelect onchange */
+function loadSelectedTrip() {
+  const id = document.getElementById("savedTripsSelect").value;
+  if (id === "new") {
+    currentStops = [];
+    document.getElementById("tripNameInput").value = "";
+  } else {
+    const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
+    const trip = all[id];
+    if (trip) {
+      currentStops = (trip.stops || []).map((s) => ({ ...s }));
+      document.getElementById("tripNameInput").value = trip.name || "";
+    }
+  }
+  renderItinerary();
+  updateRoute();
+}
+
+/* Called by the Save Trip button */
+function saveFullTrip() {
+  if (currentStops.length === 0) {
+    alert("Add some stops first!");
+    return;
+  }
+  const name = document.getElementById("tripNameInput").value.trim()
+    || `Trip ${new Date().toLocaleDateString()}`;
+  const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
+
+  const id = `${currentStateCode}-${Date.now()}`;
+  all[id] = {
+    id,
+    stateCode: currentStateCode,
+    name,
+    stops: currentStops,
+    updatedAt: new Date().toISOString()
+  };
+  localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(all));
+  populateSavedTripsSelect();
+  document.getElementById("savedTripsSelect").value = id;
+  alert(`Trip "${name}" saved!`);
+}
+
+/* Stop CRUD */
 function saveLocationToTrip() {
   if (!pendingLatLng) return;
 
-  const stop = {
+  currentStops.push({
     id: Date.now(),
     name: document.getElementById("locName").value || "Unnamed Stop",
     notes: document.getElementById("locNotes").value,
     lat: pendingLatLng.lat,
     lng: pendingLatLng.lng,
     completed: false,
+    duration: parseFloat(document.getElementById("locDuration").value) || 1.5,
+    preferredTime: document.getElementById("locPreferredTime").value || "",
     costs: {
       tickets: parseFloat(document.getElementById("costTickets").value) || 0,
       parking: parseFloat(document.getElementById("costParking").value) || 0,
-      food: parseFloat(document.getElementById("costFood").value) || 0,
-      merch: parseFloat(document.getElementById("costMerch").value) || 0
+      food:    parseFloat(document.getElementById("costFood").value) || 0,
+      merch:   parseFloat(document.getElementById("costMerch").value) || 0
     }
-  };
+  });
 
-  currentStops.push(stop);
-  
-  // Reset form & temp marker
   if (tempMarker) map.removeLayer(tempMarker);
   document.getElementById("locationFormCard").style.display = "none";
-  document.getElementById("locName").value = "";
-  document.getElementById("locNotes").value = "";
-  ["costTickets", "costParking", "costFood", "costMerch"].forEach(id => document.getElementById(id).value = 0);
+  ["locName", "locNotes"].forEach((id) => (document.getElementById(id).value = ""));
+  document.getElementById("locDuration").value = 1.5;
+  document.getElementById("locPreferredTime").value = "";
+  ["costTickets", "costParking", "costFood", "costMerch"].forEach(
+    (id) => (document.getElementById(id).value = 0)
+  );
 
   renderItinerary();
   updateRoute();
@@ -1074,21 +1213,28 @@ function renderItinerary() {
   let grandTotal = 0;
 
   currentStops.forEach((stop, index) => {
-    const stopTotal = stop.costs.tickets + stop.costs.parking + stop.costs.food + stop.costs.merch;
+    const t = stop.costs;
+    const stopTotal = t.tickets + t.parking + t.food + t.merch;
     grandTotal += stopTotal;
 
+    const extras = [
+      stop.duration ? `⏱️ ${stop.duration}h` : "",
+      stop.preferredTime ? `🕒 ${stop.preferredTime}` : ""
+    ].filter(Boolean).join(" | ");
+
     const li = document.createElement("li");
-    li.className = `stop-item ${stop.completed ? 'completed' : ''}`;
+    li.className = `stop-item ${stop.completed ? "completed" : ""}`;
     li.innerHTML = `
       <div class="stop-header">
         <span class="drag-handle">☰</span>
-        <input type="checkbox" ${stop.completed ? 'checked' : ''} onchange="toggleStopComplete(${index})">
-        <strong>${index + 1}. ${stop.name}</strong>
+        <input type="checkbox" ${stop.completed ? "checked" : ""} onchange="toggleStopComplete(${index})">
+        <strong>${index + 1}. ${esc(stop.name)}</strong>
+        <p class="stop-notes">${esc(stop.notes)}</p>
         <span>$${stopTotal.toFixed(2)}</span>
         <button onclick="removeStop(${index})">🗑️</button>
       </div>
       <p class="stop-notes">${stop.notes}</p>
-      <small>🎟️ $${stop.costs.tickets} | 🅿️ $${stop.costs.parking} | 🍔 $${stop.costs.food} | 🛍️ $${stop.costs.merch}</small>
+      <small>🎟️ $${t.tickets} | 🅿️ $${t.parking} | 🍔 $${t.food} | 🛍️ $${t.merch}${extras ? " | " + extras : ""}</small>
     `;
     list.appendChild(li);
   });
@@ -1097,34 +1243,30 @@ function renderItinerary() {
 }
 
 function updateRoute() {
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
+  if (routingControl) map.removeControl(routingControl);
   if (currentStops.length === 0) return;
 
   const waypoints = [];
   if (document.getElementById("startFromHomeToggle").checked) {
     waypoints.push(L.latLng(HOME_COORDS[0], HOME_COORDS[1]));
   }
-  currentStops.forEach(stop => {
-    waypoints.push(L.latLng(stop.lat, stop.lng));
-  });
+  currentStops.forEach((s) => waypoints.push(L.latLng(s.lat, s.lng)));
 
   routingControl = L.Routing.control({
-    waypoints: waypoints,
+    waypoints,
     routeWhileDragging: false,
     addWaypoints: false,
-    show: false // Hides turn-by-turn text box to keep modal clean
+    show: false
   }).addTo(map);
 }
 
-function toggleStopComplete(index) {
-  currentStops[index].completed = !currentStops[index].completed;
+function toggleStopComplete(i) {
+  currentStops[i].completed = !currentStops[i].completed;
   renderItinerary();
 }
 
-function removeStop(index) {
-  currentStops.splice(index, 1);
+function removeStop(i) {
+  currentStops.splice(i, 1);
   renderItinerary();
   updateRoute();
 }
@@ -1135,25 +1277,24 @@ function openInGoogleMaps() {
     return;
   }
 
-  const origin = "Ponca City, OK"; // Your home starting point
-  
-  // The last stop in your array is the final destination
-  const finalStop = currentStops[currentStops.length - 1];
-  const destination = `${finalStop.lat},${finalStop.lng}`;
+  const useHome = document.getElementById("startFromHomeToggle").checked;
+  let origin, waypointStops, destinationStop;
 
-  // Any stops in between become the waypoints
-  let waypointsStr = "";
-  if (currentStops.length > 1) {
-    const intermediateStops = currentStops.slice(0, currentStops.length - 1);
-    waypointsStr = intermediateStops.map(stop => `${stop.lat},${stop.lng}`).join("|");
+  if (useHome) {
+    origin = "Ponca City, OK";
+    destinationStop = currentStops[currentStops.length - 1];
+    waypointStops = currentStops.slice(0, -1);
+  } else {
+    origin = `${currentStops[0].lat},${currentStops[0].lng}`;
+    destinationStop = currentStops[currentStops.length - 1];
+    waypointStops = currentStops.slice(1, -1);
   }
 
-  // Construct the official Google Maps directions URL
-  let gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${destination}`;
-  if (waypointsStr) {
-    gmapsUrl += `&waypoints=${encodeURIComponent(waypointsStr)}`;
-  }
+  const destination = `${destinationStop.lat},${destinationStop.lng}`;
+  let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
 
-  // Open in a new tab
-  window.open(gmapsUrl, '_blank');
+  if (waypointStops.length > 0) {
+    url += `&waypoints=${encodeURIComponent(waypointStops.map((s) => `${s.lat},${s.lng}`).join("|"))}`;
+  }
+  window.open(url, "_blank");
 }

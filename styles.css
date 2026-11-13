@@ -208,7 +208,7 @@ svg pattern image { object-fit: cover; }
 }
 
 /* --- Modal Gallery & Overlays --- */
-.modal, .modal-overlay {
+.modal {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(43, 43, 43, 0.75);
@@ -224,12 +224,12 @@ svg pattern image { object-fit: cover; }
     padding: 15px;
 }
 
-.modal.active, .modal-overlay.active {
+.modal.active {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
 }
-
+/* Gallery modal — scrapbook base */
 .modal-content {
     background: var(--bg-color);
     border: 3px solid var(--primary-red);
@@ -237,36 +237,61 @@ svg pattern image { object-fit: cover; }
     max-width: 900px;
     max-height: 88vh;
     border-radius: 8px;
-    padding: 0px 20px 25px 20px;
+    padding: 0 20px 25px 20px;
     overflow-y: auto;
     position: relative;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
     animation: modalPop 0.25s ease;
 }
 
+.modal-overlay .modal-content {
+  background: #fdfbf7;
+  color: #2c2c2c;
+  border: 2px solid #3c2f2f;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  font-family: 'Courier Prime', monospace;
+}
+
+.modal-overlay .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px dashed #8c7b6c;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.modal-overlay .modal-header h2 {
+  font-family: 'Special Elite', cursive, serif;
+  font-size: 1.8rem;
+  margin: 0;
+  color: #2c2c2c;
+}
+
+.modal-overlay .modal-header button {
+  background: none;
+  border: 1.5px solid #3c2f2f;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.modal-overlay .modal-header button:hover {
+  background: #3c2f2f;
+  color: #fdfbf7;
+}
+
 @keyframes modalPop {
     0% { transform: scale(0.95); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
-}
-
-/* Sticky Header with Close & Edit Mode Buttons */
-.modal-header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--bg-color);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    font-family: 'Special Elite', cursive;
-    font-size: clamp(1.2rem, 3.5vw, 1.8rem);
-    color: var(--primary-red);
-    margin: 0 -20px 20px -20px;
-    padding: 15px 20px;
-    border-bottom: 2px dashed var(--primary-tan);
-    text-align: left;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .modal-header-actions {
@@ -301,24 +326,27 @@ svg pattern image { object-fit: cover; }
 
 /* Sticky & Right-Aligned Close Button */
 .close-btn {
-    position: sticky;
-    top: 0.9rem; left: 40rem;
-    padding: 6px 14px;
-    font-family: 'Special Elite', cursive;
-    background: var(--bg-color);
-    color: var(--primary-red);
-    border: 1px solid var(--primary-red);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    z-index: 101;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0.9rem;
+  float: right;
+  margin-left: auto;
+  padding: 6px 14px;
+  font-family: 'Special Elite', cursive;
+  background: var(--bg-color);
+  color: var(--primary-red);
+  border: 1px solid var(--primary-red);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  z-index: 101;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: fit-content;
 }
 
 .close-btn:hover {
-    background: var(--primary-red);
-    color: #ffffff;
+  background: var(--primary-red);
+  color: #ffffff;
 }
 
 .modal-content h2, #gallery-modal h2 {
@@ -1321,13 +1349,17 @@ footer {
 
 /* Modals */
 .modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 3000; padding: 15px;
-  opacity: 1; 
-  visibility: visible; 
-  pointer-events: auto;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 15px;
 }
+
 .modal-overlay.hidden { display: none !important; }
 .modal-card {
   background: var(--bg-color, #E2D6CA); padding: 20px; border-radius: 8px;
@@ -1377,51 +1409,6 @@ body.admin-unlocked button.admin-only {
   justify-content: center;
   align-items: center;
   z-index: 1000;
-}
-
-.modal-content {
-  background: #fdfbf7; /* Classic journal parchment feel */
-  color: #2c2c2c;
-  border: 2px solid #3c2f2f;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 1100px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 24px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
-  font-family: 'Courier Prime', monospace;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 2px dashed #8c7b6c;
-  padding-bottom: 12px;
-  margin-bottom: 20px;
-}
-
-.modal-header h2 {
-  font-family: 'Special Elite', cursive, serif;
-  font-size: 1.8rem;
-  margin: 0;
-  color: #2c2c2c;
-}
-
-.modal-header button {
-  background: none;
-  border: 1.5px solid #3c2f2f;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 4px 10px;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.modal-header button:hover {
-  background: #3c2f2f;
-  color: #fdfbf7;
 }
 
 .trip-controls {
