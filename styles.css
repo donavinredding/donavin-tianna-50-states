@@ -1360,3 +1360,303 @@ body.admin-unlocked button.admin-only {
 .hidden {
     display: none !important;
 }
+
+/* ==========================================
+   Trip Planner Modal & Itinerary Styles
+   ========================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fdfbf7; /* Classic journal parchment feel */
+  color: #2c2c2c;
+  border: 2px solid #3c2f2f;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1100px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  font-family: 'Courier Prime', monospace;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px dashed #8c7b6c;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-family: 'Special Elite', cursive, serif;
+  font-size: 1.8rem;
+  margin: 0;
+  color: #2c2c2c;
+}
+
+.modal-header button {
+  background: none;
+  border: 1.5px solid #3c2f2f;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.modal-header button:hover {
+  background: #3c2f2f;
+  color: #fdfbf7;
+}
+
+.trip-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.trip-controls select,
+.trip-controls input[type="text"] {
+  padding: 8px 12px;
+  border: 1px solid #8c7b6c;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.trip-controls input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* 2-Column Grid: Map on left, Itinerary/Form on right */
+.planner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#tripMap {
+  border: 2px solid #8c7b6c;
+  border-radius: 6px;
+}
+
+.map-hint {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+  margin: 0;
+}
+
+.itinerary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Form Card for New Stops */
+.detail-card {
+  background: #f4efe6;
+  border: 1px solid #d3c5b4;
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-card h4 {
+  margin: 0;
+  font-family: 'Special Elite', cursive, serif;
+}
+
+.detail-card input,
+.detail-card textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #b5a491;
+  border-radius: 4px;
+  background: #fff;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.detail-card textarea {
+  resize: vertical;
+  height: 60px;
+}
+
+.cost-grid, .time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cost-grid label, .time-grid label {
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cost-grid input, .time-grid input {
+  padding: 6px;
+}
+
+.detail-card button {
+  background: #3c2f2f;
+  color: #fdfbf7;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Special Elite', cursive, serif;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.detail-card button:hover {
+  background: #544343;
+}
+
+/* Draggable Itinerary List */
+.sortable-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stop-item {
+  background: #fff;
+  border: 1px solid #d3c5b4;
+  border-left: 4px solid #3c2f2f;
+  border-radius: 4px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: opacity 0.2s;
+}
+
+.stop-item.completed {
+  opacity: 0.6;
+  background: #f7f5f0;
+}
+
+.stop-item.completed .stop-header strong {
+  text-decoration: line-through;
+  color: #777;
+}
+
+.stop-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #8c7b6c;
+  font-weight: bold;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.stop-header strong {
+  flex: 1;
+}
+
+.stop-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.stop-notes {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0;
+}
+
+.stop-item small {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+/* Grand Total & Navigation Bar */
+.trip-totals {
+  background: #e9e3d5;
+  padding: 12px 16px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #d3c5b4;
+  margin-top: auto;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trip-totals .actions {
+  display: flex;
+  gap: 8px;
+}
+
+.trip-totals button {
+  background: #3c2f2f;
+  color: #fdfbf7;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Special Elite', cursive, serif;
+  font-size: 0.9rem;
+}
+
+.trip-totals button.gmaps-btn {
+  background: #1a73e8; /* Classic Google Maps blue */
+}
+
+.trip-totals button:hover {
+  opacity: 0.9;
+}

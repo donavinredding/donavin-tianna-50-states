@@ -974,3 +974,186 @@ document.addEventListener("DOMContentLoaded", () => {
     /* ---- Boot ---- */
     loadSiteData();
 });
+
+// Home coordinates (Ponca City, OK)
+const HOME_COORDS = [36.7213545, -97.0531794];
+
+// State center coordinates & zoom levels
+const STATE_VIEWS = {
+  "AL": { name: "Alabama", coords: [32.8067, -86.7911], zoom: 7 },
+  "AR": { name: "Arkansas", coords: [34.9697, -92.3731], zoom: 7 },
+  "OK": { name: "Oklahoma", coords: [35.5653, -96.9289], zoom: 7 }
+  // Add remaining states here
+};
+
+let map, routingControl, tempMarker, pendingLatLng;
+let currentStateCode = "AL";
+let currentStops = []; // Array of location objects
+
+function openPlanTripModal(stateCode) {
+  currentStateCode = stateCode;
+  const stateInfo = STATE_VIEWS[stateCode] || { name: stateCode, coords: [39.8283, -98.5795], zoom: 4 };
+  
+  document.getElementById("modalStateTitle").innerText = `Plan Trip: ${stateInfo.name}`;
+  document.getElementById("planTripModal").style.display = "flex";
+
+  // Initialize map if not already created
+  if (!map) {
+    map = L.map('tripMap').setView(stateInfo.coords, stateInfo.zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Click map to drop temporary pin and open details form
+    map.on('click', function(e) {
+      pendingLatLng = e.latlng;
+      if (tempMarker) map.removeLayer(tempMarker);
+      tempMarker = L.marker(pendingLatLng).addTo(map);
+      document.getElementById("locationFormCard").style.display = "block";
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+      .then(res => res.json())
+      .then(data => {
+      document.getElementById("locName").value = data.name || data.display_name.split(',')[0];
+      });
+    });
+
+    // Enable Drag-and-Drop Reordering
+    new Sortable(document.getElementById('itineraryList'), {
+      animation: 150,
+      onEnd: function (evt) {
+        // Reorder array to match dragged DOM order
+        const movedItem = currentStops.splice(evt.oldIndex, 1)[0];
+        currentStops.splice(evt.newIndex, 0, movedItem);
+        renderItinerary();
+        updateRoute();
+      }
+    });
+  } else {
+    // Fix Leaflet rendering bug inside hidden modals & zoom to state
+    setTimeout(() => {
+      map.invalidateSize();
+      map.setView(stateInfo.coords, stateInfo.zoom);
+    }, 100);
+  }
+}
+
+function saveLocationToTrip() {
+  if (!pendingLatLng) return;
+
+  const stop = {
+    id: Date.now(),
+    name: document.getElementById("locName").value || "Unnamed Stop",
+    notes: document.getElementById("locNotes").value,
+    lat: pendingLatLng.lat,
+    lng: pendingLatLng.lng,
+    completed: false,
+    costs: {
+      tickets: parseFloat(document.getElementById("costTickets").value) || 0,
+      parking: parseFloat(document.getElementById("costParking").value) || 0,
+      food: parseFloat(document.getElementById("costFood").value) || 0,
+      merch: parseFloat(document.getElementById("costMerch").value) || 0
+    }
+  };
+
+  currentStops.push(stop);
+  
+  // Reset form & temp marker
+  if (tempMarker) map.removeLayer(tempMarker);
+  document.getElementById("locationFormCard").style.display = "none";
+  document.getElementById("locName").value = "";
+  document.getElementById("locNotes").value = "";
+  ["costTickets", "costParking", "costFood", "costMerch"].forEach(id => document.getElementById(id).value = 0);
+
+  renderItinerary();
+  updateRoute();
+}
+
+function renderItinerary() {
+  const list = document.getElementById("itineraryList");
+  list.innerHTML = "";
+  let grandTotal = 0;
+
+  currentStops.forEach((stop, index) => {
+    const stopTotal = stop.costs.tickets + stop.costs.parking + stop.costs.food + stop.costs.merch;
+    grandTotal += stopTotal;
+
+    const li = document.createElement("li");
+    li.className = `stop-item ${stop.completed ? 'completed' : ''}`;
+    li.innerHTML = `
+      <div class="stop-header">
+        <span class="drag-handle">☰</span>
+        <input type="checkbox" ${stop.completed ? 'checked' : ''} onchange="toggleStopComplete(${index})">
+        <strong>${index + 1}. ${stop.name}</strong>
+        <span>$${stopTotal.toFixed(2)}</span>
+        <button onclick="removeStop(${index})">🗑️</button>
+      </div>
+      <p class="stop-notes">${stop.notes}</p>
+      <small>🎟️ $${stop.costs.tickets} | 🅿️ $${stop.costs.parking} | 🍔 $${stop.costs.food} | 🛍️ $${stop.costs.merch}</small>
+    `;
+    list.appendChild(li);
+  });
+
+  document.getElementById("tripGrandTotal").innerText = grandTotal.toFixed(2);
+}
+
+function updateRoute() {
+  if (routingControl) {
+    map.removeControl(routingControl);
+  }
+  if (currentStops.length === 0) return;
+
+  const waypoints = [];
+  if (document.getElementById("startFromHomeToggle").checked) {
+    waypoints.push(L.latLng(HOME_COORDS[0], HOME_COORDS[1]));
+  }
+  currentStops.forEach(stop => {
+    waypoints.push(L.latLng(stop.lat, stop.lng));
+  });
+
+  routingControl = L.Routing.control({
+    waypoints: waypoints,
+    routeWhileDragging: false,
+    addWaypoints: false,
+    show: false // Hides turn-by-turn text box to keep modal clean
+  }).addTo(map);
+}
+
+function toggleStopComplete(index) {
+  currentStops[index].completed = !currentStops[index].completed;
+  renderItinerary();
+}
+
+function removeStop(index) {
+  currentStops.splice(index, 1);
+  renderItinerary();
+  updateRoute();
+}
+
+function openInGoogleMaps() {
+  if (currentStops.length === 0) {
+    alert("Add some stops to your itinerary first!");
+    return;
+  }
+
+  const origin = "Ponca City, OK"; // Your home starting point
+  
+  // The last stop in your array is the final destination
+  const finalStop = currentStops[currentStops.length - 1];
+  const destination = `${finalStop.lat},${finalStop.lng}`;
+
+  // Any stops in between become the waypoints
+  let waypointsStr = "";
+  if (currentStops.length > 1) {
+    const intermediateStops = currentStops.slice(0, currentStops.length - 1);
+    waypointsStr = intermediateStops.map(stop => `${stop.lat},${stop.lng}`).join("|");
+  }
+
+  // Construct the official Google Maps directions URL
+  let gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${destination}`;
+  if (waypointsStr) {
+    gmapsUrl += `&waypoints=${encodeURIComponent(waypointsStr)}`;
+  }
+
+  // Open in a new tab
+  window.open(gmapsUrl, '_blank');
+}

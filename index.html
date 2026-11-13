@@ -9,6 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <!-- Supabase CDN removed -->
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet Routing Machine (Free OSRM Routing) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+  
+  <!-- SortableJS for Drag-and-Drop Reordering -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
 
 <body>
@@ -17,6 +27,76 @@
     <h1>Donavin's &amp; Tianna's 50 State Gallery</h1>
     <p class="subtitle">Our Family Journey Across America</p>
   </header>
+
+  <div class="time-grid">
+  <label>⏱️ Time Spent Here (Hours): 
+    <input type="number" id="locDuration" value="1.5" min="0.25" step="0.25">
+  </label>
+  <label>🕒 Preferred Arrival Time (Optional): 
+    <input type="time" id="locPreferredTime">
+  </label>
+</div>
+
+
+  <div id="planTripModal" class="modal-overlay" style="display:none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalStateTitle">Plan Trip: Alabama</h2>
+      <button onclick="closeTripModal()">✖</button>
+    </div>
+
+    <!-- Trip Selector & Name -->
+    <div class="trip-controls">
+      <select id="savedTripsSelect" onchange="loadSelectedTrip()">
+        <option value="new">+ Create New Trip</option>
+      </select>
+      <input type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)" />
+      <label><input type="checkbox" id="startFromHomeToggle" checked onchange="updateRoute()" /> Start Route from Home</label>
+    </div>
+
+    <div class="planner-grid">
+      <!-- Left: Interactive Map -->
+      <div class="map-section">
+        <div id="tripMap" style="height: 400px; width: 100%; border-radius: 6px;"></div>
+        <p class="map-hint">Click anywhere on the map to drop a pin and add a stop.</p>
+      </div>
+
+      <!-- Right: Add/Edit Location Form & Draggable List -->
+      <div class="itinerary-section">
+        
+        <!-- Detailed Add Location Card (Hidden until map is clicked) -->
+        <div id="locationFormCard" class="detail-card" style="display:none;">
+          <h4>New Stop Details</h4>
+          <input type="text" id="locName" placeholder="Location Name (e.g., USS Alabama)" />
+          <textarea id="locNotes" placeholder="Notes, reservation info, hours..."></textarea>
+          
+          <div class="cost-grid">
+            <label>🎟️ Tickets ($)<input type="number" id="costTickets" value="0" min="0" step="0.01"></label>
+            <label>🅿️ Parking ($)<input type="number" id="costParking" value="0" min="0" step="0.01"></label>
+            <label>🍔 Food ($)<input type="number" id="costFood" value="0" min="0" step="0.01"></label>
+            <label>🛍️ Merch ($)<input type="number" id="costMerch" value="0" min="0" step="0.01"></label>
+          </div>
+          
+          <button onclick="saveLocationToTrip()">+ Add Location to Itinerary</button>
+        </div>
+
+        <!-- Draggable Itinerary List -->
+        <h3>Itinerary Stops (Drag to Reorder)</h3>
+        <ul id="itineraryList" class="sortable-list"></ul>
+
+        <!-- Inside your modal footer (.trip-totals) -->
+        <div class="trip-totals">
+          <strong>Projected Trip Cost: $<span id="tripGrandTotal">0.00</span></strong>
+          <div class="actions">
+            <button onclick="openInGoogleMaps()" class="gmaps-btn">🗺️ Open in Google Maps</button>
+            <button onclick="saveFullTrip()">💾 Save Trip</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
   <div class="map-container">
     <svg class="us-map" xmlns="http://www.w3.org/2000/svg" height="100%" version="1.1" width="100%"
