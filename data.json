@@ -1,8 +1,10 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-13T05:50:48.309Z",
-  "nextStateTargets": [],
-  "tripNotes": "",
+  "updatedAt": "2026-11-13T05:52:04.376Z",
+  "nextStateTargets": [
+    "Alabama"
+  ],
+  "tripNotes": "Tt",
   "states": {
     "Oklahoma": [
       {
