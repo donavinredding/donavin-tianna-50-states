@@ -1,8 +1,9 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-13T07:04:16.202Z",
+  "updatedAt": "2026-11-13T07:16:58.802Z",
   "nextStateTargets": [
-    "Alabama"
+    "Alabama",
+    "Alaska"
   ],
   "tripNotes": "Hello",
   "states": {
