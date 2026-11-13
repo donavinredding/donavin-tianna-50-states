@@ -1356,3 +1356,7 @@ body.admin-unlocked .admin-flex-row {
 body.admin-unlocked button.admin-only {
   display: inline-block !important;
 }
+
+.hidden {
+    display: none !important;
+}
