@@ -12,6 +12,11 @@
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet-GeoSearch CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@4.4.0/dist/geosearch.css" />
+
+  <!-- Leaflet-GeoSearch JS (Add this AFTER your Leaflet JS) -->
+  <script src="https://unpkg.com/leaflet-geosearch@4.4.0/dist/bundle.min.js"></script>
   
   <!-- Leaflet Routing Machine (Free OSRM Routing) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
@@ -47,6 +52,8 @@
     <div class="planner-grid">
       <!-- Left: Interactive Map -->
       <div class="map-section">
+        <!-- 🆕 Search Bar Container -->
+        <div id="map-search-container" style="margin-bottom: 10px;"></div>
         <div id="tripMap" style="height: 400px; width: 100%; border-radius: 6px;"></div>
         <p class="map-hint">Click anywhere on the map to drop a pin and add a stop.</p>
       </div>
