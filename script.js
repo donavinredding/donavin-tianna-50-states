@@ -1087,7 +1087,8 @@ function openPlanTripModal(stateNameOrCode) {
       keepResult: true,
     });
 
-    map.addControl(searchControl);
+    document.getElementById("map-search-container").appendChild(searchControl.getContainer());
+    searchControl.onAdd(map);
 
     map.on("click", (e) => {
       pendingLatLng = e.latlng;
