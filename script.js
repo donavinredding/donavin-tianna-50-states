@@ -1078,16 +1078,15 @@ function openPlanTripModal(stateNameOrCode) {
     const provider = new window.GeoSearch.OpenStreetMapProvider();
     const searchControl = new window.GeoSearch.GeoSearchControl({
       provider: provider,
-      style: 'bar',              // 'bar' looks like a standard search input
-      showMarker: false,         // We already drop a pin on click
-      showPopup: false,          // We don't want a popup on search, just fly to it
+      style: 'bar',
+      showMarker: false,
+      showPopup: false,
       autoClose: true,
       retainZoomLevel: false,
       animateZoom: true,
       keepResult: true,
     });
 
-    // Add the search control to the map
     map.addControl(searchControl);
 
     map.on("click", (e) => {
