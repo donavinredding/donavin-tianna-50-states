@@ -55,8 +55,8 @@ function encodeGhPath(path) {
 }
 
 async function ghGetFile(path) {
-    const res = await fetch(`${ghApiBase()}/${encodeGhPath(path)}?ref=${GH_CONFIG.branch}`, {
-        headers: ghHeaders()
+    const res = await fetch(`${ghApiBase()}/${encodeGhPath(path)}?ref=${GH_CONFIG.branch}`, { 
+        headers: ghHeaders() 
     });
     if (!res.ok) {
         if (res.status === 404) return null;
@@ -68,14 +68,14 @@ async function ghGetFile(path) {
 async function ghPutFile(path, base64Content, message, sha) {
     const body = { message, content: base64Content, branch: GH_CONFIG.branch };
     if (sha) body.sha = sha;
-    const res = await fetch(`${ghApiBase()}/${encodeGhPath(path)}`, {
-        method: "PUT",
-        headers: ghHeaders({ "Content-Type": "application/json" }),
-        body: JSON.stringify(body)
-    });
-    if (!res.ok) {
-        let detail = "";
-        try { detail = (await res.json()).message || ""; } catch {}
+    const res = await fetch(`${ghApiBase()}/${encodeGhPath(path)}`, { 
+        method: "PUT", 
+        headers: ghHeaders({ "Content-Type": "application/json" }), 
+        body: JSON.stringify(body) 
+    }); 
+    if (!res.ok) { 
+        let detail = ""; 
+        try { detail = (await res.json()).message || ""; } catch {} 
         throw new Error(`GitHub PUT ${path} failed (${detail ? ": " + detail : ""})`);
     }
     return res.json();
@@ -109,7 +109,7 @@ function toBase64(str) {
 
 async function loadSiteData() {
     try {
-        const res = await fetch(`./data.json?t=${Date.now()}`, { cache: "no-store" });
+        const res = await fetch(`./data.json?t=${Date.now()}`, { cache: "no-store" }); 
         if (!res.ok) throw new Error(`data.json (${res.status})`);
         const data = await res.json();
         stateGalleries = data.states || {};
@@ -149,14 +149,17 @@ function queueSave(message) {
 }
 
 async function saveSiteData(message = "Update site data") {
-    const payload = JSON.stringify({
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        nextStateTargets: [...nextStateTargets],
-        tripNotes: tripNotesText,
-        states: stateGalleries
-    }, null, 2);
-    
+    const payload = JSON.stringify(
+        {
+            version: 1,
+            updatedAt: new Date().toISOString(),
+            nextStateTargets: [...nextStateTargets],
+            tripNotes: tripNotesText,
+            states: stateGalleries
+        },
+        null,
+        2
+    );
     const existing = await ghGetFile(GH_CONFIG.dataPath);
     await ghPutFile(GH_CONFIG.dataPath, toBase64(payload), message, existing ? existing.sha : null);
     setPublishStatus("✅ Saved to GitHub — live site updates in ~30–60 s.");
@@ -191,8 +194,8 @@ function compressImage(file, maxDim = 1400, quality = 0.82) {
 async function uploadImageToRepo(file, stateName) {
     const dataUrl = await compressImage(file);
     const base64 = dataUrl.split(",")[1];
-    const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-    const path = `${GH_CONFIG.imagesDir}/${name}`;
+    const name = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`; 
+    const path = `${GH_CONFIG.imagesDir}/${name}`; 
     await ghPutFile(path, base64, `Add photo — ${stateName}`, null);
     return path;
 }
@@ -280,28 +283,6 @@ function confirmForgetToken() {
     }
 }
 
-async function publishRawJson() {
-    if (!isAdmin()) return alert("Unlock with your token first (⚙️).");
-    const el = document.getElementById("json-editor");
-    if (!el) return;
-
-    let parsed;
-    try {
-        parsed = JSON.parse(el.value);
-    } catch (e) {
-        setPublishStatus("❌ Invalid JSON: " + e.message);
-        return;
-    }
-
-    stateGalleries = parsed.states || {};
-    tripNotesText = parsed.tripNotes || "";
-    nextStateTargets = new Set(parsed.nextStateTargets || []);
-
-    setPublishStatus("⏳ Publishing…");
-    await queueSave("Update data.json via admin editor");
-    await loadSiteData();
-}
-
 /* ============================================================
 7. Map painting, checklists, progress
 ============================================================ */
@@ -377,8 +358,8 @@ function paintStatePatterns() {
 function updateProgress(completedCount) {
     const percentage = Math.round((completedCount / TOTAL_STATES) * 100);
     const progressText = document.getElementById("progress-text");
-    if (progressText) progressText.textContent = `${completedCount} / ${TOTAL_STATES} (${percentage}%)`;
-    const progressBar = document.getElementById("progress-bar");
+    if (progressText) progressText.textContent = `${completedCount} / ${TOTAL_STATES} (${percentage}%)`; 
+    const progressBar = document.getElementById("progress-bar"); 
     if (progressBar) progressBar.style.width = `${percentage}%`;
 }
 
@@ -465,7 +446,7 @@ function renderGallery(stateName, container) {
             <div class="drag-handle" title="Drag to reorder">⋮⋮</div>
             <button class="delete-btn" title="Delete Memory">✕</button>
             <div class="img-wrapper">
-                <img src="${item.img}" class="polaroid-img ${rotationClass}" alt="${item.desc || ""}" style="transform: rotate(${item.rotation}deg);">
+                <img src="${item.img}" class="polaroid-img ${rotationClass}" style="transform: rotate(${item.rotation}deg);" alt="">
             </div>
             <p class="caption-text">${item.desc || ""}</p>
             <button class="rotate-btn" title="Rotate Image">↻</button>
@@ -487,7 +468,7 @@ function renderGallery(stateName, container) {
             queueSave(`Rotate photo in ${stateName}`);
         });
 
-        /* Drag handle – only makes card draggable in edit mode */
+        /* Drag handle */
         const handle = polaroidDiv.querySelector(".drag-handle");
         handle.addEventListener("mousedown", () => { if (isEditMode) polaroidDiv.setAttribute("draggable", "true"); });
         handle.addEventListener("mouseup", () => polaroidDiv.setAttribute("draggable", "false"));
@@ -643,9 +624,7 @@ function getGoogleMapsEmbedUrl(url) {
             return `https://maps.google.com/maps?q=${encodeURIComponent(place)}&output=embed`;
         }
         return `https://maps.google.com/maps?q=${encodeURIComponent(url)}&output=embed`;
-    } catch { 
-        return null; 
-    }
+    } catch { return null; }
 }
 
 function loadDefaultDutchMap(iframeEl, linkEl) {
@@ -682,7 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const queueThumbnails = document.getElementById("queue-thumbnails");
     const queueCountText = document.getElementById("queue-count-text");
 
-    /* ---- Trip notes (autosave to data.json) ---- */
+    /* ---- Trip notes ---- */
     const planNotes = document.getElementById("plan-notes");
     if (planNotes) {
         let t;
@@ -840,7 +819,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    /* ---- Add memory (upload image + commit data.json) ---- */
+    /* ---- Add memory ---- */
     if (addMemoryForm) {
         addMemoryForm.addEventListener("submit", async (e) => {
             e.preventDefault();
