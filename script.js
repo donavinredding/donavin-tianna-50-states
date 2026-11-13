@@ -424,21 +424,17 @@ function updateChecklists() {
 
         if (isNext) {
         li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
-            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
             ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ""}
             <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>
         </span>` : "");
         nextList.appendChild(li);
 
         } else if (hasMemories) {
-        li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>` + (admin ? `<button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>` : "");
+        li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>`;
         visitedList.appendChild(li);
 
         } else {
-        li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
-            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
-            <button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Next</button>
-        </span>` : "");
+        li.innerHTML = `<span>${stateName}</span>` + (admin ? `<button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Next</button>` : "");
         notVisitedList.appendChild(li);
         }
     });
@@ -773,6 +769,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (modalStateTitle) modalStateTitle.textContent = `${stateName} Gallery`;
             if (polaroidContainer) renderGallery(stateName, polaroidContainer);
+
+            // 🆕 Wire the Plan Trip button to open the trip planner for this state
+            const planTripBtn = document.getElementById("modal-plan-trip-btn");
+            if (planTripBtn) {
+                planTripBtn.onclick = () => {
+                    modal.classList.remove("active");
+                    // Skip unlockScroll — we're immediately opening another modal
+                    openPlanTripModal(stateName);
+                };
+            }
 
             if (modal) { modal.classList.add("active"); lockScroll(); }
         });
@@ -1229,11 +1235,10 @@ function renderItinerary() {
         <span class="drag-handle">☰</span>
         <input type="checkbox" ${stop.completed ? "checked" : ""} onchange="toggleStopComplete(${index})">
         <strong>${index + 1}. ${esc(stop.name)}</strong>
-        <p class="stop-notes">${esc(stop.notes)}</p>
         <span>$${stopTotal.toFixed(2)}</span>
         <button onclick="removeStop(${index})">🗑️</button>
       </div>
-      <p class="stop-notes">${stop.notes}</p>
+      <p class="stop-notes">${esc(stop.notes)}</p>
       <small>🎟️ $${t.tickets} | 🅿️ $${t.parking} | 🍔 $${t.food} | 🛍️ $${t.merch}${extras ? " | " + extras : ""}</small>
     `;
     list.appendChild(li);
