@@ -253,8 +253,18 @@ function toggleAdminPanel() {
 }
 
 function openTokenModal() {
-    document.getElementById("token-input").value = "";
-    document.getElementById("token-modal").classList.remove("hidden");
+    const savedToken = localStorage.getItem(GH_CONFIG.tokenKey);
+    
+    if (savedToken) {
+        // If they already saved a token, just unlock it immediately
+        isAdminUnlocked = true;
+        updateAdminUI();
+        loadSiteData();
+    } else {
+        // If no token saved, show the input modal
+        document.getElementById("token-input").value = "";
+        document.getElementById("token-modal").classList.remove("hidden");
+    }
 }
 
 function saveToken() {
@@ -638,7 +648,7 @@ function loadDefaultDutchMap(iframeEl, linkEl) {
 ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
-    isAdminUnlocked = !!localStorage.getItem(GH_CONFIG.tokenKey);
+    isAdminUnlocked = false;
     updateAdminUI();
 
     const states = document.querySelectorAll(".state");
