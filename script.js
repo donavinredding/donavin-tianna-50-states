@@ -160,8 +160,27 @@ async function saveSiteData(message = "Update site data") {
         null,
         2
     );
-    const existing = await ghGetFile(GH_CONFIG.dataPath);
-    await ghPutFile(GH_CONFIG.dataPath, toBase64(payload), message, existing ? existing.sha : null);
+
+    // 1. Force a fresh request straight to the GitHub API (no cache) to get the newest SHA
+    const token = localStorage.getItem(GH_CONFIG.tokenKey);
+    const url = `${ghApiBase()}/${GH_CONFIG.dataPath}?ref=${GH_CONFIG.branch}`;
+    
+    const res = await fetch(url, { 
+        headers: { 
+            Accept: "application/vnd.github+json", 
+            Authorization: `Bearer ${token}` 
+        },
+        cache: "no-store" // Prevents browser from reusing an old SHA
+    });
+
+    let sha = null;
+    if (res.ok) {
+        const data = await res.json();
+        sha = data.sha;
+    }
+
+    // 2. Send the write request with the freshly retrieved SHA
+    await ghPutFile(GH_CONFIG.dataPath, toBase64(payload), message, sha);
     setPublishStatus("✅ Saved to GitHub — live site updates in ~30–60 s.");
 }
 
