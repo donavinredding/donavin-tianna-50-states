@@ -1350,12 +1350,17 @@ function addStateLabels() {
         if (stateId === "MI") { cy += 40; cx += 30; }
         if (stateId === "LA") { cx -= 20; }
         if (stateId === "ME") { cx += 5; cy -= 10; }
-        if (stateId === "CA") { cx -= 5; cy += 5; }
-        if (stateId === "KY") { cx += 5; cy += 3; }
-      if (stateId === "OK") { cx += 10; }
-      if (stateId === "TX") { cx += 10; }
+        if (stateId === "CA") { cx -= 10; cy += 10; }
+        if (stateId === "KY") { cx += 10; cy += 3; }
+      if (stateId === "OK") { cx += 20; }
+      if (stateId === "TX") { cx += 20; }
       if (stateId === "NV") { cy -= 10; }
       if (stateId === "MN") { cx -= 10; cy += 10; }
+      if (stateId === "ID") { cy += 40; }
+      if (stateId === "VA") { cx += 20; cy += 10; }
+      if (stateId === "WV") { cy += 10; cx -= 10; }
+      if (stateId === "AK") { cx += 10; cy -= 10; }
+      if (stateId === "HI") { cy += 10; }
       
                       //           Y-
                       //           ▲
