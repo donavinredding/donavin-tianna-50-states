@@ -1259,7 +1259,15 @@ function saveFullTrip() {
     || `Trip ${new Date().toLocaleDateString()}`;
   const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
 
-  const id = `${currentStateCode}-${Date.now()}`;
+  // 🆕 Check if we are updating an existing trip, or creating a brand new one
+  let id = document.getElementById("savedTripsSelect").value;
+
+  if (id === "new") {
+    // Only generate a new timestamp if it's a new trip
+    id = `${currentStateCode}-${Date.now()}`;
+  }
+
+  // Save or overwrite the trip
   all[id] = {
     id,
     stateCode: currentStateCode,
@@ -1267,10 +1275,41 @@ function saveFullTrip() {
     stops: currentStops,
     updatedAt: new Date().toISOString()
   };
+  
   localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(all));
   populateSavedTripsSelect();
   document.getElementById("savedTripsSelect").value = id;
-  alert(`Trip "${name}" saved!`);
+  
+  // Removed the alert here so it doesn't interrupt the "Save & Exit" flow
+}
+
+/* 🆕 Delete the currently selected trip */
+function deleteSelectedTrip() {
+  const id = document.getElementById("savedTripsSelect").value;
+  
+  if (id === "new") {
+    alert("Please select a saved trip from the dropdown first to delete it.");
+    return;
+  }
+
+  if (!confirm("Are you sure you want to delete this trip? This cannot be undone.")) {
+    return;
+  }
+
+  const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
+  
+  // Remove the trip from the object
+  delete all[id];
+  
+  // Save back to LocalStorage
+  localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(all));
+  
+  // Reset the UI
+  document.getElementById("savedTripsSelect").value = "new";
+  loadSelectedTrip(); // Clears the map and itinerary
+  populateSavedTripsSelect(); // Refreshes the dropdown list
+  
+  alert("Trip deleted.");
 }
 
 /* Stop CRUD */
@@ -1481,4 +1520,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-            }
+}
