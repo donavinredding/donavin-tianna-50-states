@@ -256,6 +256,7 @@ svg pattern image { object-fit: cover; }
   padding: 24px;
   box-shadow: 0 12px 32px rgba(0,0,0,0.3);
   font-family: 'Courier Prime', monospace;
+  box-sizing: border-box; /* 🆕 Fixes padding overflow */
 }
 
 .modal-overlay .modal-header {
@@ -1424,6 +1425,8 @@ body.admin-unlocked button.admin-only {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
+  width: 100%;
+  min-width: 0; /* 🆕 Prevents grid items from breaking out */
 }
 
 @media (max-width: 768px) {
@@ -1441,7 +1444,10 @@ body.admin-unlocked button.admin-only {
 #tripMap {
   border: 2px solid #8c7b6c;
   border-radius: 6px;
-  touch-action: none;
+  width: 100% !important; /* 🆕 Forces the map to stay inside the box */
+  max-width: 100%;
+  box-sizing: border-box;
+  touch-action: none; /* Keeps mobile touch working */
 }
 
 .map-hint {
@@ -1632,4 +1638,4 @@ body.admin-unlocked button.admin-only {
 
 .trip-totals button:hover {
   opacity: 0.9;
-    }
+}
