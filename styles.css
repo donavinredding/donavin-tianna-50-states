@@ -1755,3 +1755,76 @@ body.admin-unlocked button.admin-only {
     margin-bottom: 5px;
   }
 }
+
+/* ==========================================
+   Bulletproof Mobile Fixes for Trip Planner
+   ========================================== */
+@media (max-width: 768px) {
+  /* 1. Stop the modal from scrolling sideways */
+  .modal-overlay .modal-content {
+    padding: 15px !important;
+    width: 95% !important;
+    overflow-x: hidden !important; 
+  }
+
+  /* 2. Force the grid columns to not expand past the screen */
+  .planner-grid {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .map-section,
+  .itinerary-section {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* 3. Crush the Leaflet Search Bar so it fits inside the map */
+  .leaflet-control-geosearch.bar {
+    width: calc(100% - 60px) !important; /* Leaves room for the zoom buttons */
+    max-width: calc(100% - 60px) !important;
+    margin-left: 45px !important;
+  }
+  
+  .leaflet-control-geosearch form {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 4. Fix the inputs that are pushing the width */
+  .trip-controls input[type="text"] {
+    min-width: 0 !important; /* Removes the 200px minimum */
+    width: 100% !important;
+  }
+  
+  .trip-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* 5. Stack the cost/time inputs */
+  .cost-grid, .time-grid {
+    grid-template-columns: 1fr !important;
+    width: 100% !important;
+  }
+
+  /* 6. Fix the bottom buttons */
+  .trip-totals {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .trip-totals .actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .trip-totals button {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+  }
+}
