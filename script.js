@@ -1363,11 +1363,11 @@ function addStateLabels() {
       if (stateId === "HI") { cy += 10; }
       if (stateId === "MS") { cx += 5; }
       if (stateId === "SC") { cy -= 5; cx += 5; }
-      if (stateId === "RI") { cy += 10; cx += 20; }
+      if (stateId === "RI") { cx += 20; }
       if (stateId === "VT") { cy -= 10; }
       if (stateId === "NH") { cy += 15; }
       if (stateId === "MA") { cx += 20; }
-      if (stateId === "CT") { cy += 20; cx += 10 }
+      if (stateId === "CT") { cy += 10; }
       if (stateId === "DE") { cy += 10; cx += 20 }
       if (stateId === "GA") { cy += 10; }
       
@@ -1406,4 +1406,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-            }
+    }
