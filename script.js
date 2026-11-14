@@ -1391,13 +1391,13 @@ function addStateLabels() {
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "28px"); // Will scale down perfectly with the map
+        text.setAttribute("font-size", "20px"); // Will scale down perfectly with the map
         text.setAttribute("font-weight", "bold");
         
         // White text with a dark outline so it's readable over photos
         text.setAttribute("fill", "#ffffff");
         text.setAttribute("stroke", "#2b2b2b");
-        text.setAttribute("stroke-width", "4px");
+        text.setAttribute("stroke-width", "3px");
         text.setAttribute("stroke-linejoin", "round");
         text.setAttribute("paint-order", "stroke"); 
         text.setAttribute("pointer-events", "none"); // Let map clicks pass through
@@ -1405,4 +1405,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-}
+        }
