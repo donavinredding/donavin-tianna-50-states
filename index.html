@@ -87,10 +87,11 @@
         <!-- Inside your modal footer (.trip-totals) -->
         <div class="trip-totals">
           <strong>Projected Trip Cost: $<span id="tripGrandTotal">0.00</span></strong>
-          <div class="actions">
-            <button onclick="openInGoogleMaps()" class="gmaps-btn">🗺️ Open in Google Maps</button>
-            <button onclick="saveFullTrip()">💾 Save Trip</button>
-          </div>
+         <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+          <button onclick="openInGoogleMaps()" class="gmaps-btn" style="background: #1a73e8;">🗺️ Maps</button>
+          <button onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
+          <button onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
+         </div>
         </div>
       </div>
     </div>
