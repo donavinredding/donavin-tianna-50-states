@@ -1075,58 +1075,54 @@ function openPlanTripModal(stateNameOrCode) {
 
   populateSavedTripsSelect();
 
-  if (!map) {
-    map = L.map("tripMap").setView(info.coords, info.zoom);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors"
-    }).addTo(map);
+  // Wait 100ms for the modal to actually appear on screen before drawing the map
+  setTimeout(() => {
+    if (!map) {
+      map = L.map("tripMap").setView(info.coords, info.zoom);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors"
+      }).addTo(map);
 
-    // 🆕 Setup the Free OpenStreetMap Search Provider
-    const provider = new window.GeoSearch.OpenStreetMapProvider();
-    const searchControl = new window.GeoSearch.GeoSearchControl({
-      provider: provider,
-      style: 'bar',
-      showMarker: false,
-      showPopup: false,
-      autoClose: true,
-      retainZoomLevel: false,
-      animateZoom: true,
-      keepResult: true,
-    });
+      // Setup the Free OpenStreetMap Search Provider
+      const provider = new window.GeoSearch.OpenStreetMapProvider();
+      const searchControl = new window.GeoSearch.GeoSearchControl({
+        provider: provider,
+        style: 'bar',
+        showMarker: false,
+        showPopup: false,
+      });
+      map.addControl(searchControl);
 
-    document.getElementById("map-search-container").appendChild(searchControl.getContainer());
-    searchControl.onAdd(map);
+      map.on("click", (e) => {
+        pendingLatLng = e.latlng;
+        if (tempMarker) map.removeLayer(tempMarker);
+        tempMarker = L.marker(pendingLatLng).addTo(map);
+        document.getElementById("locationFormCard").style.display = "block";
 
-    map.on("click", (e) => {
-      pendingLatLng = e.latlng;
-      if (tempMarker) map.removeLayer(tempMarker);
-      tempMarker = L.marker(pendingLatLng).addTo(map);
-      document.getElementById("locationFormCard").style.display = "block";
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+          .then((r) => r.json())
+          .then((data) => {
+            const fallback = (data.display_name || "").split(",")[0];
+            document.getElementById("locName").value = data.name || fallback || "New Stop";
+          })
+          .catch(() => { document.getElementById("locName").value = "New Stop"; });
+      });
 
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
-        .then((r) => r.json())
-        .then((data) => {
-          const fallback = (data.display_name || "").split(",")[0];
-          document.getElementById("locName").value = data.name || fallback || "New Stop";
-        })
-        .catch(() => { document.getElementById("locName").value = "New Stop"; });
-    });
-
-    new Sortable(document.getElementById("itineraryList"), {
-      animation: 150,
-      onEnd(evt) {
-        const [moved] = currentStops.splice(evt.oldIndex, 1);
-        currentStops.splice(evt.newIndex, 0, moved);
-        renderItinerary();
-        updateRoute();
-      }
-    });
-  } else {
-    setTimeout(() => {
-      map.invalidateSize();
+      new Sortable(document.getElementById("itineraryList"), {
+        animation: 150,
+        onEnd(evt) {
+          const [moved] = currentStops.splice(evt.oldIndex, 1);
+          currentStops.splice(evt.newIndex, 0, moved);
+          renderItinerary();
+          updateRoute();
+        }
+      });
+    } else {
       map.setView(info.coords, info.zoom);
-    }, 100);
-  }
+    }
+    // Force Leaflet to recalculate the map size now that it's visible
+    map.invalidateSize();
+  }, 100); 
 }
 
 /* Called by the ✖ button in the trip modal */
@@ -1335,7 +1331,6 @@ function addStateLabels() {
     const statesGroup = document.getElementById("states-group");
     if (!statesGroup) return;
 
-    // Create a group for the labels if it doesn't exist yet
     let labelGroup = document.getElementById("state-labels");
     if (!labelGroup) {
         labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -1344,43 +1339,42 @@ function addStateLabels() {
     }
 
     document.querySelectorAll(".state").forEach(state => {
-        const stateId = state.id; // This is the abbreviation like "TX", "CA"
-        
-        // Skip Alaska and Hawaii (they are small and inset, text looks cluttered)
-        if (stateId === "AK" || stateId === "HI") return;
+        const stateId = state.id; 
+        if (stateId === "AK" || stateId === "HI") return; // Skip insets
 
         const bbox = state.getBBox();
-        
-        // Calculate the exact center of the state
         let cx = bbox.x + bbox.width / 2;
         let cy = bbox.y + bbox.height / 2;
 
-        // Manual tweaks for weirdly shaped states so the text sits nicely
-        if (stateId === "FL") { cy -= 20; cx += 15; } // Florida (shift up to avoid the tip)
-        if (stateId === "MI") { cy += 25; cx += 20; } // Michigan (shift down to the lower peninsula)
-        if (stateId === "LA") { cx -= 10; }           // Louisiana (shift left)
+        // Manual tweaks for weirdly shaped states
+        if (stateId === "FL") { cy -= 40; cx += 30; }
+        if (stateId === "MI") { cy += 40; cx += 40; }
+        if (stateId === "LA") { cx -= 20; }
+        if (stateId === "ME") { cx += 10; cy -= 10; }
 
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", cx);
         text.setAttribute("y", cy);
+
+        // 🌟 THIS IS THE FIX: Copy the exact scaling transform from the state path!
+        const transform = state.getAttribute("transform");
+        if (transform) text.setAttribute("transform", transform);
+
         text.setAttribute("text-anchor", "middle");
-        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "11px");
+        text.setAttribute("font-size", "28px"); // Will scale down perfectly with the map
         text.setAttribute("font-weight", "bold");
         
-        // Text styling: White text with a dark outline for readability
+        // White text with a dark outline so it's readable over photos
         text.setAttribute("fill", "#ffffff");
         text.setAttribute("stroke", "#2b2b2b");
-        text.setAttribute("stroke-width", "3px");
+        text.setAttribute("stroke-width", "4px");
         text.setAttribute("stroke-linejoin", "round");
-        text.setAttribute("paint-order", "stroke"); // Puts the stroke BEHIND the text
-        
-        // Crucial: Let clicks pass through the text to the state path below it
-        text.setAttribute("pointer-events", "none"); 
+        text.setAttribute("paint-order", "stroke"); 
+        text.setAttribute("pointer-events", "none"); // Let map clicks pass through
         
         text.textContent = stateId;
-        
         labelGroup.appendChild(text);
     });
-    }
+}
