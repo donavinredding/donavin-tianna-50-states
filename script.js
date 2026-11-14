@@ -1340,7 +1340,6 @@ function addStateLabels() {
 
     document.querySelectorAll(".state").forEach(state => {
         const stateId = state.id; 
-        if (stateId === "AK" || stateId === "HI") return; // Skip insets
 
         const bbox = state.getBBox();
         let cx = bbox.x + bbox.width / 2;
