@@ -1363,7 +1363,7 @@ function addStateLabels() {
       if (stateId === "HI") { cy += 10; }
       if (stateId === "MS") { cx += 5; }
       if (stateId === "SC") { cy -= 5; cx += 5; }
-      if (stateId === "RI") { cx += 20; }
+      if (stateId === "RI") { cx += 20; cy += 5; }
       if (stateId === "VT") { cy -= 10; }
       if (stateId === "NH") { cy += 15; }
       if (stateId === "MA") { cx += 20; }
@@ -1392,7 +1392,7 @@ function addStateLabels() {
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "10px"); // Will scale down perfectly with the map
+        text.setAttribute("font-size", "18px"); // Will scale down perfectly with the map
         text.setAttribute("font-weight", "bold");
         
         // White text with a dark outline so it's readable over photos
@@ -1406,4 +1406,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-    }
+                    }
