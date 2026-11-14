@@ -1346,11 +1346,27 @@ function addStateLabels() {
         let cy = bbox.y + bbox.height / 2;
 
         // Manual tweaks for weirdly shaped states
-        if (stateId === "FL") { cy -= 40; cx += 30; }
-        if (stateId === "MI") { cy += 40; cx += 40; }
+        if (stateId === "FL") { cy -= 30; cx += 30; }
+        if (stateId === "MI") { cy += 40; cx += 30; }
         if (stateId === "LA") { cx -= 20; }
-        if (stateId === "ME") { cx += 10; cy -= 10; }
-
+        if (stateId === "ME") { cx += 5; cy -= 10; }
+        if (stateId === "CA") { cx -= 5; cy += 5; }
+        if (stateId === "KY") { cx += 5; cy += 3; }
+      if (stateId === "OK") { cx += 10; }
+      if (stateId === "TX") { cx += 10; }
+      if (stateId === "NV") { cy -= 10; }
+      if (stateId === "MN") { cx -= 10; cy += 10; }
+      
+                      //           Y-
+                      //           ▲
+                      //           │
+                      //        -  │
+                      // X- ◄─────┼──────► X+
+                      //           │  +
+                      //           │
+                      //           ▼
+                      //           Y+
+      
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", cx);
         text.setAttribute("y", cy);
