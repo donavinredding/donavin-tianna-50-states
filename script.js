@@ -148,33 +148,46 @@ let hasUnsavedChanges = false;
 let pendingSaveMessage = "Update site data";
 
 function queueSave(message) {
-    // Instead of saving immediately, we just flag it as dirty
     hasUnsavedChanges = true;
     pendingSaveMessage = message;
     
-    // Show the banner
+    // Show the banner in its small state
     const banner = document.getElementById("unsaved-banner");
-    if (banner) banner.classList.remove("hidden");
+    if (banner) {
+        banner.classList.remove("hidden");
+        banner.classList.remove("expanded"); // Keep it small initially
+    }
 }
 
-async function commitSave() {
+function toggleBanner(expand) {
+    const banner = document.getElementById("unsaved-banner");
+    if (!banner || banner.classList.contains("hidden")) return;
+    
+    if (expand) {
+        banner.classList.add("expanded");
+    } else {
+        banner.classList.remove("expanded");
+    }
+}
+
+async function commitSave(event) {
+    if (event) event.stopPropagation(); // Prevent the banner click from triggering
     if (!hasUnsavedChanges) return;
 
     const btn = document.getElementById("save-btn");
     const originalText = btn.textContent;
     
-    // Visual feedback
     btn.textContent = "Saving...";
     btn.disabled = true;
 
     try {
-        // Actually push the data to GitHub
         await saveSiteData(pendingSaveMessage);
         
-        // Reset state
         hasUnsavedChanges = false;
-        document.getElementById("unsaved-banner").classList.add("hidden");
-        setPublishStatus("✅ All changes saved to the live website!");
+        const banner = document.getElementById("unsaved-banner");
+        banner.classList.add("hidden");
+        banner.classList.remove("expanded");
+        setPublishStatus("✅ All changes saved!");
     } catch (err) {
         alert("Failed to save: " + err.message);
     } finally {
@@ -1208,6 +1221,34 @@ function loadSelectedTrip() {
   updateRoute();
 }
 
+/* Save the current trip, close the modal, and stay on the page */
+function saveAndCloseTrip() {
+  if (currentStops.length > 0) {
+    saveFullTrip(); // Saves to localStorage
+  }
+  closeTripModal();
+}
+
+/* Mark the current state as visited, move it to the gallery, and close */
+function markTripVisited() {
+  if (currentStops.length > 0) {
+    saveFullTrip();
+  }
+  
+  // Add an empty array for photos if it doesn't exist so it counts as "Visited"
+  if (!stateGalleries[currentStateCode]) {
+    stateGalleries[currentStateCode] = [];
+  }
+  
+  // Remove from "Next" target list
+  nextStateTargets.delete(currentStateCode);
+  
+  // Update the UI
+  updateChecklists();
+  queueSave(`Mark ${currentStateCode} as visited`);
+  closeTripModal();
+}
+
 /* Called by the Save Trip button */
 function saveFullTrip() {
   if (currentStops.length === 0) {
@@ -1440,4 +1481,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-        }
+            }
