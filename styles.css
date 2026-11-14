@@ -1641,7 +1641,7 @@ body.admin-unlocked button.admin-only {
 }
 
 /* ==========================================
-   Unsaved Changes Banner
+   Unsaved Changes Banner (Collapsible)
    ========================================== */
 #unsaved-banner {
   position: fixed;
@@ -1650,23 +1650,45 @@ body.admin-unlocked button.admin-only {
   z-index: 2600;
   background: var(--primary-orange);
   color: #ffffff;
-  padding: 15px 20px;
-  border-radius: 8px;
+  border-radius: 30px; /* Pill shape */
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  border: 2px solid var(--text-dark);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  overflow: hidden;
+}
+
+/* The Small State */
+#unsaved-banner:not(.expanded) .banner-text,
+#unsaved-banner:not(.expanded) #save-btn {
+  display: none;
+}
+
+#unsaved-banner:not(.expanded)::before {
+  content: "⚠️ Unsaved";
+  font-weight: bold;
+  font-family: 'Special Elite', cursive;
+  letter-spacing: 1px;
+}
+
+/* The Expanded State */
+#unsaved-banner.expanded {
+  border-radius: 8px;
+  padding: 15px 20px;
+  cursor: default;
   gap: 20px;
-  border: 2px solid var(--text-dark);
-  animation: slideUp 0.3s ease;
 }
 
-@keyframes slideUp {
-  from { transform: translateY(100px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+#unsaved-banner.expanded::before {
+  display: none;
 }
 
-#unsaved-banner.hidden {
-  display: none !important;
+#unsaved-banner .banner-text {
+  flex-grow: 1;
 }
 
 #unsaved-banner button {
@@ -1685,11 +1707,51 @@ body.admin-unlocked button.admin-only {
 
 #unsaved-banner button:hover {
   background: var(--text-dark);
-  transform: scale(1.05);
 }
 
-#unsaved-banner button:disabled {
-  background: #888;
-  cursor: wait;
-  transform: none;
+/* ==========================================
+   Mobile Fixes for Trip Planner
+   ========================================== */
+@media (max-width: 768px) {
+  .modal-overlay .modal-content {
+    padding: 15px; /* Reduce padding on mobile */
+  }
+
+  /* Force the search bar to stay inside the map */
+  .leaflet-control-geosearch.bar {
+    width: calc(100% - 20px) !important;
+    max-width: 100% !important;
+    margin: 10px !important;
+  }
+
+  .leaflet-control-geosearch form {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Stack the cost and time inputs so they aren't squished */
+  .cost-grid, .time-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  /* Ensure all inputs and buttons fit the container */
+  .detail-card input,
+  .detail-card textarea,
+  .trip-controls select,
+  .trip-controls input {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  /* Stack the bottom buttons */
+  .trip-totals .actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .trip-totals button {
+    width: 100%;
+    margin-bottom: 5px;
+  }
 }
