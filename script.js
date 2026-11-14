@@ -1349,18 +1349,26 @@ function addStateLabels() {
         if (stateId === "FL") { cy -= 30; cx += 30; }
         if (stateId === "MI") { cy += 40; cx += 30; }
         if (stateId === "LA") { cx -= 20; }
-        if (stateId === "ME") { cx += 5; cy -= 10; }
+        if (stateId === "ME") { cx -= 5; cy -= 10; }
         if (stateId === "CA") { cx -= 10; cy += 10; }
         if (stateId === "KY") { cx += 10; cy += 3; }
       if (stateId === "OK") { cx += 20; }
       if (stateId === "TX") { cx += 20; }
       if (stateId === "NV") { cy -= 10; }
-      if (stateId === "MN") { cx -= 10; cy += 10; }
+      if (stateId === "MN") { cx -= 20; cy += 10; }
       if (stateId === "ID") { cy += 40; }
       if (stateId === "VA") { cx += 20; cy += 10; }
       if (stateId === "WV") { cy += 10; cx -= 10; }
       if (stateId === "AK") { cx += 10; cy -= 10; }
       if (stateId === "HI") { cy += 10; }
+      if (stateId === "MS") { cx += 5; }
+      if (stateId === "SC") { cy -= 5; cx += 5; }
+      if (stateId === "RI") { cy += 20; cx += 20; }
+      if (stateId === "VT") { cy -= 5; }
+      if (stateId === "NH") { cy += 5; }
+      if (stateId === "MA") { cx += 20; }
+      if (stateId === "CT") { cy += 20; cx += 20 }
+      if (stateId === "DE") { cy += 10; cx += 10 }
       
                       //           Y-
                       //           ▲
@@ -1397,4 +1405,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-}
+                                       }
