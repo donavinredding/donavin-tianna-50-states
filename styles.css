@@ -1639,3 +1639,57 @@ body.admin-unlocked button.admin-only {
 .trip-totals button:hover {
   opacity: 0.9;
 }
+
+/* ==========================================
+   Unsaved Changes Banner
+   ========================================== */
+#unsaved-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 2600;
+  background: var(--primary-orange);
+  color: #ffffff;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 2px solid var(--text-dark);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+#unsaved-banner.hidden {
+  display: none !important;
+}
+
+#unsaved-banner button {
+  background: var(--primary-red);
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-family: 'Special Elite', cursive;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+#unsaved-banner button:hover {
+  background: var(--text-dark);
+  transform: scale(1.05);
+}
+
+#unsaved-banner button:disabled {
+  background: #888;
+  cursor: wait;
+  transform: none;
+}
