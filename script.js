@@ -144,17 +144,43 @@ async function loadSiteData() {
 }
 
 /* Serialize saves so two quick edits can't fight over the same SHA */
-let saveChain = Promise.resolve();
+let hasUnsavedChanges = false;
+let pendingSaveMessage = "Update site data";
 
 function queueSave(message) {
-    saveChain = saveChain
-        .catch(() => {})
-        .then(() => saveSiteData(message))
-        .catch(err => {
-            console.error("Save failed:", err);
-            setPublishStatus(`❌ ${err.message}`);
-        });
-    return saveChain;
+    // Instead of saving immediately, we just flag it as dirty
+    hasUnsavedChanges = true;
+    pendingSaveMessage = message;
+    
+    // Show the banner
+    const banner = document.getElementById("unsaved-banner");
+    if (banner) banner.classList.remove("hidden");
+}
+
+async function commitSave() {
+    if (!hasUnsavedChanges) return;
+
+    const btn = document.getElementById("save-btn");
+    const originalText = btn.textContent;
+    
+    // Visual feedback
+    btn.textContent = "Saving...";
+    btn.disabled = true;
+
+    try {
+        // Actually push the data to GitHub
+        await saveSiteData(pendingSaveMessage);
+        
+        // Reset state
+        hasUnsavedChanges = false;
+        document.getElementById("unsaved-banner").classList.add("hidden");
+        setPublishStatus("✅ All changes saved to the live website!");
+    } catch (err) {
+        alert("Failed to save: " + err.message);
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
 }
 
 async function saveSiteData(message = "Update site data") {
@@ -660,6 +686,14 @@ function loadDefaultDutchMap(iframeEl, linkEl) {
     linkEl.href = "https://www.google.com/maps/dir/?api=1&destination=Dutch+Bros&travelmode=driving";
     linkEl.style.display = "inline-flex";
 }
+
+// Warn user if they try to leave with unsaved changes
+window.addEventListener("beforeunload", (e) => {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = ""; 
+    }
+});
 
 /* ============================================================
 10. DOM wiring
@@ -1406,4 +1440,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-                    }
+        }
