@@ -1441,6 +1441,7 @@ body.admin-unlocked button.admin-only {
 #tripMap {
   border: 2px solid #8c7b6c;
   border-radius: 6px;
+  touch-action: none;
 }
 
 .map-hint {
@@ -1631,4 +1632,4 @@ body.admin-unlocked button.admin-only {
 
 .trip-totals button:hover {
   opacity: 0.9;
-}
+    }
