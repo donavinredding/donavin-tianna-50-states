@@ -1391,7 +1391,7 @@ function addStateLabels() {
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "20px"); // Will scale down perfectly with the map
+        text.setAttribute("font-size", "18px"); // Will scale down perfectly with the map
         text.setAttribute("font-weight", "bold");
         
         // White text with a dark outline so it's readable over photos
@@ -1405,4 +1405,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-        }
+      }
