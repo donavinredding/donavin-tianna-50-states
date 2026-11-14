@@ -415,29 +415,35 @@ function updateChecklists() {
     let visitedCount = 0;
 
     ALL_STATES.forEach(stateName => {
-        const photos = stateGalleries[stateName] || [];
-        const hasMemories = photos.length > 0;
-        const isNext = nextStateTargets.has(stateName);
-        if (hasMemories) visitedCount++;
+    const photos = stateGalleries[stateName] || [];
+    const hasMemories = photos.length > 0;
+    const isNext = nextStateTargets.has(stateName);
+    if (hasMemories) visitedCount++;
 
-        const li = document.createElement("li");
+    const li = document.createElement("li");
 
-        if (isNext) {
+    if (isNext) {
         li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
+            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
             ${hasMemories ? `<button class="btn-action btn-finish" onclick="finishTrip('${stateName}')">End Trip 🏁</button>` : ""}
             <button class="btn-action" onclick="toggleNextTarget('${stateName}')">Cancel</button>
         </span>` : "");
         nextList.appendChild(li);
 
-        } else if (hasMemories) {
-        li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>`;
+    } else if (hasMemories) {
+        li.innerHTML = `<span>${stateName} (${photos.length} photo${photos.length === 1 ? "" : "s"})</span>` + (admin ? `<span style="display:flex;gap:6px;">
+            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
+        </span>` : "");
         visitedList.appendChild(li);
 
-        } else {
-        li.innerHTML = `<span>${stateName}</span>` + (admin ? `<button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Next</button>` : "");
+    } else {
+        li.innerHTML = `<span>${stateName}</span>` + (admin ? `<span style="display:flex;gap:6px;">
+            <button class="btn-action" onclick="openPlanTripModal('${stateName}')">Plan 🗺️</button>
+            <button class="btn-action" onclick="toggleNextTarget('${stateName}')">+ Next</button>
+        </span>` : "");
         notVisitedList.appendChild(li);
-        }
-    });
+    }
+});
 
     updateProgress(visitedCount);
 }
@@ -976,6 +982,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* ---- Boot ---- */
     loadSiteData();
+  addStateLabels()
 });
 
 /* ============================================================
@@ -1319,3 +1326,61 @@ function openInGoogleMaps() {
   }
   window.open(url, "_blank");
 }
+
+/* ============================================================
+   Map Labels — Adds State Abbreviations to the SVG
+============================================================ */
+
+function addStateLabels() {
+    const statesGroup = document.getElementById("states-group");
+    if (!statesGroup) return;
+
+    // Create a group for the labels if it doesn't exist yet
+    let labelGroup = document.getElementById("state-labels");
+    if (!labelGroup) {
+        labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        labelGroup.id = "state-labels";
+        statesGroup.appendChild(labelGroup);
+    }
+
+    document.querySelectorAll(".state").forEach(state => {
+        const stateId = state.id; // This is the abbreviation like "TX", "CA"
+        
+        // Skip Alaska and Hawaii (they are small and inset, text looks cluttered)
+        if (stateId === "AK" || stateId === "HI") return;
+
+        const bbox = state.getBBox();
+        
+        // Calculate the exact center of the state
+        let cx = bbox.x + bbox.width / 2;
+        let cy = bbox.y + bbox.height / 2;
+
+        // Manual tweaks for weirdly shaped states so the text sits nicely
+        if (stateId === "FL") { cy -= 20; cx += 15; } // Florida (shift up to avoid the tip)
+        if (stateId === "MI") { cy += 25; cx += 20; } // Michigan (shift down to the lower peninsula)
+        if (stateId === "LA") { cx -= 10; }           // Louisiana (shift left)
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", cx);
+        text.setAttribute("y", cy);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("dominant-baseline", "middle");
+        text.setAttribute("font-family", "'Courier Prime', monospace");
+        text.setAttribute("font-size", "11px");
+        text.setAttribute("font-weight", "bold");
+        
+        // Text styling: White text with a dark outline for readability
+        text.setAttribute("fill", "#ffffff");
+        text.setAttribute("stroke", "#2b2b2b");
+        text.setAttribute("stroke-width", "3px");
+        text.setAttribute("stroke-linejoin", "round");
+        text.setAttribute("paint-order", "stroke"); // Puts the stroke BEHIND the text
+        
+        // Crucial: Let clicks pass through the text to the state path below it
+        text.setAttribute("pointer-events", "none"); 
+        
+        text.textContent = stateId;
+        
+        labelGroup.appendChild(text);
+    });
+    }
