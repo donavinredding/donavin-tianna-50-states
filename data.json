@@ -1,10 +1,25 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-15T00:43:15.017Z",
+  "updatedAt": "2026-11-15T09:39:57.716Z",
   "nextStateTargets": [
     "Texas"
   ],
   "tripNotes": "",
+  "savedTrips": {},
+  "savedVehicles": {
+    "veh-1794735559452": {
+      "id": "veh-1794735559452",
+      "name": "Honda",
+      "mpg": 30,
+      "gallons": 17.2
+    },
+    "veh-1794735590677": {
+      "id": "veh-1794735590677",
+      "name": "Tucson",
+      "mpg": 25,
+      "gallons": 14.3
+    }
+  },
   "states": {
     "Oklahoma": [
       {
