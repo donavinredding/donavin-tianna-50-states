@@ -29,6 +29,7 @@ const ALL_STATES = [
 let stateGalleries = {}; 
 let tripNotesText = "";
 let nextStateTargets = new Set();
+let savedTrips = {};
 
 let activeStateName = null;
 let intervalId = null;
@@ -120,11 +121,28 @@ async function loadSiteData() {
         stateGalleries = data.states || {};
         tripNotesText = data.tripNotes || "";
         nextStateTargets = new Set(data.nextStateTargets || []);
+        savedTrips = data.savedTrips || {}; // 🆕 Load global trips
     } catch (err) {
         console.warn("Could not load data.json — starting empty.", err);
         stateGalleries = {};
         tripNotesText = "";
         nextStateTargets = new Set();
+        savedTrips = {}; // 🆕 Fallback
+    }
+
+    // 🆕 Automatically migrate old localStorage trips to the website
+    const localTrips = JSON.parse(localStorage.getItem("savedTrips") || "{}");
+    let migrated = false;
+    for (const [id, trip] of Object.entries(localTrips)) {
+        if (!savedTrips[id]) {
+            savedTrips[id] = trip;
+            migrated = true;
+        }
+    }
+    if (migrated) {
+        console.log("Migrated local trips to global website data.");
+        localStorage.removeItem("savedTrips"); // Clean up local storage
+        queueSave("Migrate local trips to website");
     }
 
     const notesEl = document.getElementById("plan-notes");
@@ -195,6 +213,7 @@ async function saveSiteData(message = "Update site data") {
             updatedAt: new Date().toISOString(),
             nextStateTargets: [...nextStateTargets],
             tripNotes: tripNotesText,
+            savedTrips: savedTrips, // 🆕 Include saved trips in the file
             states: stateGalleries
         },
         null,
@@ -1149,8 +1168,8 @@ function populateSavedTripsSelect() {
     const current = select.value;
     select.innerHTML = '<option value="new">+ Create New Trip</option>';
 
-    const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
-    Object.values(all)
+    // 🆕 Read from global savedTrips
+    Object.values(savedTrips)
         .filter((t) => t.stateCode === currentStateCode)
         .forEach((trip) => {
             const opt = document.createElement("option");
@@ -1168,8 +1187,8 @@ function loadSelectedTrip() {
         currentStops = [];
         document.getElementById("tripNameInput").value = "";
     } else {
-        const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
-        const trip = all[id];
+        // 🆕 Read from global savedTrips
+        const trip = savedTrips[id];
         if (trip) {
             currentStops = (trip.stops || []).map((s) => ({ ...s }));
             document.getElementById("tripNameInput").value = trip.name || "";
@@ -1211,20 +1230,22 @@ function saveFullTrip() {
         return;
     }
     const name = document.getElementById("tripNameInput").value.trim() || `Trip ${new Date().toLocaleDateString()}`;
-    const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
 
     let id = document.getElementById("savedTripsSelect").value;
     if (id === "new") {
         id = `${currentStateCode}-${Date.now()}`;
     }
 
-    all[id] = {
+    // 🆕 Save to global object
+    savedTrips[id] = {
         id, stateCode: currentStateCode, name, stops: currentStops, updatedAt: new Date().toISOString()
     };
     
-    localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(all));
     populateSavedTripsSelect();
     document.getElementById("savedTripsSelect").value = id;
+    
+    // 🆕 Trigger the "Save to Website" banner
+    queueSave(`Save trip: ${name}`);
 }
 
 function deleteSelectedTrip() {
@@ -1236,12 +1257,16 @@ function deleteSelectedTrip() {
     if (!confirm("Are you sure you want to delete this trip? This cannot be undone.")) {
         return;
     }
-    const all = JSON.parse(localStorage.getItem(TRIPS_STORAGE_KEY) || "{}");
-    delete all[id];
-    localStorage.setItem(TRIPS_STORAGE_KEY, JSON.stringify(all));
+    
+    // 🆕 Delete from global object
+    delete savedTrips[id];
+    
     document.getElementById("savedTripsSelect").value = "new";
     loadSelectedTrip(); 
     populateSavedTripsSelect(); 
+    
+    // 🆕 Trigger the "Save to Website" banner
+    queueSave(`Delete trip`);
     alert("Trip deleted.");
 }
 
