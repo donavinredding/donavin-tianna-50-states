@@ -1363,7 +1363,15 @@ function openInGoogleMaps() {
     if (waypointStops.length > 0) {
         url += `&waypoints=${encodeURIComponent(waypointStops.map((s) => `${s.lat},${s.lng}`).join("|"))}`;
     }
-    window.open(url, "_blank");
+
+    // 🆕 Mobile-friendly way to open links (bypasses popup blockers)
+    const link = document.createElement("a");
+    link.href = url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 /* ============================================================
@@ -1432,9 +1440,9 @@ function addStateLabels() {
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "14px"); 
+        text.setAttribute("font-size", "16px"); 
         text.setAttribute("font-weight", "bold");
-        text.setAttribute("fill", "#ffffff");
+        text.setAttribute("fill", "#ffffff00");
         text.setAttribute("stroke", "#2b2b2b");
         text.setAttribute("stroke-width", "3px");
         text.setAttribute("stroke-linejoin", "round");
@@ -1444,4 +1452,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-                                                                                          }
+}
