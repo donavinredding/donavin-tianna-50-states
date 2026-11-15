@@ -1399,11 +1399,11 @@ function addStateLabels() {
         if (stateId === "MI") { cy += 40; cx += 30; }
         if (stateId === "LA") { cx -= 20; }
         if (stateId === "ME") { cx -= 5; cy -= 10; }
-        if (stateId === "CA") { cx -= 10; cy += 10; }
+        if (stateId === "CA") { cx -= 15; cy += 10; }
         if (stateId === "KY") { cx += 10; cy += 3; }
         if (stateId === "OK") { cx += 20; }
         if (stateId === "TX") { cx += 20; }
-        if (stateId === "NV") { cy -= 10; }
+        if (stateId === "NV") { cy -= 13; }
         if (stateId === "MN") { cx -= 20; cy += 10; }
         if (stateId === "ID") { cy += 40; }
         if (stateId === "VA") { cx += 20; cy += 10; }
@@ -1412,13 +1412,17 @@ function addStateLabels() {
         if (stateId === "HI") { cy += 10; }
         if (stateId === "MS") { cx += 5; }
         if (stateId === "SC") { cy -= 5; cx += 5; }
-        if (stateId === "RI") { cx += 20; cy += 5; }
+        if (stateId === "RI") { cx += 13; cy += 13; }
         if (stateId === "VT") { cy -= 10; }
         if (stateId === "NH") { cy += 15; }
-        if (stateId === "MA") { cx += 20; }
-        if (stateId === "CT") { cy += 10; }
-        if (stateId === "DE") { cy += 10; cx += 20 }
+        if (stateId === "MA") { cx += 28; cy -= 5; }
+        if (stateId === "CT") { cy += 15; cx += 3; }
+        if (stateId === "DE") { cy += 10; cx += 22; }
         if (stateId === "GA") { cy += 10; }
+        if (stateId === "MD") { cy += 25; cx += 30; }
+        if (stateId === "NJ") { cy += 5; cx += 23; }
+        if (stateId === "MN") { cx += 5; }
+        if (stateId === "IL") { cy += 0; cx += 0; }
       
           //           Y-
           //           ▲
@@ -1442,9 +1446,9 @@ function addStateLabels() {
         text.setAttribute("font-family", "'Courier Prime', monospace");
         text.setAttribute("font-size", "16px"); 
         text.setAttribute("font-weight", "bold");
-        text.setAttribute("fill", "#ffffff00");
+        text.setAttribute("fill", "#ffffff");
         text.setAttribute("stroke", "#2b2b2b");
-        text.setAttribute("stroke-width", "3px");
+        text.setAttribute("stroke-width", "4px");
         text.setAttribute("stroke-linejoin", "round");
         text.setAttribute("paint-order", "stroke"); 
         text.setAttribute("pointer-events", "none"); 
