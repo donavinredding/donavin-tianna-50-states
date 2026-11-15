@@ -1047,8 +1047,6 @@ document.addEventListener("DOMContentLoaded", () => {
 Trip Planner 
 ============================================================ */
 
-const HOME_COORDS = [36.7213545, -97.0531794];
-
 const STATE_NAME_TO_CODE = {
     "Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA",
     "Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA",
@@ -1337,15 +1335,76 @@ function renderItinerary() {
     document.getElementById("tripGrandTotal").innerText = grandTotal.toFixed(2);
 }
 
+function setHomeLocation(e) {
+    if(e) e.preventDefault();
+    const address = prompt("Enter your home address or city (e.g., Ponca City, OK):");
+    if (!address) return;
+
+    // Use free OpenStreetMap API to find coordinates
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lng = parseFloat(data[0].lon);
+                // Save privately to the user's browser
+                localStorage.setItem("user_home_coords", JSON.stringify({ lat, lng }));
+                alert("✅ Home base saved privately to this browser!");
+                updateRoute(); // Refresh the map
+            } else {
+                alert("❌ Could not find that address. Try being more specific.");
+            }
+        })
+        .catch(err => alert("Error finding address: " + err.message));
+}
+
 function updateRoute() {
     if (routingControl) map.removeControl(routingControl);
     if (currentStops.length === 0) return;
 
-    const waypoints = [];
-    if (document.getElementById("startFromHomeToggle").checked) {
-        waypoints.push(L.latLng(HOME_COORDS[0], HOME_COORDS[1]));
+    const startType = document.querySelector('input[name="startRoute"]:checked').value;
+    let waypoints = [];
+    let startCoords = null;
+
+    if (startType === 'home') {
+        const savedHome = localStorage.getItem("user_home_coords");
+        if (savedHome) {
+            const home = JSON.parse(savedHome);
+            startCoords = L.latLng(home.lat, home.lng);
+        } else {
+            alert("You haven't set a Home location yet! Please click the 'Set' button, or choose a different option. Defaulting to First Stop for now.");
+            startCoords = L.latLng(currentStops[0].lat, currentStops[0].lng);
+        }
+    } else if (startType === 'first') {
+        startCoords = L.latLng(currentStops[0].lat, currentStops[0].lng);
+    } else if (startType === 'gps') {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by your browser.");
+            return;
+        }
+        // Fetch GPS, then draw
+        navigator.geolocation.getCurrentPosition(pos => {
+            const gpsCoords = L.latLng(pos.coords.latitude, pos.coords.longitude);
+            drawLeafletRoute(gpsCoords);
+        });
+        return; // Wait for GPS to load before drawing
     }
-    currentStops.forEach((s) => waypoints.push(L.latLng(s.lat, s.lng)));
+
+    drawLeafletRoute(startCoords);
+}
+
+function drawLeafletRoute(startCoords) {
+    let waypoints = [];
+    if (startCoords) {
+        // Don't duplicate the first stop if it's the same as the start point
+        if (currentStops.length > 0 && (startCoords.lat !== currentStops[0].lat || startCoords.lng !== currentStops[0].lng)) {
+            waypoints.push(startCoords);
+        }
+    }
+    
+    currentStops.forEach(s => waypoints.push(L.latLng(s.lat, s.lng)));
+
+    if (waypoints.length < 2) return; // Need at least 2 points for a route
 
     routingControl = L.Routing.control({
         waypoints, routeWhileDragging: false, addWaypoints: false, show: false
@@ -1369,34 +1428,45 @@ function openInGoogleMaps() {
         return;
     }
 
-    const useHome = document.getElementById("startFromHomeToggle").checked;
-    let origin, waypointStops, destinationStop;
+    const startType = document.querySelector('input[name="startRoute"]:checked').value;
+    
+    const processLink = (originStr) => {
+        const destinationStop = currentStops[currentStops.length - 1];
+        const destination = `${destinationStop.lat},${destinationStop.lng}`;
+        let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(originStr)}&destination=${encodeURIComponent(destination)}`;
+        
+        // If we started from the first stop, we don't need it as a waypoint
+        const waypointStops = startType === 'first' ? currentStops.slice(1, -1) : currentStops.slice(0, -1);
+        
+        if (waypointStops.length > 0) {
+            url += `&waypoints=${encodeURIComponent(waypointStops.map(s => `${s.lat},${s.lng}`).join("|"))}`;
+        }
+        
+        const link = document.createElement("a");
+        link.href = url; link.target = "_blank";
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    };
 
-    if (useHome) {
-        origin = "Ponca City, OK";
-        destinationStop = currentStops[currentStops.length - 1];
-        waypointStops = currentStops.slice(0, -1);
-    } else {
-        origin = `${currentStops[0].lat},${currentStops[0].lng}`;
-        destinationStop = currentStops[currentStops.length - 1];
-        waypointStops = currentStops.slice(1, -1);
+    if (startType === 'home') {
+        const savedHome = localStorage.getItem("user_home_coords");
+        if (savedHome) {
+            const home = JSON.parse(savedHome);
+            processLink(`${home.lat},${home.lng}`);
+        } else {
+            alert("No home set! Defaulting to First Stop.");
+            processLink(`${currentStops[0].lat},${currentStops[0].lng}`);
+        }
+    } else if (startType === 'first') {
+        processLink(`${currentStops[0].lat},${currentStops[0].lng}`);
+    } else if (startType === 'gps') {
+        navigator.geolocation.getCurrentPosition(
+            pos => processLink(`${pos.coords.latitude},${pos.coords.longitude}`),
+            () => {
+                alert("Could not get GPS location. Defaulting to First Stop.");
+                processLink(`${currentStops[0].lat},${currentStops[0].lng}`);
+            }
+        );
     }
-
-    const destination = `${destinationStop.lat},${destinationStop.lng}`;
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
-
-    if (waypointStops.length > 0) {
-        url += `&waypoints=${encodeURIComponent(waypointStops.map((s) => `${s.lat},${s.lng}`).join("|"))}`;
-    }
-
-    // 🆕 Mobile-friendly way to open links (bypasses popup blockers)
-    const link = document.createElement("a");
-    link.href = url;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
 }
 
 /* ============================================================
