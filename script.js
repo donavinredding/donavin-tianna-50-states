@@ -1472,7 +1472,13 @@ function openInGoogleMaps() {
         const savedHome = localStorage.getItem("user_home_coords");
         if (savedHome) {
             const home = JSON.parse(savedHome);
-            processLink(`${home.lat},${home.lng}`);
+            
+            // 🆕 If we have the text address, send that to Google Maps (it's way more accurate than OSM coordinates)
+            if (home.address) {
+                processLink(home.address); 
+            } else {
+                processLink(`${home.lat},${home.lng}`);
+            }
         } else {
             alert("No home set! Defaulting to First Stop.");
             processLink(`${currentStops[0].lat},${currentStops[0].lng}`);
