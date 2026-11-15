@@ -1414,7 +1414,7 @@ function addStateLabels() {
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "10px"); 
+        text.setAttribute("font-size", "14px"); 
         text.setAttribute("font-weight", "bold");
         text.setAttribute("fill", "#ffffff");
         text.setAttribute("stroke", "#2b2b2b");
@@ -1426,4 +1426,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-        }
+}
