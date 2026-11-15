@@ -310,7 +310,11 @@ function toggleAdminPanel() {
 }
 
 function openTokenModal() {
+    // Hide the admin panel first
+    document.getElementById("admin-panel").classList.add("hidden");
+
     const savedToken = localStorage.getItem(GH_CONFIG.tokenKey);
+    
     if (savedToken) {
         isAdminUnlocked = true;
         updateAdminUI();
@@ -335,6 +339,9 @@ function lockAdmin() {
     isAdminUnlocked = false;
     updateAdminUI();
     setPublishStatus("🔒 Locked for this session. Token is safely saved.");
+    
+    // Hide the admin panel
+    document.getElementById("admin-panel").classList.add("hidden");
 }
 
 function confirmForgetToken() {
@@ -343,6 +350,9 @@ function confirmForgetToken() {
         isAdminUnlocked = false;
         updateAdminUI();
         setPublishStatus("🗑️ Token removed from this browser.");
+        
+        // Hide the admin panel
+        document.getElementById("admin-panel").classList.add("hidden");
     }
 }
 
@@ -1404,7 +1414,7 @@ function addStateLabels() {
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("dominant-baseline", "central");
         text.setAttribute("font-family", "'Courier Prime', monospace");
-        text.setAttribute("font-size", "18px"); 
+        text.setAttribute("font-size", "10px"); 
         text.setAttribute("font-weight", "bold");
         text.setAttribute("fill", "#ffffff");
         text.setAttribute("stroke", "#2b2b2b");
@@ -1416,4 +1426,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-}
+        }
