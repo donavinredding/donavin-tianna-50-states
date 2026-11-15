@@ -122,13 +122,15 @@ async function loadSiteData() {
         stateGalleries = data.states || {};
         tripNotesText = data.tripNotes || "";
         nextStateTargets = new Set(data.nextStateTargets || []);
-        savedTrips = data.savedTrips || {}; // 🆕 Load global trips
+        savedTrips = data.savedTrips || {}; 
+        savedVehicles = data.savedVehicles || {}; // 🆕 Load global vehicles
     } catch (err) {
         console.warn("Could not load data.json — starting empty.", err);
         stateGalleries = {};
         tripNotesText = "";
         nextStateTargets = new Set();
         savedTrips = {}; // 🆕 Fallback
+        savedVehicles = {};
     }
 
     // 🆕 Automatically migrate old localStorage trips to the website
@@ -214,7 +216,8 @@ async function saveSiteData(message = "Update site data") {
             updatedAt: new Date().toISOString(),
             nextStateTargets: [...nextStateTargets],
             tripNotes: tripNotesText,
-            savedTrips: savedTrips, // 🆕 Include saved trips in the file
+            savedTrips: savedTrips, 
+            savedVehicles: savedVehicles, // 🆕 Include vehicles in the file
             states: stateGalleries
         },
         null,
@@ -1484,9 +1487,10 @@ function updateRoute() {
         return;
     }
 
-    const startType = document.querySelector('input[name="startRoute"]:checked').value;
+    // 🆕 Safe check in case the radio button loses its state
+    const routeRadio = document.querySelector('input[name="startRoute"]:checked');
+    const startType = routeRadio ? routeRadio.value : 'home';
     let startCoords = null;
-
     if (startType === 'home') {
         const savedHome = localStorage.getItem("user_home_coords");
         if (savedHome) {
@@ -1703,7 +1707,8 @@ function openInGoogleMaps() {
         return;
     }
 
-    const startType = document.querySelector('input[name="startRoute"]:checked').value;
+    const routeRadio = document.querySelector('input[name="startRoute"]:checked');
+    const startType = routeRadio ? routeRadio.value : 'home';
     
     const processLink = (originStr) => {
         const destinationStop = currentStops[currentStops.length - 1];

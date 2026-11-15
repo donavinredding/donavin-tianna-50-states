@@ -51,23 +51,26 @@
       <input type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)" style="width: 100%;" />
 
       <!-- 🆕 Route Start Options -->
-      <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%;">
-        <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px;">Start Route From:</strong>
-        
-        <label style="font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-          <input type="radio" name="startRoute" value="home" onchange="updateRoute()" checked> Home
-          <span id="home-address-display" style="font-size: 0.75rem; color: #666; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 4px;"></span>
-          <button type="button" onclick="setHomeLocation(event)" style="padding: 2px 8px; font-size: 0.75rem; background: #3c2f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Set</button>
-        </label>
-        
-        <label style="font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-          <input type="radio" name="startRoute" value="gps" onchange="updateRoute()"> Current Location
-        </label>
-        
-        <label style="font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-          <input type="radio" name="startRoute" value="first" onchange="updateRoute()"> First Stop
-        </label>
-      </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%;">
+          <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px;">Start Route From:</strong>
+          
+          <!-- Home Option -->
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+              <input type="radio" name="startRoute" value="home" onchange="updateRoute()" checked> Home
+            </label>
+            <span id="home-address-display" style="font-size: 0.75rem; color: #666; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-left: 2px;"></span>
+            <button type="button" onclick="setHomeLocation(event)" style="padding: 2px 8px; font-size: 0.75rem; background: #3c2f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Set</button>
+          </div>
+          
+          <label style="font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <input type="radio" name="startRoute" value="gps" onchange="updateRoute()"> Current Location
+          </label>
+          
+          <label style="font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+            <input type="radio" name="startRoute" value="first" onchange="updateRoute()"> First Stop
+          </label>
+        </div>
 
       <!-- 🆕 Fuel & Vehicle Tracking -->
       <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%; margin-top: 5px;">
