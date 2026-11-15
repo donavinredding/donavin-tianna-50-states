@@ -1104,6 +1104,7 @@ function openPlanTripModal(stateNameOrCode) {
     lockScroll();
 
     populateSavedTripsSelect();
+    updateHomeUI();
 
     setTimeout(() => {
         if (!map) {
@@ -1340,22 +1341,42 @@ function setHomeLocation(e) {
     const address = prompt("Enter your home address or city (e.g., Ponca City, OK):");
     if (!address) return;
 
-    // Use free OpenStreetMap API to find coordinates
     fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
         .then(res => res.json())
         .then(data => {
             if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat);
                 const lng = parseFloat(data[0].lon);
-                // Save privately to the user's browser
-                localStorage.setItem("user_home_coords", JSON.stringify({ lat, lng }));
+                
+                // 🆕 Save the text address too!
+                localStorage.setItem("user_home_coords", JSON.stringify({ lat, lng, address }));
+                
                 alert("✅ Home base saved privately to this browser!");
-                updateRoute(); // Refresh the map
+                updateHomeUI(); // 🆕 Refresh the text next to the radio button
+                updateRoute(); 
             } else {
                 alert("❌ Could not find that address. Try being more specific.");
             }
         })
         .catch(err => alert("Error finding address: " + err.message));
+}
+
+function updateHomeUI() {
+    const displaySpan = document.getElementById("home-address-display");
+    if (!displaySpan) return;
+    
+    const savedHome = localStorage.getItem("user_home_coords");
+    if (savedHome) {
+        try {
+            const home = JSON.parse(savedHome);
+            // Show the address if we have it, otherwise show coordinates
+            displaySpan.textContent = home.address ? `(${home.address})` : `(${home.lat.toFixed(2)}, ${home.lng.toFixed(2)})`;
+        } catch (e) {
+            displaySpan.textContent = "";
+        }
+    } else {
+        displaySpan.textContent = "";
+    }
 }
 
 function updateRoute() {
