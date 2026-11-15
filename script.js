@@ -772,12 +772,12 @@
 </div>
 
   <!-- 🆕 UNSAVED CHANGES BANNER -->
-<div id="unsaved-banner" class="hidden">
-  <div style="flex-grow: 1;">
+<div id="unsaved-banner" class="hidden" onclick="toggleBanner(true)">
+  <div class="banner-text">
     <strong>⚠️ Unsaved Changes</strong><br>
     <span style="font-size: 0.8rem; opacity: 0.9;">You have edits that aren't on the live site yet.</span>
   </div>
-  <button onclick="commitSave()" id="save-btn">Save to Website</button>
+  <button onclick="commitSave(event)" id="save-btn">Save to Website</button>
 </div>
 </body>
 
