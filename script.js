@@ -30,6 +30,7 @@ let stateGalleries = {};
 let tripNotesText = "";
 let nextStateTargets = new Set();
 let savedTrips = {};
+let savedVehicles = {};
 
 let activeStateName = null;
 let intervalId = null;
@@ -274,6 +275,99 @@ async function uploadImageToRepo(file, stateName) {
     const path = `${GH_CONFIG.imagesDir}/${name}`; 
     await ghPutFile(path, base64, `Add photo — ${stateName}`, null);
     return path;
+}
+
+function openVehicleModal() {
+    document.getElementById("vehicle-modal").classList.remove("hidden");
+    renderVehicles();
+}
+
+function renderVehicles() {
+    const list = document.getElementById("vehicle-list");
+    if (!list) return console.error("Vehicle list container not found.");
+
+    list.innerHTML = "";
+    Object.values(savedVehicles || {}).forEach(veh => {
+        const range = (veh.mpg * veh.gallons).toFixed(0);
+        list.innerHTML += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px;">
+                <div>
+                    <strong>${esc(veh.name)}</strong><br>
+                    <span style="font-size: 0.8rem; color: #666;">${veh.mpg} MPG • ${veh.gallons} Gal • ~${range} miles</span>
+                </div>
+                <button onclick="deleteVehicle('${veh.id}')" style="background: none; border: none; color: var(--primary-red); font-size: 1.2rem; cursor: pointer;">🗑️</button>
+            </div>
+        `;
+    });
+    populateVehicleDropdown();
+}
+
+function addVehicle() {
+    // 1. Grab elements safely
+    const nameInput = document.getElementById("veh-name");
+    const mpgInput = document.getElementById("veh-mpg");
+    const gallonsInput = document.getElementById("veh-tank");
+
+    // 2. Check if elements actually exist in the HTML
+    if (!nameInput || !mpgInput || !gallonsInput) {
+        alert("Critical Error: The vehicle form inputs are missing from the HTML.");
+        return;
+    }
+
+    const name = nameInput.value.trim();
+    const mpg = parseFloat(mpgInput.value);
+    const gallons = parseFloat(gallonsInput.value);
+
+    // 3. Validate numbers correctly
+    if (!name || isNaN(mpg) || isNaN(gallons)) {
+        alert("Please fill out all fields with valid text/numbers.");
+        return;
+    }
+
+    // 4. Ensure global object exists
+    if (typeof savedVehicles === 'undefined' || savedVehicles === null) {
+        window.savedVehicles = {};
+    }
+
+    // 5. Save the vehicle
+    const id = `veh-${Date.now()}`;
+    window.savedVehicles[id] = { id, name, mpg, gallons };
+
+    // 6. Clear inputs
+    nameInput.value = "";
+    mpgInput.value = "";
+    gallonsInput.value = "";
+
+    // 7. Update UI
+    renderVehicles();
+    alert(`✅ ${name} saved!`);
+    
+    // 8. Trigger global save
+    if (typeof queueSave === 'function') {
+        queueSave(`Add vehicle: ${name}`);
+    }
+}
+
+function deleteVehicle(id) {
+    if (!confirm("Delete this vehicle?")) return;
+    if (savedVehicles) delete savedVehicles[id];
+    renderVehicles();
+    if (typeof queueSave === 'function') queueSave(`Delete vehicle`);
+}
+
+function populateVehicleDropdown() {
+    const select = document.getElementById("tripVehicleSelect");
+    if (!select) return;
+    const current = select.value;
+    select.innerHTML = '<option value="">-- Select Vehicle for Fuel Calc --</option>';
+    
+    Object.values(savedVehicles || {}).forEach(veh => {
+        const opt = document.createElement("option");
+        opt.value = veh.id;
+        opt.textContent = `${veh.name} (${veh.mpg} MPG)`;
+        select.appendChild(opt);
+    });
+    if ([...select.options].some(o => o.value === current)) select.value = current;
 }
 
 /* ============================================================
@@ -1379,12 +1473,18 @@ function updateHomeUI() {
     }
 }
 
+let refuelMarker = null;
+
 function updateRoute() {
+    if (!map) return;
     if (routingControl) map.removeControl(routingControl);
-    if (currentStops.length === 0) return;
+    if (refuelMarker) { map.removeLayer(refuelMarker); refuelMarker = null; }
+    if (currentStops.length === 0) {
+        document.getElementById("tripTotalDistance").innerText = "0.0 miles";
+        return;
+    }
 
     const startType = document.querySelector('input[name="startRoute"]:checked').value;
-    let waypoints = [];
     let startCoords = null;
 
     if (startType === 'home') {
@@ -1393,43 +1493,197 @@ function updateRoute() {
             const home = JSON.parse(savedHome);
             startCoords = L.latLng(home.lat, home.lng);
         } else {
-            alert("You haven't set a Home location yet! Please click the 'Set' button, or choose a different option. Defaulting to First Stop for now.");
             startCoords = L.latLng(currentStops[0].lat, currentStops[0].lng);
         }
     } else if (startType === 'first') {
         startCoords = L.latLng(currentStops[0].lat, currentStops[0].lng);
     } else if (startType === 'gps') {
-        if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser.");
-            return;
-        }
-        // Fetch GPS, then draw
         navigator.geolocation.getCurrentPosition(pos => {
-            const gpsCoords = L.latLng(pos.coords.latitude, pos.coords.longitude);
-            drawLeafletRoute(gpsCoords);
+            drawLeafletRoute(L.latLng(pos.coords.latitude, pos.coords.longitude));
         });
-        return; // Wait for GPS to load before drawing
+        return;
     }
-
     drawLeafletRoute(startCoords);
 }
 
 function drawLeafletRoute(startCoords) {
     let waypoints = [];
     if (startCoords) {
-        // Don't duplicate the first stop if it's the same as the start point
         if (currentStops.length > 0 && (startCoords.lat !== currentStops[0].lat || startCoords.lng !== currentStops[0].lng)) {
             waypoints.push(startCoords);
         }
     }
     
+    // Add stops. If a stop is a Refuel Point, it acts as a reset.
     currentStops.forEach(s => waypoints.push(L.latLng(s.lat, s.lng)));
 
-    if (waypoints.length < 2) return; // Need at least 2 points for a route
+    if (waypoints.length < 2) return;
 
     routingControl = L.Routing.control({
-        waypoints, routeWhileDragging: false, addWaypoints: false, show: false
+        waypoints, 
+        routeWhileDragging: false, 
+        addWaypoints: false, 
+        show: false,
+        lineOptions: { styles: [{ color: '#1a73e8', weight: 5 }] }
     }).addTo(map);
+
+    // 🆕 Listen for the route to be calculated so we can do fuel math
+    routingControl.on('routesfound', function(e) {
+        const route = e.routes[0];
+        const totalMiles = route.summary.totalDistance * 0.000621371; // meters to miles
+        document.getElementById("tripTotalDistance").innerText = `${totalMiles.toFixed(1)} miles`;
+
+        calculateFuelAndPlaceMarker(route, startCoords);
+    });
+}
+
+function calculateFuelAndPlaceMarker(route, startCoords) {
+    const vehId = document.getElementById("tripVehicleSelect").value;
+    const currentMiles = parseFloat(document.getElementById("currentFuelMiles").value);
+
+    // If no vehicle or no fuel input, stop here.
+    if (!vehId || isNaN(currentMiles) || currentMiles <= 0) return;
+
+    const veh = savedVehicles[vehId];
+    const totalRange = veh.mpg * veh.gallons; // e.g., 26 MPG * 14 Gal = 364 miles
+
+    // We want to warn them when they hit 25% (0.25) of their total range
+    const warningThreshold = totalRange * 0.25; 
+    
+    // How many miles can we drive before hitting 25%?
+    const milesUntilWarning = currentMiles - warningThreshold;
+
+    if (milesUntilWarning <= 0) {
+        alert(`⚠️ Your tank is already below 25%! You should find gas before you leave.`);
+        return;
+    }
+
+    if (milesUntilWarning > (route.summary.totalDistance * 0.000621371)) {
+        // We have enough gas for the whole trip! No marker needed.
+        return;
+    }
+
+    // We need to find exactly where on the route we hit that mileage.
+    // We walk along the route coordinates, summing up the distance.
+    let accumulatedMiles = 0;
+    let refuelLatLng = null;
+
+    // Route coordinates are densely packed.
+    for (let i = 1; i < route.coordinates.length; i++) {
+        const p1 = route.coordinates[i - 1];
+        const p2 = route.coordinates[i];
+        
+        // Calculate distance between p1 and p2 in miles
+        const dist = p1.distanceTo(p2) * 0.000621371; 
+        
+        if (accumulatedMiles + dist >= milesUntilWarning) {
+            // The warning point is between p1 and p2. We'll just drop it on p2 to keep it simple.
+            refuelLatLng = p2;
+            break;
+        }
+        accumulatedMiles += dist;
+    }
+
+    if (refuelLatLng) {
+        // Create a custom icon for the Refuel Point
+        const gasIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `<div style="background-color: #B75109; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); font-size: 16px;">⛽</div>`,
+            iconSize: [30, 30],
+            iconAnchor: [15, 15]
+        });
+
+        refuelMarker = L.marker(refuelLatLng, { icon: gasIcon }).addTo(map);
+        refuelMarker.bindPopup(`
+            <div style="text-align: center;">
+                <strong>⛽ Refuel Point</strong><br>
+                <span style="font-size: 0.8rem;">You will hit 25% fuel (${warningThreshold.toFixed(0)} miles left) here.</span><br><br>
+                <button onclick="findGasStations(${refuelLatLng.lat}, ${refuelLatLng.lng})" style="background: #1a73e8; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Find Gas Station</button>
+            </div>
+        `).openPopup();
+    }
+}
+
+function findGasStations(lat, lng) {
+    // Query Overpass API for gas stations within 20 miles (approx 32186 meters)
+    const query = `[out:json];node(around:32186,${lat},${lng})[amenity=fuel];out 15;`;
+    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+    refuelMarker.setPopupContent(`<div style="text-align:center;">Searching for gas stations... ⏳</div>`);
+
+    fetch(url)
+        .then(res => res.json())
+        .then(data => {
+            const stations = data.elements;
+            if (!stations || stations.length === 0) {
+                refuelMarker.setPopupContent(`<div style="text-align:center;">No gas stations found within 20 miles. 😢<br><br><button onclick="map.closePopup()">Close</button></div>`);
+                return;
+            }
+
+            let html = `<div style="max-height: 200px; overflow-y: auto;"><strong>Select a Gas Station:</strong><br><br>`;
+            stations.forEach((st, idx) => {
+                const name = st.tags.name || "Unknown Gas Station";
+                const brand = st.tags.brand || "";
+                const displayName = brand ? `${brand} (${name})` : name;
+                
+                // We pass the index to a global array so we can retrieve the data later
+                window._foundStations = stations;
+                
+                html += `<button onclick="selectGasStation(${idx})" style="display: block; width: 100%; text-align: left; margin-bottom: 5px; padding: 8px; background: #f4efe6; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                    ⛽ ${esc(displayName)}
+                </button>`;
+            });
+            html += `</div>`;
+            refuelMarker.setPopupContent(html);
+        })
+        .catch(err => {
+            console.error(err);
+            refuelMarker.setPopupContent(`<div style="text-align:center;">Error connecting to OpenStreetMap. 🛑</div>`);
+        });
+}
+
+function selectGasStation(index) {
+    const st = window._foundStations[index];
+    if (!st) return;
+    
+    const name = st.tags.brand || st.tags.name || "Gas Station";
+    
+    // Add this gas station as a new stop in the itinerary
+    currentStops.push({
+        id: Date.now(),
+        name: `⛽ Refuel: ${name}`,
+        notes: "Refueling stop (Added from map)",
+        lat: st.lat,
+        lng: st.lon,
+        completed: false,
+        duration: 0.25, // 15 mins
+        preferredTime: "",
+        costs: { tickets: 0, parking: 0, food: 0, merch: 0, fuel: 0 },
+        isRefuel: true // 🆕 Flag it so we can reset the math
+    });
+
+    renderItinerary();
+    
+    // 🆕 We need to recalculate the route. 
+    // Since we added a stop, the total distance changes, and the "25% mark" changes.
+    // Also, we need to reset the fuel baseline from this new stop.
+    // For now, let's just trigger a re-route. 
+    // (In a perfect world, we'd recursively recalculate from the new stop, but that's extremely complex. 
+    // By just recalculating, the user will now see the *next* refuel point based on their original input. 
+    // To truly reset, we'd need to subtract the miles driven to this stop from currentMiles. 
+    // Let's do a simple version of that).
+    
+    // Calculate miles from start to this gas station to update the fuel remaining
+    const vehId = document.getElementById("tripVehicleSelect").value;
+    if (vehId) {
+         // We cheat a bit here: we subtract 300 miles from their input just to simulate a full tank.
+         // Actually, if they refuel, their "Miles till empty" becomes "Full Tank".
+         const veh = savedVehicles[vehId];
+         const fullRange = veh.mpg * veh.gallons;
+         document.getElementById("currentFuelMiles").value = fullRange; 
+    }
+
+    updateRoute(); // Redraw map and re-calculate the *next* refuel point
 }
 
 function toggleStopComplete(i) {

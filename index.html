@@ -68,7 +68,22 @@
           <input type="radio" name="startRoute" value="first" onchange="updateRoute()"> First Stop
         </label>
       </div>
+
+      <!-- 🆕 Fuel & Vehicle Tracking -->
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%; margin-top: 5px;">
+        <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px; display: flex; justify-content: space-between;">
+          <span>⛽ Fuel Tracking (Optional)</span>
+          <button type="button" onclick="openVehicleModal()" style="background: none; border: none; color: #1a73e8; cursor: pointer; text-decoration: underline;">Manage Vehicles</button>
+        </strong>
+        
+        <select id="tripVehicleSelect" onchange="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1;">
+          <option value="">-- Select Vehicle --</option>
+        </select>
+        
+        <input type="number" id="currentFuelMiles" placeholder="Current Miles till Empty" oninput="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; width: 160px;">
+      </div>
     </div>
+    
 
     <div class="planner-grid">
       <!-- Left: Interactive Map -->
@@ -107,13 +122,20 @@
         <ul id="itineraryList" class="sortable-list"></ul>
 
         <!-- Inside your modal footer (.trip-totals) -->
-        <div class="trip-totals">
-          <strong>Projected Trip Cost: $<span id="tripGrandTotal">0.00</span></strong>
-         <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
-          <button onclick="openInGoogleMaps()" class="gmaps-btn" style="background: #1a73e8;">🗺️ Maps</button>
-          <button onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
-          <button onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
-         </div>
+        <div class="trip-totals" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
+            <span>Total Distance:</span>
+            <span id="tripTotalDistance" style="color: #1a73e8;">0.0 miles</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px;">
+            <span>Projected Trip Cost:</span>
+            <span id="tripGrandTotal">$0.00</span>
+          </div>
+          <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+            <button onclick="openInGoogleMaps()" class="gmaps-btn" style="background: #1a73e8;">🗺️ Maps</button>
+            <button onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
+            <button onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
+          </div>
         </div>
       </div>
     </div>
@@ -773,6 +795,30 @@
     <button id="btn-unlock" type="button" class="admin-btn" onclick="openTokenModal()" style="display: none;">🔑 Unlock Admin</button>
     <button id="btn-lock" type="button" class="admin-btn secondary" onclick="lockAdmin()" style="display: none;">🔒 Lock Site (Keep Token)</button>
     <button id="btn-forget" type="button" class="admin-btn danger" onclick="confirmForgetToken()" style="display: none;">🗑️ Forget Token</button>
+  </div>
+</div>
+
+<!-- 🆕 VEHICLE MODAL -->
+<div id="vehicle-modal" class="modal-overlay hidden" style="z-index: 2000;">
+  <div class="modal-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h3 class="modal-title" style="margin: 0;">🚗 My Vehicles</h3>
+      <button type="button" onclick="document.getElementById('vehicle-modal').classList.add('hidden')" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">✖</button>
+    </div>
+    
+    <div id="vehicle-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;">
+      <!-- Vehicles will be injected here -->
+    </div>
+
+    <div style="background: #f4efe6; padding: 10px; border-radius: 6px; border: 1px solid #d3c5b4;">
+      <h4 style="margin-top: 0; margin-bottom: 10px;">+ Add Vehicle</h4>
+      <input type="text" id="veh-name" placeholder="Vehicle Name (e.g., Honda CR-V)" style="width: 100%; margin-bottom: 8px; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <input type="number" id="veh-mpg" placeholder="Avg MPG (e.g., 26)" style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        <input type="number" id="veh-tank" placeholder="Gallons (e.g., 14)" style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+      </div>
+      <button onclick="addVehicle()" class="submit-btn" style="margin-top: 0;">Save Vehicle</button>
+    </div>
   </div>
 </div>
 
