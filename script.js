@@ -289,6 +289,11 @@ function updateAdminUI() {
         document.getElementById("btn-lock").style.display = "none";
         document.getElementById("btn-forget").style.display = hasToken ? "block" : "none";
         document.body.classList.remove("admin-unlocked");
+        
+        // 🆕 Force-close any open modals so the user can't keep editing
+        document.getElementById("gallery-modal").classList.remove("active");
+        document.getElementById("planTripModal").classList.add("hidden");
+        unlockScroll();
     }
 
     const notesEl = document.getElementById("plan-notes");
@@ -298,6 +303,13 @@ function updateAdminUI() {
         isEditMode = false;
         const btn = document.getElementById("toggle-edit-btn");
         if (btn) { btn.classList.remove("active"); btn.textContent = "Edit Mode ✏️"; }
+    }
+
+    // 🆕 Instantly redraw the checklists and gallery to strip admin buttons
+    updateChecklists(); 
+    if (activeStateName) {
+        const container = document.getElementById("polaroid-container");
+        if (container) renderGallery(activeStateName, container);
     }
 }
 
@@ -1175,6 +1187,12 @@ function saveAndCloseTrip() {
 }
 
 function markTripVisited() {
+    // 🆕 Check if admin is locked before allowing this
+    if (!isAdmin()) {
+        alert("You must unlock the Site Admin to modify the State Gallery.");
+        return;
+    }
+    
     if (currentStops.length > 0) {
         saveFullTrip();
     }
@@ -1426,4 +1444,4 @@ function addStateLabels() {
         text.textContent = stateId;
         labelGroup.appendChild(text);
     });
-}
+                                                                                          }
