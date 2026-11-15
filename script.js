@@ -216,8 +216,8 @@ async function saveSiteData(message = "Update site data") {
             updatedAt: new Date().toISOString(),
             nextStateTargets: [...nextStateTargets],
             tripNotes: tripNotesText,
-            savedTrips: savedTrips, 
-            savedVehicles: savedVehicles, // 🆕 Include vehicles in the file
+            savedTrips: savedTrips,
+            savedVehicles: savedVehicles, // 🆕 THIS IS THE MISSING PIECE
             states: stateGalleries
         },
         null,
@@ -327,14 +327,12 @@ function addVehicle() {
         return;
     }
 
-    // 4. Ensure global object exists
-    if (typeof savedVehicles === 'undefined' || savedVehicles === null) {
-        window.savedVehicles = {};
-    }
+    // 4. Ensure the state object exists
+    if (!savedVehicles) savedVehicles = {};
 
     // 5. Save the vehicle
     const id = `veh-${Date.now()}`;
-    window.savedVehicles[id] = { id, name, mpg, gallons };
+    savedVehicles[id] = { id, name, mpg, gallons };
 
     // 6. Clear inputs
     nameInput.value = "";
