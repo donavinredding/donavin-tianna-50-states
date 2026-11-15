@@ -1,11 +1,36 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-15T09:39:57.716Z",
+  "updatedAt": "2026-11-15T11:25:10.684Z",
   "nextStateTargets": [
     "Texas"
   ],
   "tripNotes": "",
-  "savedTrips": {},
+  "savedTrips": {
+    "TX-1794741905490": {
+      "id": "TX-1794741905490",
+      "stateCode": "TX",
+      "name": "mom's house",
+      "stops": [
+        {
+          "id": 1794736557839,
+          "name": "Flour Bluff",
+          "notes": "",
+          "lat": 27.676086583774683,
+          "lng": -97.28469964810853,
+          "completed": false,
+          "duration": 1.5,
+          "preferredTime": "",
+          "costs": {
+            "tickets": 0,
+            "parking": 0,
+            "food": 0,
+            "merch": 0
+          }
+        }
+      ],
+      "updatedAt": "2026-11-15T11:25:05.490Z"
+    }
+  },
   "savedVehicles": {
     "veh-1794735559452": {
       "id": "veh-1794735559452",
