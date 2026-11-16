@@ -1194,6 +1194,149 @@ let map, routingControl, tempMarker, pendingLatLng;
 let currentStateCode = "AL";
 let currentStops = [];
 
+/* ============================================================
+Batch 4: Open Hours editor (stops only, 12h display, 5-min steps)
+============================================================ */
+const OH_DAYS_LIST = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const OH_DAY_RANGES_LIST = ["Monday - Friday","Saturday - Sunday","Monday - Sunday"];
+const OH_MINUTES_LIST = ["00","05","10","15","20","25","30","35","40","45","50","55"];
+const OH_HOURS_LIST = ["1","2","3","4","5","6","7","8","9","10","11","12"];
+
+let openHoursDraft = [];
+
+function format12h(hhmm) {
+  if (!hhmm || typeof hhmm !== "string" || !/^\d{2}:\d{2}$/.test(hhmm)) return "";
+  const [hStr, mStr] = hhmm.split(":");
+  const h24 = parseInt(hStr, 10);
+  let ampm = "AM", h12 = h24;
+  if (h24 === 0) { h12 = 12; ampm = "AM"; }
+  else if (h24 < 12) { h12 = h24; ampm = "AM"; }
+  else if (h24 === 12) { h12 = 12; ampm = "PM"; }
+  else { h12 = h24 - 12; ampm = "PM"; }
+  return `${h12}:${mStr} ${ampm}`;
+}
+
+function _partsFrom24(hhmm) {
+  if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return { hour: "9", minute: "00", ampm: "AM" };
+  const [hStr, mStr] = hhmm.split(":");
+  const h24 = parseInt(hStr, 10);
+  let h12 = h24, ampm = "AM";
+  if (h24 === 0) { h12 = 12; ampm = "AM"; }
+  else if (h24 < 12) { h12 = h24; ampm = "AM"; }
+  else if (h24 === 12) { h12 = 12; ampm = "PM"; }
+  else { h12 = h24 - 12; ampm = "PM"; }
+  return { hour: String(h12), minute: mStr, ampm };
+}
+
+function _to24(hourStr, minuteStr, ampm) {
+  let h = parseInt(hourStr, 10);
+  if (ampm === "AM") { if (h === 12) h = 0; }
+  else { if (h !== 12) h += 12; }
+  return `${String(h).padStart(2, "0")}:${minuteStr}`;
+}
+
+function _ohSelect(cls, options, selected) {
+  const optHtml = options.map(o => {
+    const val = typeof o === "string" ? o : o.value;
+    const label = typeof o === "string" ? o : o.label;
+    return `<option value="${esc(val)}"${val === selected ? " selected" : ""}>${esc(label)}</option>`;
+  }).join("");
+  return `<select class="${cls}">${optHtml}</select>`;
+}
+
+function renderOpenHoursEditor() {
+  const container = document.getElementById("openHoursList");
+  if (!container) return;
+
+  if (openHoursDraft.length === 0) {
+    container.innerHTML = '<p class="oh-empty">No open hours set. Click "+ Add Day" to add one.</p>';
+    return;
+  }
+
+  const allDayOptions = OH_DAYS_LIST.concat(OH_DAY_RANGES_LIST);
+  let html = "";
+
+  openHoursDraft.forEach((day, dIdx) => {
+    html += `<div class="oh-day-row" data-day-idx="${dIdx}">`;
+    html += `<div class="oh-day-header">`;
+    html += `<select class="oh-day-select" onchange="updateOpenHoursDay(${dIdx}, this.value)">`;
+    allDayOptions.forEach(opt => {
+      html += `<option value="${esc(opt)}"${opt === day.days ? " selected" : ""}>${esc(opt)}</option>`;
+    });
+    html += `</select>`;
+    html += `<button type="button" class="oh-btn oh-add-tf" onclick="addOpenHoursTimeframe(${dIdx})">+ Time</button>`;
+    html += `<button type="button" class="oh-btn oh-remove-day" onclick="removeOpenHoursDay(${dIdx})" title="Remove day">🗑️</button>`;
+    html += `</div>`;
+
+    html += `<div class="oh-timeframes">`;
+    day.timeframes.forEach((tf, tIdx) => {
+      const s = _partsFrom24(tf.start);
+      const e = _partsFrom24(tf.end);
+      const canRemove = day.timeframes.length > 1;
+      html += `<div class="oh-timeframe-row" data-tf-idx="${tIdx}" onchange="syncOpenHoursTimeframe(${dIdx}, ${tIdx})">`;
+      html += _ohSelect("oh-start-hour", OH_HOURS_LIST, s.hour);
+      html += _ohSelect("oh-start-min", OH_MINUTES_LIST, s.minute);
+      html += _ohSelect("oh-start-ampm", ["AM","PM"], s.ampm);
+      html += `<span class="oh-sep">to</span>`;
+      html += _ohSelect("oh-end-hour", OH_HOURS_LIST, e.hour);
+      html += _ohSelect("oh-end-min", OH_MINUTES_LIST, e.minute);
+      html += _ohSelect("oh-end-ampm", ["AM","PM"], e.ampm);
+      if (canRemove) {
+        html += `<button type="button" class="oh-btn oh-remove-tf" onclick="event.stopPropagation(); removeOpenHoursTimeframe(${dIdx}, ${tIdx})" title="Remove timeframe">✕</button>`;
+      } else {
+        html += `<span class="oh-remove-tf-placeholder"></span>`;
+      }
+      html += `</div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function addOpenHoursDay() {
+  openHoursDraft.push({ days: "Monday", timeframes: [{ start: "09:00", end: "17:00" }] });
+  renderOpenHoursEditor();
+}
+function removeOpenHoursDay(dayIdx) {
+  openHoursDraft.splice(dayIdx, 1);
+  renderOpenHoursEditor();
+}
+function updateOpenHoursDay(dayIdx, newDays) {
+  if (!openHoursDraft[dayIdx]) return;
+  openHoursDraft[dayIdx].days = newDays;
+}
+function addOpenHoursTimeframe(dayIdx) {
+  if (!openHoursDraft[dayIdx]) return;
+  const list = openHoursDraft[dayIdx].timeframes;
+  const last = list[list.length - 1] || { start: "09:00", end: "17:00" };
+  list.push({ start: last.start, end: last.end });
+  renderOpenHoursEditor();
+}
+function removeOpenHoursTimeframe(dayIdx, tfIdx) {
+  if (!openHoursDraft[dayIdx]) return;
+  if (openHoursDraft[dayIdx].timeframes.length <= 1) return;
+  openHoursDraft[dayIdx].timeframes.splice(tfIdx, 1);
+  renderOpenHoursEditor();
+}
+function syncOpenHoursTimeframe(dayIdx, tfIdx) {
+  if (!openHoursDraft[dayIdx] || !openHoursDraft[dayIdx].timeframes[tfIdx]) return;
+  const row = document.querySelector(
+    `.oh-day-row[data-day-idx="${dayIdx}"] .oh-timeframe-row[data-tf-idx="${tfIdx}"]`
+  );
+  if (!row) return;
+  const sh = row.querySelector(".oh-start-hour").value;
+  const sm = row.querySelector(".oh-start-min").value;
+  const sap = row.querySelector(".oh-start-ampm").value;
+  const eh = row.querySelector(".oh-end-hour").value;
+  const em = row.querySelector(".oh-end-min").value;
+  const eap = row.querySelector(".oh-end-ampm").value;
+  openHoursDraft[dayIdx].timeframes[tfIdx] = {
+    start: _to24(sh, sm, sap),
+    end: _to24(eh, em, eap)
+  };
+}
+
 function openPlanTripModal(stateNameOrCode) {
     const code = STATE_NAME_TO_CODE[stateNameOrCode] || stateNameOrCode;
     const info = STATE_VIEWS[code] || { name: stateNameOrCode, coords: [39.8283, -98.5795], zoom: 4 };
