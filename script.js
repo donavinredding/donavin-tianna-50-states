@@ -1229,20 +1229,6 @@ function openPlanTripModal(stateNameOrCode) {
 
             map.on("dblclick", (e) => {
                 window.pendingManualRefuelIndex = undefined; 
-
-                // 🆕 Ask to favorite
-                if (confirm("⭐ Do you want to save this location as a Favorite?")) {
-                    favoriteLocations.push({
-                        id: "fav-" + Date.now(),
-                        name: "Favorite",
-                        lat: e.latlng.lat,
-                        lng: e.latlng.lng
-                    });
-                    renderFavoriteMarkers();
-                    renderFavoritesUI();
-                    queueSave(`Add favorite location`);
-                }
-
                 pendingLatLng = e.latlng;
                 if (tempMarker) map.removeLayer(tempMarker);
                 tempMarker = L.marker(pendingLatLng).addTo(map);
@@ -1391,6 +1377,36 @@ function deleteSelectedTrip() {
     alert("Trip deleted.");
 }
 
+function saveLocationAsFavorite() {
+    if (!pendingLatLng) return;
+
+    const newFav = {
+        id: "fav-" + Date.now(),
+        name: document.getElementById("locName").value || "Favorite",
+        notes: document.getElementById("locNotes").value,
+        lat: pendingLatLng.lat,
+        lng: pendingLatLng.lng,
+        costs: {
+            tickets: parseFloat(document.getElementById("costTickets").value) || 0,
+            parking: parseFloat(document.getElementById("costParking").value) || 0,
+            food:    parseFloat(document.getElementById("costFood").value) || 0,
+            merch:   parseFloat(document.getElementById("costMerch").value) || 0,
+            fuel:    0
+        }
+        // Notice: We skip duration and preferredTime entirely here
+    };
+
+    favoriteLocations.push(newFav);
+    renderFavoriteMarkers();
+    renderFavoritesUI(); 
+    queueSave(`Saved favorite location: ${newFav.name}`);
+    
+    // Optional: Close the form after saving
+    if (tempMarker) map.removeLayer(tempMarker);
+    document.getElementById("locationFormCard").style.display = "none";
+    pendingLatLng = null;
+}
+
 function saveLocationToTrip() {
     if (!pendingLatLng) return;
 
@@ -1404,7 +1420,7 @@ function saveLocationToTrip() {
         lat: pendingLatLng.lat,
         lng: pendingLatLng.lng,
         completed: false,
-        duration: parseFloat(document.getElementById("locDuration").value) || (isRefuel ? 0.25 : 1.5),
+        duration: parseFloat(document.getElementById("locDuration").value) || (isRefuel ? 0.25 : 1),
         preferredTime: document.getElementById("locPreferredTime").value || "",
         costs: {
             tickets: parseFloat(document.getElementById("costTickets").value) || 0,
@@ -1427,7 +1443,7 @@ function saveLocationToTrip() {
     if (tempMarker) map.removeLayer(tempMarker);
     document.getElementById("locationFormCard").style.display = "none";
     ["locName", "locNotes"].forEach((id) => (document.getElementById(id).value = ""));
-    document.getElementById("locDuration").value = 1.5;
+    document.getElementById("locDuration").value = 1;
     document.getElementById("locPreferredTime").value = "";
     ["costTickets", "costParking", "costFood", "costMerch"].forEach(
         (id) => (document.getElementById(id).value = 0)
@@ -1848,10 +1864,10 @@ function renderFavoriteMarkers() {
     favoriteMarkers.forEach(m => map.removeLayer(m));
     favoriteMarkers = [];
 
-    // 🆕 Yellow Drop Pin
+    // Yellow Drop Pin
     const yellowPin = L.divIcon({
         className: 'custom-div-icon',
-        html: `<div style="background-color: #f1c40f; color: black; border-radius: 50% 50% 50% 0; width: 28px; height: 28px; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"><div style="transform: rotate(45deg); font-size: 14px;">⭐</div></div>`,
+        html: `<div style="background-color: white; color: black; border-radius: 50% 50% 50% 0; width: 28px; height: 28px; transform: rotate(-45deg); border: 3px solid #f1c40f; box-shadow: 0 2px 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"><div style="transform: rotate(45deg); font-size: 14px;">⭐</div></div>`,
         iconSize: [28, 28],
         iconAnchor: [14, 28],
         popupAnchor: [0, -28]
@@ -1859,9 +1875,41 @@ function renderFavoriteMarkers() {
 
     favoriteLocations.forEach(fav => {
         const marker = L.marker([fav.lat, fav.lng], { icon: yellowPin, bubblingMouseEvents: false }).addTo(map);
-        marker.bindPopup(`<div style="text-align:center;"><strong>⭐ ${esc(fav.name)}</strong></div>`);
+        
+        // 🆕 Updated Popup with "Add to Route" button
+        marker.bindPopup(`
+            <div style="text-align:center; min-width: 160px;">
+                <strong>⭐ ${esc(fav.name)}</strong>
+                <p style="font-size: 0.8rem; color: #666; margin: 4px 0 8px 0;">${esc(fav.notes || "")}</p>
+                <button onclick="addFavoriteToRoute('${fav.id}')" style="background: #6B8071; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;">
+                    + Add to Route
+                </button>
+            </div>
+        `);
         favoriteMarkers.push(marker);
     });
+}
+
+function addFavoriteToRoute(id) {
+    const fav = favoriteLocations.find(f => f.id === id);
+    if (!fav) return;
+
+    const newStop = {
+        id: Date.now(),
+        name: fav.name,
+        notes: fav.notes || "",
+        lat: fav.lat,
+        lng: fav.lng,
+        completed: false,
+        duration: 1, // 🆕 Defaults to 1 hour since we don't save Time Spent
+        preferredTime: "",
+        costs: fav.costs || { tickets: 0, parking: 0, food: 0, merch: 0, fuel: 0 }
+    };
+
+    currentStops.push(newStop);
+    renderItinerary();
+    updateRoute();
+    map.closePopup();
 }
 
 function updateFavoriteName(id, newName) {

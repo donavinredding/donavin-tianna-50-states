@@ -113,10 +113,13 @@
           </div>
 
           <div class="time-grid">
-            <label>⏱️ Time Spent Here (Hours)<input type="number" id="locDuration" value="1.5" min="0.25" step="0.25"></label>
+            <label>⏱️ Time Spent Here (Hours)<input type="number" id="locDuration" value="1" min="0.25" step="0.25"></label>
             <label>🕒 Preferred Arrival<input type="time" id="locPreferredTime"></label>
           </div>
 
+          <button type="button" onclick="saveLocationAsFavorite()" style="background: #ffffff; color: #2c2c2c; border: 1px solid #BC9E84; padding: 0; border-radius: 4px; cursor: pointer; font-family: 'Special Elite', cursive; font-size: 1rem; transition: background 0.2s; margin: 1px;">
+            ⭐
+        </button>
           <button onclick="saveLocationToTrip()">+ Add Location to Itinerary</button>
         </div>
 
