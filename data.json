@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-16T01:39:06.736Z",
+  "updatedAt": "2026-11-16T01:40:38.281Z",
   "nextStateTargets": [
     "Texas"
   ],
@@ -29,6 +29,30 @@
         }
       ],
       "updatedAt": "2026-11-16T00:34:34.017Z"
+    },
+    "TX-1794793235508": {
+      "id": "TX-1794793235508",
+      "stateCode": "TX",
+      "name": "Trip 11/15/2026",
+      "stops": [
+        {
+          "id": 1794793230529,
+          "name": "Mom's House",
+          "notes": "",
+          "lat": 27.67610800148963,
+          "lng": -97.28473044356636,
+          "completed": false,
+          "duration": 7,
+          "preferredTime": "",
+          "costs": {
+            "tickets": 0,
+            "parking": 0,
+            "food": 0,
+            "merch": 0
+          }
+        }
+      ],
+      "updatedAt": "2026-11-16T01:40:35.508Z"
     }
   },
   "savedVehicles": {
