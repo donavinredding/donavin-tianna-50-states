@@ -1337,6 +1337,58 @@ function syncOpenHoursTimeframe(dayIdx, tfIdx) {
   };
 }
 
+/* ============================================================
+Batch 5: Field visibility helpers
+============================================================ */
+const FIELD_VIS_DEFAULTS = {
+  tickets: true,
+  parking: true,
+  food: true,
+  merch: true,
+  duration: true,
+  preferredTime: true
+};
+
+function getFieldVisibilityFromForm() {
+  return {
+    tickets: document.getElementById("vis-tickets")?.checked ?? true,
+    parking: document.getElementById("vis-parking")?.checked ?? true,
+    food: document.getElementById("vis-food")?.checked ?? true,
+    merch: document.getElementById("vis-merch")?.checked ?? true,
+    duration: document.getElementById("vis-duration")?.checked ?? true,
+    preferredTime: document.getElementById("vis-preferredTime")?.checked ?? true
+  };
+}
+
+function resetFieldVisibilityForm() {
+  ["vis-tickets","vis-parking","vis-food","vis-merch","vis-duration","vis-preferredTime"]
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = true;
+    });
+}
+
+function setFieldVisibilityForm(stop) {
+  const vis = getStopVisibility(stop);
+  const map = {
+    tickets: "vis-tickets",
+    parking: "vis-parking",
+    food: "vis-food",
+    merch: "vis-merch",
+    duration: "vis-duration",
+    preferredTime: "vis-preferredTime"
+  };
+  Object.entries(map).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = vis[key] !== false;
+  });
+}
+
+function getStopVisibility(stop) {
+  if (!stop || !stop.fieldVisibility) return { ...FIELD_VIS_DEFAULTS };
+  return { ...FIELD_VIS_DEFAULTS, ...stop.fieldVisibility };
+}
+
 function openPlanTripModal(stateNameOrCode) {
     const code = STATE_NAME_TO_CODE[stateNameOrCode] || stateNameOrCode;
     const info = STATE_VIEWS[code] || { name: stateNameOrCode, coords: [39.8283, -98.5795], zoom: 4 };

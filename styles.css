@@ -629,3 +629,44 @@ body.admin-unlocked button.admin-only { display: inline-block !important; }
 @media (max-width: 768px) {
   .oh-timeframe-row { flex-wrap: wrap; gap: 6px; }
 }
+
+/* ---- Batch 5: field visibility toggles ---- */
+.field-visibility-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f7f3ed;
+  border: 1px solid #e0d8cd;
+  border-radius: 4px;
+  margin: 4px 0;
+  align-items: center;
+}
+.field-visibility-row .fv-label {
+  font-size: 0.72rem;
+  color: #555;
+  font-weight: bold;
+  width: 100%;
+  margin-bottom: -2px;
+}
+.field-visibility-row .fv-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  background: #ffffff;
+  border: 1px solid #b5a491;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s, background 0.15s;
+}
+.field-visibility-row .fv-toggle input {
+  margin: 0;
+  accent-color: var(--primary-green);
+  cursor: pointer;
+}
+.field-visibility-row .fv-toggle input:not(:checked) ~ * {
+  opacity: 0.6;
+}

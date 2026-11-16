@@ -98,6 +98,15 @@
         
         <div id="locationFormCard" class="detail-card" style="display:none;">
           <h4>New Stop Details</h4>
+          <div class="field-visibility-row">
+            <span class="fv-label">Show in itinerary:</span>
+            <label class="fv-toggle"><input type="checkbox" id="vis-tickets" checked> 🎟️ Tickets</label>
+            <label class="fv-toggle"><input type="checkbox" id="vis-parking" checked> 🅿️ Parking</label>
+            <label class="fv-toggle"><input type="checkbox" id="vis-food" checked> 🍔 Food</label>
+            <label class="fv-toggle"><input type="checkbox" id="vis-merch" checked> 🛍️ Merch</label>
+            <label class="fv-toggle"><input type="checkbox" id="vis-duration" checked> ⏱️ Time</label>
+            <label class="fv-toggle"><input type="checkbox" id="vis-preferredTime" checked> 🕒 Arrival</label>
+          </div>
           <input type="text" id="locName" placeholder="Location Name (e.g., USS Alabama)" />
           <textarea id="locNotes" placeholder="Notes, reservation info, hours..."></textarea>
 
