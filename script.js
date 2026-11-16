@@ -1550,9 +1550,9 @@ function updateRoute() {
         return;
     }
 
-    // 🆕 Safe check in case the radio button loses its state
-    const routeRadio = document.querySelector('input[name="startRoute"]:checked');
-    const startType = routeRadio ? routeRadio.value : 'home';
+    // 🆕 Read from the start-route dropdown
+    const startSelect = document.getElementById("startRouteSelect");
+    const startType = startSelect ? startSelect.value : "home";
     let startCoords = null;
     if (startType === 'home') {
         const savedHome = localStorage.getItem("user_home_coords");
@@ -1740,8 +1740,8 @@ function openInGoogleMaps() {
         return;
     }
 
-    const routeRadio = document.querySelector('input[name="startRoute"]:checked');
-    const startType = routeRadio ? routeRadio.value : 'home';
+    const startSelect = document.getElementById("startRouteSelect");
+    const startType = startSelect ? startSelect.value : "home";
     
     const processLink = (originStr) => {
         const destinationStop = currentStops[currentStops.length - 1];
