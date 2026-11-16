@@ -73,11 +73,13 @@
           <button type="button" onclick="openVehicleModal()" style="background: none; border: none; color: #1a73e8; cursor: pointer; text-decoration: underline;">Manage Vehicles</button>
         </strong>
         
-        <select id="tripVehicleSelect" onchange="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1;">
-          <option value="">-- Select Vehicle --</option>
-        </select>
-        
-        <input type="number" id="currentFuelMiles" placeholder="Current Miles till Empty" oninput="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; width: 160px;">
+        <div class="fuel-row">
+          <select id="tripVehicleSelect" onchange="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
+            <option value="">-- Select Vehicle --</option>
+          </select>
+
+          <input type="number" id="currentFuelMiles" placeholder="Miles left" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
       </div>
     </div>
     
@@ -111,10 +113,10 @@
             <label>🕒 Preferred Arrival<input type="time" id="locPreferredTime"></label>
           </div>
 
-          <button type="button" onclick="saveLocationAsFavorite()" style="background: #ffffff; color: #2c2c2c; border: 1px solid #BC9E84; padding: 0; border-radius: 4px; cursor: pointer; font-family: 'Special Elite', cursive; font-size: 1rem; transition: background 0.2s; margin: 1px;">
-            ⭐
-        </button>
-          <button onclick="saveLocationToTrip()">+ Add Location to Itinerary</button>
+          <div class="stop-action-row">
+            <button type="button" onclick="saveLocationAsFavorite()" class="fav-star-btn" title="Save as Favorite">⭐</button>
+            <button onclick="saveLocationToTrip()" class="add-loc-btn">+ Add Location to Itinerary</button>
+          </div>
         </div>
 
         <!-- Draggable Itinerary List -->

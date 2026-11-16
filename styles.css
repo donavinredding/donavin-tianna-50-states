@@ -417,3 +417,91 @@ body.admin-unlocked button.admin-only { display: inline-block !important; }
     display: inline-block;
     animation: spin 1s linear infinite;
 }
+
+/* ---- Batch 3: stop action row (#6) ---- */
+.stop-action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  align-items: stretch;
+  width: 100%;
+}
+.stop-action-row .fav-star-btn {
+  flex: 0 0 44px;
+  width: 44px;
+  background: #ffffff;
+  color: #2c2c2c;
+  border: 1px solid #BC9E84;
+  padding: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Special Elite', cursive;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.stop-action-row .fav-star-btn:hover {
+  background: #f4efe6;
+}
+.stop-action-row .add-loc-btn {
+  flex: 1;
+}
+
+/* ---- Batch 3: fuel row (#8) ---- */
+.fuel-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  align-items: stretch;
+}
+.fuel-row #tripVehicleSelect {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.fuel-row #currentFuelMiles {
+  flex: 0 0 90px;
+  width: 90px;
+  min-width: 0;
+}
+
+/* ---- Batch 3: Leaflet routing collapse button center (#11) ---- */
+.leaflet-routing-container .leaflet-routing-collapse-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  text-align: center;
+}
+.leaflet-routing-container .leaflet-routing-collapse-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ---- Batch 3: keep fuel row side-by-side on phones (#8) ---- */
+@media (max-width: 768px) {
+  .fuel-row {
+    flex-wrap: nowrap !important;
+  }
+  .fuel-row #tripVehicleSelect {
+    flex: 1 1 0% !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+  .fuel-row #currentFuelMiles {
+    flex: 0 0 90px !important;
+    width: 90px !important;
+    max-width: 90px !important;
+  }
+}
