@@ -1,10 +1,44 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-15T00:43:15.017Z",
+  "updatedAt": "2026-11-16T00:34:36.823Z",
   "nextStateTargets": [
     "Texas"
   ],
   "tripNotes": "",
+  "savedTrips": {
+    "TX-1794789274016": {
+      "id": "TX-1794789274016",
+      "stateCode": "TX",
+      "name": "Trip 11/15/2026",
+      "stops": [
+        {
+          "id": 1794789231990,
+          "name": "Mom's House",
+          "notes": "",
+          "lat": 27.67613415475354,
+          "lng": -97.28471606969835,
+          "completed": false,
+          "duration": 4,
+          "preferredTime": "",
+          "costs": {
+            "tickets": 0,
+            "parking": 0,
+            "food": 0,
+            "merch": 0
+          }
+        }
+      ],
+      "updatedAt": "2026-11-16T00:34:34.017Z"
+    }
+  },
+  "savedVehicles": {
+    "veh-1794789258694": {
+      "id": "veh-1794789258694",
+      "name": "Honda",
+      "mpg": 30,
+      "gallons": 17.2
+    }
+  },
   "states": {
     "Oklahoma": [
       {
@@ -732,6 +766,7 @@
         "desc": "D&T Fair",
         "rotation": 0
       }
-    ]
+    ],
+    "TX": []
   }
 }
