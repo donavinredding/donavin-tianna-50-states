@@ -505,3 +505,127 @@ body.admin-unlocked button.admin-only { display: inline-block !important; }
     max-width: 90px !important;
   }
 }
+
+/* ---- Batch 4: Open Hours editor ---- */
+.open-hours-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #b5a491;
+}
+.open-hours-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.open-hours-header strong {
+  font-family: 'Special Elite', cursive;
+  font-size: 0.9rem;
+  color: #3c2f2f;
+}
+.oh-add-day-btn {
+  background: var(--primary-green);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+.oh-add-day-btn:hover { background: var(--primary-orange); }
+
+.open-hours-list { display: flex; flex-direction: column; gap: 10px; }
+.oh-empty {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #888;
+  margin: 0;
+  padding: 6px 0;
+}
+.oh-day-row {
+  background: #fff;
+  border: 1px solid #d3c5b4;
+  border-left: 3px solid #3c2f2f;
+  border-radius: 4px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.oh-day-header { display: flex; gap: 6px; align-items: center; }
+.oh-day-select {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid #b5a491;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  min-width: 0;
+}
+.oh-btn {
+  background: transparent;
+  border: 1px solid #b5a491;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #3c2f2f;
+  white-space: nowrap;
+}
+.oh-btn:hover { background: #f4efe6; }
+.oh-remove-day { border-color: #BC9E84; color: var(--primary-red); }
+
+.oh-timeframes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 6px;
+}
+.oh-timeframe-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.oh-timeframe-row select {
+  padding: 3px 4px;
+  border: 1px solid #b5a491;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  background: #fff;
+  min-width: 0;
+}
+.oh-timeframe-row .oh-start-hour,
+.oh-timeframe-row .oh-end-hour { width: 44px; }
+.oh-timeframe-row .oh-start-min,
+.oh-timeframe-row .oh-end-min { width: 50px; }
+.oh-timeframe-row .oh-start-ampm,
+.oh-timeframe-row .oh-end-ampm { width: 52px; }
+.oh-sep {
+  font-size: 0.75rem;
+  color: #666;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+.oh-remove-tf {
+  background: transparent;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  line-height: 1;
+}
+.oh-remove-tf:hover { color: var(--primary-red); }
+.oh-remove-tf-placeholder { width: 20px; flex-shrink: 0; }
+
+@media (max-width: 768px) {
+  .oh-timeframe-row { flex-wrap: wrap; gap: 6px; }
+}
