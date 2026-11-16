@@ -1,24 +1,24 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-15T11:25:10.684Z",
+  "updatedAt": "2026-11-16T00:34:36.823Z",
   "nextStateTargets": [
     "Texas"
   ],
   "tripNotes": "",
   "savedTrips": {
-    "TX-1794741905490": {
-      "id": "TX-1794741905490",
+    "TX-1794789274016": {
+      "id": "TX-1794789274016",
       "stateCode": "TX",
-      "name": "mom's house",
+      "name": "Trip 11/15/2026",
       "stops": [
         {
-          "id": 1794736557839,
-          "name": "Flour Bluff",
+          "id": 1794789231990,
+          "name": "Mom's House",
           "notes": "",
-          "lat": 27.676086583774683,
-          "lng": -97.28469964810853,
+          "lat": 27.67613415475354,
+          "lng": -97.28471606969835,
           "completed": false,
-          "duration": 1.5,
+          "duration": 4,
           "preferredTime": "",
           "costs": {
             "tickets": 0,
@@ -28,21 +28,15 @@
           }
         }
       ],
-      "updatedAt": "2026-11-15T11:25:05.490Z"
+      "updatedAt": "2026-11-16T00:34:34.017Z"
     }
   },
   "savedVehicles": {
-    "veh-1794735559452": {
-      "id": "veh-1794735559452",
+    "veh-1794789258694": {
+      "id": "veh-1794789258694",
       "name": "Honda",
       "mpg": 30,
       "gallons": 17.2
-    },
-    "veh-1794735590677": {
-      "id": "veh-1794735590677",
-      "name": "Tucson",
-      "mpg": 25,
-      "gallons": 14.3
     }
   },
   "states": {
@@ -772,6 +766,7 @@
         "desc": "D&T Fair",
         "rotation": 0
       }
-    ]
+    ],
+    "TX": []
   }
 }
