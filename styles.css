@@ -670,3 +670,13 @@ body.admin-unlocked button.admin-only { display: inline-block !important; }
 .field-visibility-row .fv-toggle input:not(:checked) ~ * {
   opacity: 0.6;
 }
+
+/* ---- Last data push timestamp ---- */
+footer .last-updated {
+  margin-top: 6px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.72rem;
+  font-style: italic;
+  letter-spacing: 0.4px;
+  color: rgba(102, 2, 30, 0.45); /* faded version of --primary-red */
+}

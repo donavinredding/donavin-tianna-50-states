@@ -31,8 +31,9 @@ let tripNotesText = "";
 let nextStateTargets = new Set();
 let savedTrips = {};
 let savedVehicles = {};
-let favoriteLocations = []
+let favoriteLocations = [];
 
+let lastDataUpdatedAt = null;
 let activeStateName = null;
 let intervalId = null;
 let draggedIndex = null;
@@ -44,6 +45,34 @@ function esc(str) {
         "&": "&amp;", "<": "&lt;", ">": "&gt;",
         '"': "&quot;", "'": "&#39;"
     }[c]));
+}
+
+/* ============================================================
+Last data push display
+============================================================ */
+function updateLastUpdatedDisplay() {
+  const el = document.getElementById("last-updated-text");
+  if (!el) return;
+
+  if (!lastDataUpdatedAt) {
+    el.textContent = "Last data push: not yet tracked";
+    return;
+  }
+
+  const d = new Date(lastDataUpdatedAt);
+  if (isNaN(d.getTime())) {
+    el.textContent = "Last data push: unknown";
+    return;
+  }
+
+  const formatted = d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+  el.textContent = `Last data push: ${formatted}`;
 }
 
 /* ============================================================
