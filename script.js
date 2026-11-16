@@ -31,6 +31,7 @@ let tripNotesText = "";
 let nextStateTargets = new Set();
 let savedTrips = {};
 let savedVehicles = {};
+let favoriteLocations = []
 
 let activeStateName = null;
 let intervalId = null;
@@ -124,6 +125,7 @@ async function loadSiteData() {
         nextStateTargets = new Set(data.nextStateTargets || []);
         savedTrips = data.savedTrips || {}; 
         savedVehicles = data.savedVehicles || {}; // 🆕 Load global vehicles
+        favoriteLocations = data.favoriteLocations || []; // 🆕 Load Favorites
     } catch (err) {
         console.warn("Could not load data.json — starting empty.", err);
         stateGalleries = {};
@@ -131,6 +133,7 @@ async function loadSiteData() {
         nextStateTargets = new Set();
         savedTrips = {}; // 🆕 Fallback
         savedVehicles = {};
+        favoriteLocations = [];
     }
 
     // 🆕 Automatically migrate old localStorage trips to the website
@@ -217,7 +220,8 @@ async function saveSiteData(message = "Update site data") {
             nextStateTargets: [...nextStateTargets],
             tripNotes: tripNotesText,
             savedTrips: savedTrips,
-            savedVehicles: savedVehicles, // 🆕 THIS IS THE MISSING PIECE
+            savedVehicles: savedVehicles,
+            favoriteLocations: favoriteLocations, 
             states: stateGalleries
         },
         null,
@@ -1224,14 +1228,27 @@ function openPlanTripModal(stateNameOrCode) {
             map.addControl(searchControl);
 
             map.on("dblclick", (e) => {
-                window.pendingManualRefuelIndex = undefined; // 🆕 Reset the manual refuel flag
+                window.pendingManualRefuelIndex = undefined; 
+
+                // 🆕 Ask to favorite
+                if (confirm("⭐ Do you want to save this location as a Favorite?")) {
+                    favoriteLocations.push({
+                        id: "fav-" + Date.now(),
+                        name: "Favorite",
+                        lat: e.latlng.lat,
+                        lng: e.latlng.lng
+                    });
+                    renderFavoriteMarkers();
+                    renderFavoritesUI();
+                    queueSave(`Add favorite location`);
+                }
 
                 pendingLatLng = e.latlng;
                 if (tempMarker) map.removeLayer(tempMarker);
                 tempMarker = L.marker(pendingLatLng).addTo(map);
                 document.getElementById("locationFormCard").style.display = "block";
 
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&email=dredding2000@gmail.com&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
+                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&email=your_email@example.com&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
                     .then((r) => r.json())
                     .then((data) => {
                         const fallback = (data.display_name || "").split(",")[0];
@@ -1253,6 +1270,8 @@ function openPlanTripModal(stateNameOrCode) {
             map.setView(info.coords, info.zoom);
         }
         map.invalidateSize();
+        setupFavoritesUI(); 
+        renderFavoriteMarkers();
     }, 100); 
 }
 
@@ -1749,6 +1768,146 @@ function openInGoogleMaps() {
             }
         );
     }
+}
+
+/* ============================================================
+Favorite Locations
+============================================================ */
+let favoriteMarkers = [];
+let isFavExpanded = false;
+
+function setupFavoritesUI() {
+    let favPanel = document.getElementById("favorites-panel");
+    if (!favPanel) {
+        favPanel = document.createElement("div");
+        favPanel.id = "favorites-panel";
+        // We remove the default padding so the header looks like a button
+        favPanel.style.marginBottom = "16px";
+        favPanel.style.border = "1px solid #d3c5b4";
+        favPanel.style.borderRadius = "6px";
+        favPanel.style.overflow = "hidden";
+        
+        // Insert it above the map section
+        const mapSection = document.querySelector(".map-section");
+        if (mapSection) {
+            mapSection.insertBefore(favPanel, mapSection.firstChild);
+        }
+    }
+    renderFavoritesUI();
+}
+
+function toggleFavPanel(e) {
+    if (e) e.stopPropagation();
+    isFavExpanded = !isFavExpanded;
+    renderFavoritesUI();
+}
+
+function renderFavoritesUI() {
+    const panel = document.getElementById("favorites-panel");
+    if (!panel) return;
+    
+    // Header (Always visible)
+    let html = `
+        <div onclick="toggleFavPanel(event)" style="background: #e9e3d5; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+            <strong style="font-family: 'Special Elite', cursive; color: #3c2f2f; font-size: 1.1rem;">⭐ Favorite Locations</strong>
+            <span style="font-size: 0.8rem; color: #666;">${isFavExpanded ? '▲' : '▼'}</span>
+        </div>
+    `;
+
+    // Dropdown Content (Only visible if expanded)
+    if (isFavExpanded) {
+        html += `
+            <div style="padding: 16px; background: #f4efe6; border-top: 1px solid #d3c5b4;">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="fav-address-input" placeholder="Address or City..." style="flex: 1; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;">
+                    <button onclick="addFavoriteByAddress()" style="background: #f1c40f; color: #333; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer;">Save</button>
+                </div>
+                <ul style="list-style: none; padding: 0; margin: 0; max-height: 150px; overflow-y: auto;">
+        `;
+        
+        if (favoriteLocations.length === 0) {
+            html += `<li style="color: #777; font-style: italic; font-size: 0.9rem;">No favorites saved yet. (Double-click map to add)</li>`;
+        } else {
+            favoriteLocations.forEach(fav => {
+                html += `
+                    <li style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                        <input type="text" value="${esc(fav.name)}" onchange="updateFavoriteName('${fav.id}', this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; font-family: inherit;">
+                        <button onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite">🗑️</button>
+                    </li>
+                `;
+            });
+        }
+        html += `</ul></div>`;
+    }
+    
+    panel.innerHTML = html;
+}
+
+function renderFavoriteMarkers() {
+    if (!map) return;
+    favoriteMarkers.forEach(m => map.removeLayer(m));
+    favoriteMarkers = [];
+
+    // 🆕 Yellow Drop Pin
+    const yellowPin = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #f1c40f; color: black; border-radius: 50% 50% 50% 0; width: 28px; height: 28px; transform: rotate(-45deg); border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;"><div style="transform: rotate(45deg); font-size: 14px;">⭐</div></div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28]
+    });
+
+    favoriteLocations.forEach(fav => {
+        const marker = L.marker([fav.lat, fav.lng], { icon: yellowPin, bubblingMouseEvents: false }).addTo(map);
+        marker.bindPopup(`<div style="text-align:center;"><strong>⭐ ${esc(fav.name)}</strong></div>`);
+        favoriteMarkers.push(marker);
+    });
+}
+
+function updateFavoriteName(id, newName) {
+    const fav = favoriteLocations.find(f => f.id === id);
+    if (fav) {
+        fav.name = newName.trim() || "Favorite"; // 🆕 Reverts to "Favorite" if empty
+        renderFavoriteMarkers();
+        renderFavoritesUI();
+        queueSave(`Update favorite name`);
+    }
+}
+
+function deleteFavorite(id) {
+    if (!confirm("Delete this favorite location?")) return;
+    favoriteLocations = favoriteLocations.filter(f => f.id !== id);
+    renderFavoriteMarkers();
+    renderFavoritesUI();
+    queueSave(`Delete favorite location`);
+}
+
+function addFavoriteByAddress() {
+    const input = document.getElementById("fav-address-input");
+    const address = input.value.trim();
+    if (!address) return;
+
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&email=your_email@example.com&q=${encodeURIComponent(address)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lng = parseFloat(data[0].lon);
+                favoriteLocations.push({
+                    id: "fav-" + Date.now(),
+                    name: "Favorite",
+                    lat: lat,
+                    lng: lng
+                });
+                input.value = "";
+                renderFavoriteMarkers();
+                renderFavoritesUI();
+                queueSave(`Add favorite location via address`);
+            } else {
+                alert("❌ Could not find that address.");
+            }
+        })
+        .catch(err => alert("Error finding address: " + err.message));
 }
 
 /* ============================================================
