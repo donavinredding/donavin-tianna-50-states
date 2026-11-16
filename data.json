@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-16T00:34:36.823Z",
+  "updatedAt": "2026-11-16T01:39:06.736Z",
   "nextStateTargets": [
     "Texas"
   ],
@@ -37,6 +37,12 @@
       "name": "Honda",
       "mpg": 30,
       "gallons": 17.2
+    },
+    "veh-1794793131465": {
+      "id": "veh-1794793131465",
+      "name": "Tucson",
+      "mpg": 25,
+      "gallons": 14.3
     }
   },
   "states": {
