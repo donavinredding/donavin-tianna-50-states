@@ -680,3 +680,87 @@ footer .last-updated {
   letter-spacing: 0.4px;
   color: rgba(102, 2, 30, 0.45); /* faded version of --primary-red */
 }
+
+/* ---- Batch 7: refuel address row ---- */
+.edit-address-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: #fff8e7;
+  border: 1px dashed var(--primary-orange);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+.edit-address-row input {
+  padding: 6px 8px;
+  border: 1px solid #b5a491;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---- Batch 7: cancel button ---- */
+.cancel-edit-btn {
+  background: transparent;
+  color: #3c2f2f;
+  border: 1px solid #b5a491;
+  padding: 10px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Special Elite', cursive;
+  font-size: 0.9rem;
+  flex: 0 0 auto;
+  transition: background 0.15s;
+}
+.cancel-edit-btn:hover {
+  background: #f4efe6;
+}
+
+/* ---- Batch 7: edit button on itinerary stop ---- */
+.stop-header .edit-stop-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 4px;
+}
+.stop-header .edit-stop-btn:hover {
+  opacity: 0.7;
+}
+
+/* ---- Batch 6: favorite edit form ---- */
+.fav-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fav-edit-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+.fav-edit-input {
+  padding: 8px 10px;
+  border: 1px solid #b5a491;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---- Batch 8: refuel popup ---- */
+.refuel-popup .refuel-address-input {
+  font-family: inherit;
+}
+.refuel-popup .refuel-address-input:focus {
+  outline: none;
+  border-color: var(--primary-orange);
+}

@@ -6,7 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Donavin's and Tianna's 50 State Gallery</title>
   <link rel="icon" type="image/svg+xml" href="./svg/dnt.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Special+Elite&family=VT323&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,11 +18,11 @@
 
   <!-- Leaflet-GeoSearch JS (Add this AFTER your Leaflet JS) -->
   <script src="https://unpkg.com/leaflet-geosearch@4.4.0/dist/bundle.min.js"></script>
-  
+
   <!-- Leaflet Routing Machine (Free OSRM Routing) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
   <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-  
+
   <!-- SortableJS for Drag-and-Drop Reordering -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
@@ -32,137 +34,157 @@
     <p class="subtitle">Our Family Journey Across America</p>
   </header>
 
-  <div id="planTripModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalStateTitle">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 id="modalStateTitle">Plan Trip: Alabama</h2>
-      <button onclick="closeTripModal()">✖</button>
-    </div>
-
-        <!-- Trip Selector & Name -->
-    <div class="trip-controls" style="flex-direction: column; align-items: flex-start; gap: 10px;">
-      <div style="display: flex; gap: 8px; width: 100%;">
-        <select id="savedTripsSelect" onchange="loadSelectedTrip()" style="flex-grow: 1;">
-          <option value="new">+ Create New Trip</option>
-        </select>
-        <button onclick="deleteSelectedTrip()" style="background: var(--primary-red); color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 1.2rem;" title="Delete Trip">🗑️</button>
-      </div>
-      
-      <input type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)" style="width: 100%;" />
-
-      <!-- 🆕 Route Start Options -->
-      <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%;">
-      <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px;">Start Route From:</strong>
-
-      <select id="startRouteSelect" onchange="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1;">
-      <option value="home" selected>Home</option>
-      <option value="gps">Current Location</option>
-      <option value="first">First Stop</option>
-      </select>
-
-      <div style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
-      <span id="home-address-display" style="font-size: 0.75rem; color: #666; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
-      <button type="button" onclick="setHomeLocation(event)" style="padding: 2px 8px; font-size: 0.75rem; background: #3c2f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Set</button>
-      </div>
+  <div id="planTripModal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+    aria-labelledby="modalStateTitle">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalStateTitle">Plan Trip: Alabama</h2>
+        <button onclick="closeTripModal()">✖</button>
       </div>
 
-      <!-- 🆕 Fuel & Vehicle Tracking -->
-      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%; margin-top: 5px;">
-        <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px; display: flex; justify-content: space-between;">
-          <span>⛽ Fuel Tracking (Optional)</span>
-          <button type="button" onclick="openVehicleModal()" style="background: none; border: none; color: #1a73e8; cursor: pointer; text-decoration: underline;">Manage Vehicles</button>
-        </strong>
-        
-        <div class="fuel-row">
-          <select id="tripVehicleSelect" onchange="updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
-            <option value="">-- Select Vehicle --</option>
+      <!-- Trip Selector & Name -->
+      <div class="trip-controls" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+        <div style="display: flex; gap: 8px; width: 100%;">
+          <select id="savedTripsSelect" onchange="loadSelectedTrip()" style="flex-grow: 1;">
+            <option value="new">+ Create New Trip</option>
+          </select>
+          <button onclick="deleteSelectedTrip()"
+            style="background: var(--primary-red); color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 1.2rem;"
+            title="Delete Trip">🗑️</button>
+        </div>
+
+        <input type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)"
+          style="width: 100%;" />
+
+        <!-- 🆕 Route Start Options -->
+        <div
+          style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%;">
+          <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px;">Start Route From:</strong>
+
+          <select id="startRouteSelect" onchange="resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1;">
+            <option value="home" selected>Home</option>
+            <option value="gps">Current Location</option>
+            <option value="first">First Stop</option>
           </select>
 
-          <input type="number" id="currentFuelMiles" placeholder="Miles left" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
-        </div>
-      </div>
-    </div>
-    
-
-    <div class="planner-grid">
-      <!-- Left: Interactive Map -->
-      <div class="map-section">
-        <!-- 🆕 Search Bar Container -->
-        <div id="map-search-container" style="margin-bottom: 10px;"></div>
-        <div id="tripMap" style="height: 400px; width: 100%; border-radius: 6px;"></div>
-        <p class="map-hint">Double-click anywhere on the map to drop a pin and add a stop.</p>
-      </div>
-
-      <!-- Right: Add/Edit Location Form & Draggable List -->
-      <div class="itinerary-section">
-        
-        <div id="locationFormCard" class="detail-card" style="display:none;">
-          <h4>New Stop Details</h4>
-          <div class="field-visibility-row">
-            <span class="fv-label">Show in itinerary:</span>
-            <label class="fv-toggle"><input type="checkbox" id="vis-tickets" checked> 🎟️ Tickets</label>
-            <label class="fv-toggle"><input type="checkbox" id="vis-parking" checked> 🅿️ Parking</label>
-            <label class="fv-toggle"><input type="checkbox" id="vis-food" checked> 🍔 Food</label>
-            <label class="fv-toggle"><input type="checkbox" id="vis-merch" checked> 🛍️ Merch</label>
-            <label class="fv-toggle"><input type="checkbox" id="vis-duration" checked> ⏱️ Time</label>
-            <label class="fv-toggle"><input type="checkbox" id="vis-preferredTime" checked> 🕒 Arrival</label>
-          </div>
-          <input type="text" id="locName" placeholder="Location Name (e.g., USS Alabama)" />
-          <textarea id="locNotes" placeholder="Notes, reservation info, hours..."></textarea>
-
-          <div class="cost-grid">
-            <label>🎟️ Tickets ($)<input type="number" id="costTickets" value="0" min="0" step="0.01"></label>
-            <label>🅿️ Parking ($)<input type="number" id="costParking" value="0" min="0" step="0.01"></label>
-            <label>🍔 Food ($)<input type="number" id="costFood" value="0" min="0" step="0.01"></label>
-            <label>🛍️ Merch ($)<input type="number" id="costMerch" value="0" min="0" step="0.01"></label>
-          </div>
-
-          <div class="time-grid">
-            <label>⏱️ Time Spent Here (Hours)<input type="number" id="locDuration" value="1" min="0.25" step="0.25"></label>
-            <label>🕒 Preferred Arrival<input type="time" id="locPreferredTime"></label>
-          </div>
-
-          <!-- 🕒 Open Hours (Batch 4) -->
-          <div class="open-hours-section">
-            <div class="open-hours-header">
-              <strong>🕒 Open Hours</strong>
-              <button type="button" class="oh-add-day-btn" onclick="addOpenHoursDay()">+ Add Day</button>
-            </div>
-            <div id="openHoursList" class="open-hours-list">
-              <p class="oh-empty">No open hours set. Click "+ Add Day" to add one.</p>
-            </div>
-          </div>
-
-          <div class="stop-action-row">
-            <button type="button" onclick="saveLocationAsFavorite()" class="fav-star-btn" title="Save as Favorite">⭐</button>
-            <button onclick="saveLocationToTrip()" class="add-loc-btn">+ Add Location to Itinerary</button>
+          <div style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+            <span id="home-address-display"
+              style="font-size: 0.75rem; color: #666; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+            <button type="button" onclick="setHomeLocation(event)"
+              style="padding: 2px 8px; font-size: 0.75rem; background: #3c2f2f; color: white; border: none; border-radius: 4px; cursor: pointer;">Set</button>
           </div>
         </div>
 
-        <!-- Draggable Itinerary List -->
-        <h3>Itinerary Stops (Drag to Reorder)</h3>
-        <ul id="itineraryList" class="sortable-list"></ul>
+        <!-- 🆕 Fuel & Vehicle Tracking -->
+        <div
+          style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%; margin-top: 5px;">
+          <strong
+            style="font-size: 0.85rem; width: 100%; margin-bottom: -5px; display: flex; justify-content: space-between;">
+            <span>⛽ Fuel Tracking (Optional)</span>
+            <button type="button" onclick="openVehicleModal()"
+              style="background: none; border: none; color: #1a73e8; cursor: pointer; text-decoration: underline;">Manage
+              Vehicles</button>
+          </strong>
 
-        <!-- Inside your modal footer (.trip-totals) -->
-        <div class="trip-totals" style="flex-direction: column; align-items: stretch;">
-          <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
-            <span>Total Distance:</span>
-            <span id="tripTotalDistance" style="color: #1a73e8;">0.0 miles</span>
+          <div class="fuel-row">
+            <select id="tripVehicleSelect" onchange="resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
+
+            <input type="number" id="currentFuelMiles" placeholder="Miles left" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
           </div>
-          <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px;">
-            <span>Projected Trip Cost:</span>
-            <span id="tripGrandTotal">$0.00</span>
+        </div>
+      </div>
+
+
+      <div class="planner-grid">
+        <!-- Left: Interactive Map -->
+        <div class="map-section">
+          <!-- 🆕 Search Bar Container -->
+          <div id="map-search-container" style="margin-bottom: 10px;"></div>
+          <div id="tripMap" style="height: 400px; width: 100%; border-radius: 6px;"></div>
+          <p class="map-hint">Double-click anywhere on the map to drop a pin and add a stop.</p>
+        </div>
+
+        <!-- Right: Add/Edit Location Form & Draggable List -->
+        <div class="itinerary-section">
+
+          <div id="locationFormCard" class="detail-card" style="display:none;">
+            <h4 id="form-title-text">New Stop Details</h4>
+            <div class="field-visibility-row">
+              <span class="fv-label">Show in itinerary:</span>
+              <label class="fv-toggle"><input type="checkbox" id="vis-tickets" checked> 🎟️ Tickets</label>
+              <label class="fv-toggle"><input type="checkbox" id="vis-parking" checked> 🅿️ Parking</label>
+              <label class="fv-toggle"><input type="checkbox" id="vis-food" checked> 🍔 Food</label>
+              <label class="fv-toggle"><input type="checkbox" id="vis-merch" checked> 🛍️ Merch</label>
+              <label class="fv-toggle"><input type="checkbox" id="vis-duration" checked> ⏱️ Time</label>
+              <label class="fv-toggle"><input type="checkbox" id="vis-preferredTime" checked> 🕒 Arrival</label>
+            </div>
+            <input type="text" id="locName" placeholder="Location Name (e.g., USS Alabama)" />
+            <textarea id="locNotes" placeholder="Notes, reservation info, hours..."></textarea>
+
+            <div class="cost-grid">
+              <label>🎟️ Tickets ($)<input type="number" id="costTickets" value="0" min="0" step="0.01"></label>
+              <label>🅿️ Parking ($)<input type="number" id="costParking" value="0" min="0" step="0.01"></label>
+              <label>🍔 Food ($)<input type="number" id="costFood" value="0" min="0" step="0.01"></label>
+              <label>🛍️ Merch ($)<input type="number" id="costMerch" value="0" min="0" step="0.01"></label>
+            </div>
+
+            <div class="time-grid">
+              <label>⏱️ Time Spent Here (Hours)<input type="number" id="locDuration" value="1" min="0.25"
+                  step="0.25"></label>
+              <label>🕒 Preferred Arrival<input type="time" id="locPreferredTime"></label>
+            </div>
+
+            <!-- 📍 Refuel Address (edit-only, Batch 7) -->
+            <div class="edit-address-row" id="edit-address-row" style="display: none;">
+              <label for="edit-refuel-address" style="font-size: 0.85rem; font-weight: bold;">📍 Refuel Address</label>
+              <input type="text" id="edit-refuel-address" placeholder="e.g., 123 Main St, Springfield, MO" />
+            </div>
+
+            <!-- 🕒 Open Hours (Batch 4) -->
+            <div class="open-hours-section">
+              <div class="open-hours-header">
+                <strong>🕒 Open Hours</strong>
+                <button type="button" class="oh-add-day-btn" onclick="addOpenHoursDay()">+ Add Day</button>
+              </div>
+              <div id="openHoursList" class="open-hours-list">
+                <p class="oh-empty">No open hours set. Click "+ Add Day" to add one.</p>
+              </div>
+            </div>
+
+            <div class="stop-action-row">
+              <button type="button" onclick="saveLocationAsFavorite()" class="fav-star-btn" id="fav-star-btn"
+                title="Save as Favorite">⭐</button>
+              <button onclick="saveLocationToTrip()" id="save-stop-btn" class="add-loc-btn">+ Add Location to
+                Itinerary</button>
+              <button type="button" id="cancel-edit-btn" onclick="cancelEditStop()" class="cancel-edit-btn"
+                style="display: none;">Cancel</button>
+            </div>
           </div>
-          <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
-            <button onclick="openInGoogleMaps()" class="gmaps-btn" style="background: #1a73e8;">🗺️ Maps</button>
-            <button onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
-            <button onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
+
+          <!-- Draggable Itinerary List -->
+          <h3>Itinerary Stops (Drag to Reorder)</h3>
+          <ul id="itineraryList" class="sortable-list"></ul>
+
+          <!-- Inside your modal footer (.trip-totals) -->
+          <div class="trip-totals" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px;">
+              <span>Total Distance:</span>
+              <span id="tripTotalDistance" style="color: #1a73e8;">0.0 miles</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px;">
+              <span>Projected Trip Cost:</span>
+              <span id="tripGrandTotal">$0.00</span>
+            </div>
+            <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+              <button onclick="openInGoogleMaps()" class="gmaps-btn" style="background: #1a73e8;">🗺️ Maps</button>
+              <button onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
+              <button onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
 
   <div class="map-container">
@@ -499,9 +521,8 @@
 
         <div class="map-frame-wrapper">
           <iframe id="map-embed-iframe"
-            src="https://maps.google.com/maps?q=United%20States&t=&z=4&ie=UTF8&iwloc=&output=embed"
-            loading="lazy" allow="geolocation" referrerpolicy="no-referrer-when-downgrade"
-            title="Location Map Preview"></iframe>
+            src="https://maps.google.com/maps?q=United%20States&t=&z=4&ie=UTF8&iwloc=&output=embed" loading="lazy"
+            allow="geolocation" referrerpolicy="no-referrer-when-downgrade" title="Location Map Preview"></iframe>
         </div>
 
         <details class="map-dropdown">
@@ -510,10 +531,10 @@
             <p id="geo-status"></p>
 
             <!-- single (branded) directions button -->
-            <a id="directions-link" class="directions-btn" href="#" target="_blank"
-               rel="noopener noreferrer" style="display: none;">
+            <a id="directions-link" class="directions-btn" href="#" target="_blank" rel="noopener noreferrer"
+              style="display: none;">
               <svg class="dutch-bros-icon" viewBox="0 0 1131 1539" aria-hidden="true"
-                   xmlns="http://www.w3.org/2000/svg">
+                xmlns="http://www.w3.org/2000/svg">
                 <g id="Background" transform="matrix(1.50293,0,0,1.50293,0,0)">
                   <path
                     d="M751.999,160.5L751.999,162.5C711.079,172.336 645.385,203.055 636.56,208.61C634.18,210.108 617.242,218.864 610.398,223.347C603.61,227.793 591.428,234.931 589.76,235.908C585.255,238.548 581.135,241.813 580.423,242.378C576.344,245.61 575.841,244.846 569.304,250.252C568.196,250.7 568.286,250.694 567.445,251.416C557.485,259.069 557.016,258.329 547.235,266.184C524.534,284.416 494.493,308.376 458.201,351.348C456.315,353.582 458.854,353.763 532.621,431.382C532.782,431.541 533.624,432.374 534.62,433.381C534.951,433.718 535.282,434.055 535.613,434.392C535.934,434.738 536.254,435.084 536.575,435.43C536.899,435.771 537.224,436.113 537.549,436.454C537.883,436.788 538.216,437.121 538.55,437.455C540.053,438.419 540.837,438.206 540.224,439.362C539.574,440.59 521.103,443.923 519.421,444.226C512.248,445.521 511.259,444.929 511.496,446.501C511.583,447.079 518.005,450.487 521.389,453.657C522.395,454.598 522.632,454.26 535.277,463.832C535.754,464.759 535.759,464.656 536.613,465.362C550.541,475.035 549.729,475.972 566.268,488.82C566.782,489.812 566.811,489.695 567.613,490.367C573.319,494.621 573.147,494.713 578.479,499.528C579.562,500.534 579.497,500.474 580.553,501.441C581.142,501.858 581.731,502.275 582.32,502.692C588.517,508.528 592.949,511.47 607.833,526.156C621.233,539.38 621.46,538.998 634.694,552.308C651.245,568.953 670.458,590.178 670.582,591.491C670.87,594.54 641.106,674.981 614.132,724.312C599.787,750.548 598.372,756.014 597.583,751.453C597.255,749.558 596.319,744.146 590.719,728.413C588.637,722.563 575.668,686.128 561.307,656.588C549.476,632.252 533.415,606.375 532.295,602.731C531.957,602.722 531.838,602.111 531.5,602.102C531.5,602.102 530.85,603.44 530.794,603.556C534.616,619.138 553.059,760.939 555.674,776.469C555.884,777.483 556.094,778.498 556.304,779.513C556.621,785.081 556.72,785.002 557.628,790.477C557.859,791.821 558.089,793.166 558.32,794.51C558.498,796.517 559.122,803.54 561.677,819.469C561.885,820.483 562.092,821.498 562.3,822.512C562.476,825.752 562.304,825.719 562.789,828.453C564.912,840.438 566.529,855.539 567.666,862.471C567.875,863.485 568.084,864.499 568.293,865.513C568.518,869.595 568.613,869.524 569.242,873.56C570.951,884.519 570.578,884.514 570.753,885.457C572.509,894.9 576.698,928.734 577.683,934.469L577.916,937.455C578.175,938.719 578.384,940.264 578.417,940.509C578.624,942.048 579.542,947.839 579.643,948.476L579.959,952.45C582.158,964.958 581.758,964.942 583.677,977.471L583.902,980.458C584.18,981.819 584.485,984.172 584.527,984.496C584.698,985.824 585.527,990.923 585.618,991.481L585.938,995.453C586.896,1001.074 587.106,1001.996 587.235,1002.559C588.144,1006.546 585.107,1005.108 542.431,1014.245C502.184,1022.863 501.978,1021.774 498.611,1022.975C498.136,1023.144 497.974,1023.83 497.5,1023.999L264.5,1023.999C262.952,1023.299 263.127,1023.026 261.463,1022.625C253.794,1020.779 174.89,1005.856 174.48,1004.509C174.055,1003.113 179.235,970.185 179.469,967.497C179.535,966.744 200.532,817.844 200.755,816.561C201.039,814.926 203.882,793.126 204.723,788.554C206.661,778.021 208.717,761.749 209.012,759.411C216.182,702.661 228.387,624.16 229.605,610.508C229.745,608.948 233.492,598.403 228.367,604.354C227.26,605.641 227.134,605.5 213.354,619.346C210.573,622.141 167.233,660.656 164.34,662.166C163.044,662.843 99.125,642.927 17.755,601.023C8.52,596.267 8.093,594.677 0,592.5L0,590.5C12.759,587.834 86.104,566.472 166.269,514.157C197.138,494.012 224.857,469.913 229.674,465.725C234.765,461.299 234.789,461.434 239.687,456.693C240.263,456.265 240.84,455.836 241.416,455.408C247.63,449.54 253.573,445.895 248.399,444.954C246.314,444.575 222.997,440.334 222.476,439.514C222.396,439.388 222.497,439.377 222.763,437.676C223.77,437.228 223.659,437.195 224.423,436.427C224.747,436.085 225.07,435.743 225.394,435.4C225.827,434.83 226.26,434.26 226.693,433.689C230.298,430.015 260.765,398.97 271.468,387.474C271.802,387.14 272.137,386.806 272.471,386.473C272.797,386.132 273.123,385.792 273.449,385.451C273.779,385.114 274.109,384.777 274.439,384.44C274.765,384.1 275.091,383.76 275.417,383.42C275.749,383.084 276.08,382.748 276.411,382.412C276.739,382.074 277.067,381.736 277.395,381.398C277.726,381.062 278.058,380.727 278.389,380.391C278.823,379.823 279.256,379.255 279.69,378.687C284.911,373.376 304.519,354.129 304.358,352.536C304.277,351.732 227.198,306.218 159.504,244.495C158.419,243.481 158.491,243.548 157.439,242.566C156.854,242.147 156.27,241.727 155.685,241.307C153.695,239.377 143.642,229.627 130.497,217.503C130.168,217.165 129.839,216.828 129.509,216.49C129.168,216.165 128.826,215.841 128.484,215.516C128.151,215.183 127.818,214.849 127.485,214.515C127.144,214.189 126.804,213.863 126.464,213.537C126.131,213.203 125.798,212.87 125.465,212.536C124.445,211.556 123.606,210.715 123.447,210.554C123.107,210.228 122.767,209.901 122.427,209.574C122.094,209.241 121.761,208.907 121.428,208.573C121.265,208.417 120.407,207.595 119.409,206.593C119.069,206.265 118.73,205.938 118.391,205.611C118.057,205.278 117.724,204.944 117.391,204.611C117.228,204.453 116.376,203.625 115.382,202.616C115.051,202.281 114.719,201.945 114.387,201.609L113.713,201.294C113.283,200.721 112.852,200.148 112.422,199.575L111.726,199.282C111.239,198.219 111.233,198.323 110.46,197.538C110.137,197.195 109.814,196.852 109.491,196.509C109.159,196.174 108.828,195.839 108.496,195.503C108.172,195.162 107.847,194.82 107.523,194.478C106.467,193.42 106.536,193.489 105.525,192.479C93.013,179.469 93.368,179.218 80.959,166.068C75.805,160.605 78.557,159.691 80.342,153.463C81.928,147.926 93.257,118.357 93.645,117.542C93.707,117.412 93.958,117.456 94.02,117.326L94.705,114.613C96.385,110.919 96.27,110.955 98.016,107.32L98.717,104.623C107.948,84.549 113.134,67.227 147.6,3.543C147.904,2.866 148.208,2.189 148.512,1.512L149.461,1.05C150.144,1.753 150.529,1.385 150.764,2.392C150.805,2.567 150.938,3.135 151.355,4.559C157.467,25.444 167.439,49.833 169.02,53.699C172.516,62.249 172.609,62.122 176.241,70.606C198.914,123.573 237.231,178.511 246.864,190.22C248.267,191.926 258.555,204.432 264.098,211.786C273.874,224.759 274.559,224.098 304.544,255.446C304.878,255.782 305.212,256.117 305.545,256.453C305.882,256.782 306.22,257.112 306.557,257.442C306.891,257.774 307.225,258.107 307.56,258.44C307.898,258.768 308.236,259.096 308.575,259.424C308.909,259.756 309.243,260.089 309.578,260.421C309.916,260.749 310.254,261.077 310.593,261.405C310.928,261.736 311.263,262.068 311.599,262.399C312.17,262.83 312.742,263.261 313.314,263.692C321.222,271.407 321.275,271.195 329.481,278.525C330.559,279.509 330.499,279.455 331.574,280.417C335.618,283.879 335.578,283.798 339.666,287.296C353.782,299.374 353.901,299.561 355.493,299.442C356.627,299.358 368.383,286.624 369.455,285.462C369.791,285.13 370.127,284.797 370.462,284.465C371.451,283.451 372.292,282.614 372.453,282.454C372.776,282.111 373.099,281.768 373.422,281.425C373.747,281.084 374.072,280.743 374.397,280.403C374.722,280.06 375.047,279.718 375.372,279.375C375.811,278.813 376.251,278.25 376.69,277.687C380.292,274.069 380.177,273.892 380.614,273.851C381.546,273.762 381.66,273.883 389.288,281.703C389.72,282.275 390.152,282.846 390.584,283.417C390.911,283.757 391.239,284.096 391.566,284.435C391.897,284.771 392.229,285.107 392.56,285.443L393.265,285.726C393.738,286.786 393.738,286.694 394.517,287.484C394.839,287.828 395.162,288.171 395.484,288.515C395.821,288.844 396.159,289.174 396.496,289.503C405.282,299.12 405.374,299.279 406.491,299.268C407.275,299.26 407.274,299.05 412.331,291.402C413.923,288.995 428.95,266.271 432.619,261.577C433.544,260.521 433.501,260.581 434.333,259.385C439.784,251.884 475.521,202.71 507.415,169.424C507.841,168.845 508.267,168.266 508.694,167.687C522.973,152.932 522.8,152.852 537.236,138.241C554.056,121.217 566.181,110.417 570.922,105.95C576.624,100.579 576.877,100.943 582.602,95.627C586.731,91.792 587.3,89.561 592.466,91.63C593.472,91.935 594.478,92.241 595.484,92.546C596.977,93.229 598.215,93.565 598.46,93.631C601.147,94.361 608.423,97.338 609.477,97.581C616.25,99.146 663.075,117.901 678.279,124.949C707.836,138.65 707.9,138.432 710.426,139.709C719.977,144.537 719.887,144.685 720.721,145.096C749.543,159.282 749.246,160.053 751.999,160.5Z"
@@ -752,9 +773,8 @@
               <span>Nearest Dutch Bros</span>
             </a>
 
-            <iframe id="dutch-map" src="about:blank" width="100%" height="450" style="border:0;"
-              allowfullscreen allow="geolocation" loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe id="dutch-map" src="about:blank" width="100%" height="450" style="border:0;" allowfullscreen
+              allow="geolocation" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
           </div>
         </details>
       </div>
@@ -801,71 +821,120 @@
 
   <script src="script.js"></script>
   <!-- FLOATING GEAR BUTTON -->
-<button class="admin-gear" type="button" onclick="toggleAdminPanel()" title="Site Admin">⚙️</button>
+  <button class="admin-gear" type="button" onclick="toggleAdminPanel()" title="Site Admin">⚙️</button>
 
-<!-- ADMIN CONTROL PANEL -->
-<div id="admin-panel" class="admin-panel hidden">
-  <div class="admin-row">
-    <strong>Site Admin</strong>
-    <button type="button" class="admin-close" onclick="toggleAdminPanel()" title="Close">✕</button>
-  </div>
-  
-  <p id="admin-status" style="margin: 10px 0; font-weight: bold;">🔒 Locked</p>
-
-  <p id="publish-status" style="margin: 5px 0; font-size: 0.8rem; color: #6B8071; font-weight: bold;"></p>
-  
-  <div class="admin-actions" style="display: flex; flex-direction: column; gap: 8px;">
-    <button id="btn-unlock" type="button" class="admin-btn" onclick="openTokenModal()" style="display: none;">🔑 Unlock Admin</button>
-    <button id="btn-lock" type="button" class="admin-btn secondary" onclick="lockAdmin()" style="display: none;">🔒 Lock Site (Keep Token)</button>
-    <button id="btn-forget" type="button" class="admin-btn danger" onclick="confirmForgetToken()" style="display: none;">🗑️ Forget Token</button>
-  </div>
-</div>
-
-<!-- 🆕 VEHICLE MODAL -->
-<div id="vehicle-modal" class="modal-overlay hidden" style="z-index: 2000;">
-  <div class="modal-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <h3 class="modal-title" style="margin: 0;">🚗 My Vehicles</h3>
-      <button type="button" onclick="document.getElementById('vehicle-modal').classList.add('hidden')" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">✖</button>
-    </div>
-    
-    <div id="vehicle-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;">
-      <!-- Vehicles will be injected here -->
+  <!-- ADMIN CONTROL PANEL -->
+  <div id="admin-panel" class="admin-panel hidden">
+    <div class="admin-row">
+      <strong>Site Admin</strong>
+      <button type="button" class="admin-close" onclick="toggleAdminPanel()" title="Close">✕</button>
     </div>
 
-    <div style="background: #f4efe6; padding: 10px; border-radius: 6px; border: 1px solid #d3c5b4;">
-      <h4 style="margin-top: 0; margin-bottom: 10px;">+ Add Vehicle</h4>
-      <input type="text" id="veh-name" placeholder="Vehicle Name (e.g., Honda CR-V)" style="width: 100%; margin-bottom: 8px; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-      <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-        <input type="number" id="veh-mpg" placeholder="Avg MPG (e.g., 26)" style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-        <input type="number" id="veh-tank" placeholder="Gallons (e.g., 14)" style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+    <p id="admin-status" style="margin: 10px 0; font-weight: bold;">🔒 Locked</p>
+
+    <p id="publish-status" style="margin: 5px 0; font-size: 0.8rem; color: #6B8071; font-weight: bold;"></p>
+
+    <div class="admin-actions" style="display: flex; flex-direction: column; gap: 8px;">
+      <button id="btn-unlock" type="button" class="admin-btn" onclick="openTokenModal()" style="display: none;">🔑
+        Unlock Admin</button>
+      <button id="btn-lock" type="button" class="admin-btn secondary" onclick="lockAdmin()" style="display: none;">🔒
+        Lock Site (Keep Token)</button>
+      <button id="btn-forget" type="button" class="admin-btn danger" onclick="confirmForgetToken()"
+        style="display: none;">🗑️ Forget Token</button>
+    </div>
+  </div>
+
+  <!-- 🆕 VEHICLE MODAL -->
+  <div id="vehicle-modal" class="modal-overlay hidden" style="z-index: 2000;">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 class="modal-title" style="margin: 0;">🚗 My Vehicles</h3>
+        <button type="button" onclick="document.getElementById('vehicle-modal').classList.add('hidden')"
+          style="background:none; border:none; font-size:1.2rem; cursor:pointer;">✖</button>
       </div>
-      <button onclick="addVehicle()" class="submit-btn" style="margin-top: 0;">Save Vehicle</button>
-    </div>
-  </div>
-</div>
 
-<!-- TOKEN INPUT MODAL -->
-<div id="token-modal" class="modal-overlay hidden" style="z-index: 3000;">
-  <div class="modal-card">
-    <h3 class="modal-title">Unlock Admin</h3>
-    <p style="font-size: 0.85rem; margin-bottom: 15px;">Paste your GitHub Fine-Grained Personal Access Token.</p>
-    <input type="password" id="token-input" class="input-field" placeholder="github_pat_..." />
-    <div class="modal-actions" style="margin-top: 20px;">
-      <button type="button" class="btn btn-secondary" onclick="document.getElementById('token-modal').classList.add('hidden')">Cancel</button>
-      <button type="button" class="btn btn-primary" onclick="saveToken()">Unlock</button>
+      <div id="vehicle-list" style="margin-bottom: 15px; max-height: 200px; overflow-y: auto;">
+        <!-- Vehicles will be injected here -->
+      </div>
+
+      <div style="background: #f4efe6; padding: 10px; border-radius: 6px; border: 1px solid #d3c5b4;">
+        <h4 style="margin-top: 0; margin-bottom: 10px;">+ Add Vehicle</h4>
+        <input type="text" id="veh-name" placeholder="Vehicle Name (e.g., Honda CR-V)"
+          style="width: 100%; margin-bottom: 8px; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+          <input type="number" id="veh-mpg" placeholder="Avg MPG (e.g., 26)"
+            style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+          <input type="number" id="veh-tank" placeholder="Gallons (e.g., 14)"
+            style="width: 50%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+        </div>
+        <button onclick="addVehicle()" class="submit-btn" style="margin-top: 0;">Save Vehicle</button>
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- TOKEN INPUT MODAL -->
+  <div id="token-modal" class="modal-overlay hidden" style="z-index: 3000;">
+    <div class="modal-card">
+      <h3 class="modal-title">Unlock Admin</h3>
+      <p style="font-size: 0.85rem; margin-bottom: 15px;">Paste your GitHub Fine-Grained Personal Access Token.</p>
+      <input type="password" id="token-input" class="input-field" placeholder="github_pat_..." />
+      <div class="modal-actions" style="margin-top: 20px;">
+        <button type="button" class="btn btn-secondary"
+          onclick="document.getElementById('token-modal').classList.add('hidden')">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveToken()">Unlock</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 🆕 UNSAVED CHANGES BANNER -->
-<div id="unsaved-banner" class="hidden" onclick="toggleBanner(true)">
-  <div class="banner-text">
-    <strong>⚠️ Unsaved Changes</strong><br>
-    <span style="font-size: 0.8rem; opacity: 0.9;">You have edits that aren't on the live site yet.</span>
+  <div id="unsaved-banner" class="hidden" onclick="toggleBanner(true)">
+    <div class="banner-text">
+      <strong>⚠️ Unsaved Changes</strong><br>
+      <span style="font-size: 0.8rem; opacity: 0.9;">You have edits that aren't on the live site yet.</span>
+    </div>
+    <button onclick="commitSave(event)" id="save-btn">Save to Website</button>
   </div>
-  <button onclick="commitSave(event)" id="save-btn">Save to Website</button>
-</div>
+
+  <!-- 🆕 FAVORITE EDIT MODAL (Batch 6) -->
+  <div id="favorite-edit-modal" class="modal-overlay hidden" style="z-index: 2100;">
+    <div class="modal-card" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 class="modal-title" style="margin: 0;">✏️ Edit Favorite</h3>
+        <button type="button" onclick="closeFavoriteEditModal()"
+          style="background:none; border:none; font-size:1.2rem; cursor:pointer;">✖</button>
+      </div>
+
+      <div class="fav-edit-form">
+        <label class="fav-edit-label">Name
+          <input type="text" id="fav-edit-name" class="fav-edit-input" placeholder="Favorite name" />
+        </label>
+
+        <div class="cost-grid">
+          <label>🎟️ Tickets ($)<input type="number" id="fav-edit-tickets" value="0" min="0" step="0.01"></label>
+          <label>🅿️ Parking ($)<input type="number" id="fav-edit-parking" value="0" min="0" step="0.01"></label>
+          <label>🍔 Food ($)<input type="number" id="fav-edit-food" value="0" min="0" step="0.01"></label>
+          <label>🛍️ Merch ($)<input type="number" id="fav-edit-merch" value="0" min="0" step="0.01"></label>
+        </div>
+
+        <div class="open-hours-section" style="margin-top: 12px;">
+          <div class="open-hours-header">
+            <strong>🕒 Open Hours</strong>
+            <button type="button" class="oh-add-day-btn" onclick="addOpenHoursDay('fav')">+ Add Day</button>
+          </div>
+          <div id="favOpenHoursList" class="open-hours-list">
+            <p class="oh-empty">No open hours set. Click "+ Add Day" to add one.</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;">
+          <button type="button" class="cancel-btn" onclick="closeFavoriteEditModal()">Cancel</button>
+          <button type="button" onclick="saveFavoriteEdit()"
+            style="background: var(--primary-green); color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-family: 'Courier Prime', monospace; font-weight: 700;">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

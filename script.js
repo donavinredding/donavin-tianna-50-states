@@ -40,6 +40,10 @@ let draggedIndex = null;
 let isEditMode = false;
 let uploadQueue = [];
 
+function resetFirstRefuelAutoOpen() {
+  hasAutoOpenedFirstRefuel = false;
+}
+
 function esc(str) {
     return String(str ?? "").replace(/[&<>"']/g, c => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;",
@@ -1222,6 +1226,9 @@ const TRIPS_STORAGE_KEY = "savedTrips";
 let map, routingControl, tempMarker, pendingLatLng;
 let currentStateCode = "AL";
 let currentStops = [];
+let editingStopIndex = null;
+let hasAutoOpenedFirstRefuel = false;
+let editingFavoriteId = null;
 
 /* ============================================================
 Batch 4: Open Hours editor (stops only, 12h display, 5-min steps)
@@ -1232,6 +1239,7 @@ const OH_MINUTES_LIST = ["00","05","10","15","20","25","30","35","40","45","50",
 const OH_HOURS_LIST = ["1","2","3","4","5","6","7","8","9","10","11","12"];
 
 let openHoursDraft = [];
+let favOpenHoursDraft = [];
 
 function format12h(hhmm) {
   if (!hhmm || typeof hhmm !== "string" || !/^\d{2}:\d{2}$/.test(hhmm)) return "";
@@ -1273,11 +1281,24 @@ function _ohSelect(cls, options, selected) {
   return `<select class="${cls}">${optHtml}</select>`;
 }
 
-function renderOpenHoursEditor() {
-  const container = document.getElementById("openHoursList");
+/* ============================================================
+Shared Open Hours editor (stops + favorites)
+============================================================ */
+function _ohGetDraft(kind) {
+  return kind === "fav" ? favOpenHoursDraft : openHoursDraft;
+}
+function _ohGetContainerId(kind) {
+  return kind === "fav" ? "favOpenHoursList" : "openHoursList";
+}
+function _ohRender(kind) {
+  renderOpenHoursEditorShared(_ohGetContainerId(kind), _ohGetDraft(kind), kind);
+}
+
+function renderOpenHoursEditorShared(containerId, draft, kind) {
+  const container = document.getElementById(containerId);
   if (!container) return;
 
-  if (openHoursDraft.length === 0) {
+  if (draft.length === 0) {
     container.innerHTML = '<p class="oh-empty">No open hours set. Click "+ Add Day" to add one.</p>';
     return;
   }
@@ -1285,16 +1306,16 @@ function renderOpenHoursEditor() {
   const allDayOptions = OH_DAYS_LIST.concat(OH_DAY_RANGES_LIST);
   let html = "";
 
-  openHoursDraft.forEach((day, dIdx) => {
+  draft.forEach((day, dIdx) => {
     html += `<div class="oh-day-row" data-day-idx="${dIdx}">`;
     html += `<div class="oh-day-header">`;
-    html += `<select class="oh-day-select" onchange="updateOpenHoursDay(${dIdx}, this.value)">`;
+    html += `<select class="oh-day-select" onchange="updateOpenHoursDay('${kind}', ${dIdx}, this.value)">`;
     allDayOptions.forEach(opt => {
       html += `<option value="${esc(opt)}"${opt === day.days ? " selected" : ""}>${esc(opt)}</option>`;
     });
     html += `</select>`;
-    html += `<button type="button" class="oh-btn oh-add-tf" onclick="addOpenHoursTimeframe(${dIdx})">+ Time</button>`;
-    html += `<button type="button" class="oh-btn oh-remove-day" onclick="removeOpenHoursDay(${dIdx})" title="Remove day">🗑️</button>`;
+    html += `<button type="button" class="oh-btn oh-add-tf" onclick="addOpenHoursTimeframe('${kind}', ${dIdx})">+ Time</button>`;
+    html += `<button type="button" class="oh-btn oh-remove-day" onclick="removeOpenHoursDay('${kind}', ${dIdx})" title="Remove day">🗑️</button>`;
     html += `</div>`;
 
     html += `<div class="oh-timeframes">`;
@@ -1302,7 +1323,7 @@ function renderOpenHoursEditor() {
       const s = _partsFrom24(tf.start);
       const e = _partsFrom24(tf.end);
       const canRemove = day.timeframes.length > 1;
-      html += `<div class="oh-timeframe-row" data-tf-idx="${tIdx}" onchange="syncOpenHoursTimeframe(${dIdx}, ${tIdx})">`;
+      html += `<div class="oh-timeframe-row" data-tf-idx="${tIdx}" onchange="syncOpenHoursTimeframe('${kind}', ${dIdx}, ${tIdx})">`;
       html += _ohSelect("oh-start-hour", OH_HOURS_LIST, s.hour);
       html += _ohSelect("oh-start-min", OH_MINUTES_LIST, s.minute);
       html += _ohSelect("oh-start-ampm", ["AM","PM"], s.ampm);
@@ -1311,7 +1332,7 @@ function renderOpenHoursEditor() {
       html += _ohSelect("oh-end-min", OH_MINUTES_LIST, e.minute);
       html += _ohSelect("oh-end-ampm", ["AM","PM"], e.ampm);
       if (canRemove) {
-        html += `<button type="button" class="oh-btn oh-remove-tf" onclick="event.stopPropagation(); removeOpenHoursTimeframe(${dIdx}, ${tIdx})" title="Remove timeframe">✕</button>`;
+        html += `<button type="button" class="oh-btn oh-remove-tf" onclick="event.stopPropagation(); removeOpenHoursTimeframe('${kind}', ${dIdx}, ${tIdx})" title="Remove timeframe">✕</button>`;
       } else {
         html += `<span class="oh-remove-tf-placeholder"></span>`;
       }
@@ -1323,35 +1344,40 @@ function renderOpenHoursEditor() {
   container.innerHTML = html;
 }
 
-function addOpenHoursDay() {
-  openHoursDraft.push({ days: "Monday", timeframes: [{ start: "09:00", end: "17:00" }] });
-  renderOpenHoursEditor();
+function addOpenHoursDay(kind) {
+  _ohGetDraft(kind).push({ days: "Monday", timeframes: [{ start: "09:00", end: "17:00" }] });
+  _ohRender(kind);
 }
-function removeOpenHoursDay(dayIdx) {
-  openHoursDraft.splice(dayIdx, 1);
-  renderOpenHoursEditor();
+function removeOpenHoursDay(kind, dayIdx) {
+  _ohGetDraft(kind).splice(dayIdx, 1);
+  _ohRender(kind);
 }
-function updateOpenHoursDay(dayIdx, newDays) {
-  if (!openHoursDraft[dayIdx]) return;
-  openHoursDraft[dayIdx].days = newDays;
+function updateOpenHoursDay(kind, dayIdx, newDays) {
+  const d = _ohGetDraft(kind);
+  if (!d[dayIdx]) return;
+  d[dayIdx].days = newDays;
 }
-function addOpenHoursTimeframe(dayIdx) {
-  if (!openHoursDraft[dayIdx]) return;
-  const list = openHoursDraft[dayIdx].timeframes;
+function addOpenHoursTimeframe(kind, dayIdx) {
+  const d = _ohGetDraft(kind);
+  if (!d[dayIdx]) return;
+  const list = d[dayIdx].timeframes;
   const last = list[list.length - 1] || { start: "09:00", end: "17:00" };
   list.push({ start: last.start, end: last.end });
-  renderOpenHoursEditor();
+  _ohRender(kind);
 }
-function removeOpenHoursTimeframe(dayIdx, tfIdx) {
-  if (!openHoursDraft[dayIdx]) return;
-  if (openHoursDraft[dayIdx].timeframes.length <= 1) return;
-  openHoursDraft[dayIdx].timeframes.splice(tfIdx, 1);
-  renderOpenHoursEditor();
+function removeOpenHoursTimeframe(kind, dayIdx, tfIdx) {
+  const d = _ohGetDraft(kind);
+  if (!d[dayIdx]) return;
+  if (d[dayIdx].timeframes.length <= 1) return;
+  d[dayIdx].timeframes.splice(tfIdx, 1);
+  _ohRender(kind);
 }
-function syncOpenHoursTimeframe(dayIdx, tfIdx) {
-  if (!openHoursDraft[dayIdx] || !openHoursDraft[dayIdx].timeframes[tfIdx]) return;
+function syncOpenHoursTimeframe(kind, dayIdx, tfIdx) {
+  const d = _ohGetDraft(kind);
+  if (!d[dayIdx] || !d[dayIdx].timeframes[tfIdx]) return;
+  const containerId = _ohGetContainerId(kind);
   const row = document.querySelector(
-    `.oh-day-row[data-day-idx="${dayIdx}"] .oh-timeframe-row[data-tf-idx="${tfIdx}"]`
+    `#${containerId} .oh-day-row[data-day-idx="${dayIdx}"] .oh-timeframe-row[data-tf-idx="${tfIdx}"]`
   );
   if (!row) return;
   const sh = row.querySelector(".oh-start-hour").value;
@@ -1360,10 +1386,174 @@ function syncOpenHoursTimeframe(dayIdx, tfIdx) {
   const eh = row.querySelector(".oh-end-hour").value;
   const em = row.querySelector(".oh-end-min").value;
   const eap = row.querySelector(".oh-end-ampm").value;
-  openHoursDraft[dayIdx].timeframes[tfIdx] = {
+  d[dayIdx].timeframes[tfIdx] = {
     start: _to24(sh, sm, sap),
     end: _to24(eh, em, eap)
   };
+}
+
+/* Wrapper preserving the stop-editor API — all existing callers unchanged */
+function renderOpenHoursEditor() {
+  renderOpenHoursEditorShared("openHoursList", openHoursDraft, "stop");
+}
+
+/* ============================================================
+Batch 7: Stop edit + shared geocoding
+============================================================ */
+async function geocodeAddress(address) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&email=your_email@example.com&q=${encodeURIComponent(address)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Geocoding failed (${res.status})`);
+  const data = await res.json();
+  if (!Array.isArray(data) || data.length === 0) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+
+window.startEditStop = function (index) {
+  if (!isAdmin()) return;
+  const stop = currentStops[index];
+  if (!stop) return;
+
+  editingStopIndex = index;
+
+  const form = document.getElementById("locationFormCard");
+  form.style.display = "block";
+
+  document.getElementById("locName").value = stop.name || "";
+  document.getElementById("locNotes").value = stop.notes || "";
+  document.getElementById("costTickets").value = stop.costs?.tickets || 0;
+  document.getElementById("costParking").value = stop.costs?.parking || 0;
+  document.getElementById("costFood").value = stop.costs?.food || 0;
+  document.getElementById("costMerch").value = stop.costs?.merch || 0;
+  document.getElementById("locDuration").value = stop.duration || 1;
+  document.getElementById("locPreferredTime").value = stop.preferredTime || "";
+
+  // Open hours + toggles
+  openHoursDraft = stop.openHours ? JSON.parse(JSON.stringify(stop.openHours)) : [];
+  renderOpenHoursEditor();
+  setFieldVisibilityForm(stop);
+
+  // Address row (refuel only)
+  const addrRow = document.getElementById("edit-address-row");
+  const addrInput = document.getElementById("edit-refuel-address");
+  if (stop.isRefuel) {
+    addrRow.style.display = "flex";
+    addrInput.value = stop.address || "";
+  } else {
+    addrRow.style.display = "none";
+    addrInput.value = "";
+  }
+
+  // Buttons + title
+  document.getElementById("form-title-text").textContent = "Edit Stop Details";
+  document.getElementById("save-stop-btn").textContent = "Update Stop";
+  document.getElementById("cancel-edit-btn").style.display = "inline-block";
+  document.getElementById("fav-star-btn").style.display = "none";
+
+  // Scroll into view (form may be off-screen in the itinerary column)
+  form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+};
+
+window.cancelEditStop = function () {
+  editingStopIndex = null;
+
+  document.getElementById("locationFormCard").style.display = "none";
+  document.getElementById("form-title-text").textContent = "New Stop Details";
+  document.getElementById("save-stop-btn").textContent = "+ Add Location to Itinerary";
+  document.getElementById("cancel-edit-btn").style.display = "none";
+  document.getElementById("fav-star-btn").style.display = "";
+
+  const addrRow = document.getElementById("edit-address-row");
+  if (addrRow) addrRow.style.display = "none";
+  const addrInput = document.getElementById("edit-refuel-address");
+  if (addrInput) addrInput.value = "";
+
+  // Clear form fields
+  ["locName", "locNotes"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const dur = document.getElementById("locDuration");
+  if (dur) dur.value = 1;
+  const pref = document.getElementById("locPreferredTime");
+  if (pref) pref.value = "";
+  ["costTickets", "costParking", "costFood", "costMerch"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = 0;
+  });
+
+  openHoursDraft = [];
+  renderOpenHoursEditor();
+  resetFieldVisibilityForm();
+};
+
+async function saveEditedStop() {
+  const idx = editingStopIndex;
+  const existing = currentStops[idx];
+  if (!existing) { cancelEditStop(); return; }
+
+  const name = document.getElementById("locName").value.trim() || existing.name || "Unnamed Stop";
+  const notes = document.getElementById("locNotes").value;
+  const tickets = parseFloat(document.getElementById("costTickets").value) || 0;
+  const parking = parseFloat(document.getElementById("costParking").value) || 0;
+  const food = parseFloat(document.getElementById("costFood").value) || 0;
+  const merch = parseFloat(document.getElementById("costMerch").value) || 0;
+  const duration = parseFloat(document.getElementById("locDuration").value) || 1;
+  const preferredTime = document.getElementById("locPreferredTime").value || "";
+  const openHours = openHoursDraft.length ? JSON.parse(JSON.stringify(openHoursDraft)) : [];
+  const fieldVisibility = getFieldVisibilityFromForm();
+
+  let newLat = existing.lat;
+  let newLng = existing.lng;
+  let newAddress = existing.address || "";
+
+  // Geocode address only for refuel stops when changed
+  if (existing.isRefuel) {
+    const addrInput = document.getElementById("edit-refuel-address");
+    const newAddr = (addrInput?.value || "").trim();
+    if (newAddr && newAddr !== (existing.address || "")) {
+      try {
+        const geo = await geocodeAddress(newAddr);
+        if (!geo) {
+          alert("Could not find that address. Refuel location was not updated.");
+          return;
+        }
+        newLat = geo.lat;
+        newLng = geo.lng;
+        newAddress = newAddr;
+      } catch (err) {
+        alert("Error finding address: " + err.message);
+        return;
+      }
+    } else if (!newAddr && existing.address) {
+      // User cleared the address — keep old coords, clear string
+      newAddress = "";
+    }
+  }
+
+  currentStops[idx] = {
+    ...existing,
+    name,
+    notes,
+    lat: newLat,
+    lng: newLng,
+    address: newAddress,
+    duration,
+    preferredTime,
+    costs: {
+      ...existing.costs,
+      tickets,
+      parking,
+      food,
+      merch
+    },
+    openHours,
+    fieldVisibility
+  };
+
+  cancelEditStop();
+  renderItinerary();
+  updateRoute();
 }
 
 /* ============================================================
@@ -1419,6 +1609,7 @@ function getStopVisibility(stop) {
 }
 
 function openPlanTripModal(stateNameOrCode) {
+    hasAutoOpenedFirstRefuel = false;
     const code = STATE_NAME_TO_CODE[stateNameOrCode] || stateNameOrCode;
     const info = STATE_VIEWS[code] || { name: stateNameOrCode, coords: [39.8283, -98.5795], zoom: 4 };
 
@@ -1454,6 +1645,7 @@ function openPlanTripModal(stateNameOrCode) {
             map.addControl(searchControl);
 
             map.on("dblclick", (e) => {
+                if (editingStopIndex !== null) return;
                 window.pendingManualRefuelIndex = undefined; 
                 pendingLatLng = e.latlng;
                 if (tempMarker) map.removeLayer(tempMarker);
@@ -1493,6 +1685,17 @@ function closeTripModal() {
     if (tempMarker && map) { map.removeLayer(tempMarker); tempMarker = null; }
     pendingLatLng = null;
     document.getElementById("locationFormCard").style.display = "none";
+    openHoursDraft = [];
+    renderOpenHoursEditor();
+    editingStopIndex = null;
+    // Restore form UI to "new stop" mode without clearing hidden fields twice
+    document.getElementById("form-title-text").textContent = "New Stop Details";
+    document.getElementById("save-stop-btn").textContent = "+ Add Location to Itinerary";
+    document.getElementById("cancel-edit-btn").style.display = "none";
+    document.getElementById("fav-star-btn").style.display = "";
+    const addrRow = document.getElementById("edit-address-row");
+    if (addrRow) addrRow.style.display = "none";
+    hasAutoOpenedFirstRefuel = false;
 }
 
 function populateSavedTripsSelect() {
@@ -1515,6 +1718,7 @@ function populateSavedTripsSelect() {
 }
 
 function loadSelectedTrip() {
+    hasAutoOpenedFirstRefuel = false;
     const id = document.getElementById("savedTripsSelect").value;
     if (id === "new") {
         currentStops = [];
@@ -1619,7 +1823,7 @@ function saveLocationAsFavorite() {
             merch:   parseFloat(document.getElementById("costMerch").value) || 0,
             fuel:    0
         }
-        // Notice: We skip duration and preferredTime entirely here
+        ,openHours: openHoursDraft.length ? JSON.parse(JSON.stringify(openHoursDraft)) : []
     };
 
     favoriteLocations.push(newFav);
@@ -1634,6 +1838,10 @@ function saveLocationAsFavorite() {
 }
 
 function saveLocationToTrip() {
+    if (editingStopIndex !== null) {
+        saveEditedStop();
+        return;
+    }
     if (!pendingLatLng) return;
 
     const isRefuel = window.pendingManualRefuelIndex !== undefined;
@@ -1702,6 +1910,7 @@ function renderItinerary() {
                 <input type="checkbox" ${stop.completed ? "checked" : ""} onchange="toggleStopComplete(${index})">
                 <strong>${index + 1}. ${esc(stop.name)}</strong>
                 <span>$${stopTotal.toFixed(2)}</span>
+                <button class="edit-stop-btn admin-only" onclick="startEditStop(${index})" title="Edit stop">✏️</button>
                 <button onclick="removeStop(${index})">🗑️</button>
             </div>
             <p class="stop-notes">${esc(stop.notes)}</p>
@@ -1898,53 +2107,104 @@ function calculateFuelAndPlaceMarker(route, startCoords) {
             currentFuel = totalRange; 
         }
     });
+
+    // Auto-open first refuel popup once per fresh calculation
+  if (!hasAutoOpenedFirstRefuel && refuelMarkers.length > 0 && map) {
+    map.closePopup();
+    refuelMarkers[0].openPopup();
+    hasAutoOpenedFirstRefuel = true;
+  }
+}
+
+async function addManualRefuel(btn) {
+  const popupEl = btn.closest('.refuel-popup');
+  if (!popupEl) return;
+  const input = popupEl.querySelector('.refuel-address-input');
+  const address = input ? input.value.trim() : "";
+  if (!address) {
+    alert("Please enter a gas station address or name.");
+    return;
+  }
+  const targetStopId = btn.dataset.targetStopId || "";
+
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Searching…";
+
+  try {
+    const geo = await geocodeAddress(address);   // reuses Batch 7 helper
+    if (!geo) {
+      alert("Could not find that address. Please try again.");
+      btn.disabled = false;
+      btn.textContent = originalText;
+      return;
+    }
+
+    const newStop = {
+      id: Date.now(),
+      name: "⛽ Refuel Stop",
+      notes: "",
+      lat: geo.lat,
+      lng: geo.lng,
+      address: address,
+      completed: false,
+      duration: 0.25,
+      preferredTime: "",
+      costs: { tickets: 0, parking: 0, food: 0, merch: 0, fuel: 40 },
+      isRefuel: true,
+      openHours: [],
+      fieldVisibility: { tickets: true, parking: true, food: true, merch: true, duration: true, preferredTime: true }
+    };
+
+    let insertIdx = -1;
+    if (targetStopId) {
+      insertIdx = currentStops.findIndex(s => String(s.id) === String(targetStopId));
+    }
+    if (insertIdx < 0) insertIdx = currentStops.length;
+    currentStops.splice(insertIdx, 0, newStop);
+
+    if (map) map.closePopup();
+    renderItinerary();
+    updateRoute();
+  } catch (err) {
+    alert("Error finding address: " + err.message);
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 // 🆕 Helper function to create the marker so we can place multiple
 function placeRefuelMarker(latLng, warningThreshold, targetStopIndex) {
-    const gasIcon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div style="background-color: #B75109; color: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); font-size: 18px;">⛽</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18]
-    });
+  const gasIcon = L.divIcon({
+    className: 'custom-div-icon',
+    html: `<div style="background-color: #B75109; color: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5); font-size: 18px;">⛽</div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
 
-    const marker = L.marker(latLng, { icon: gasIcon, bubblingMouseEvents: false }).addTo(map);
-    const markerIndex = refuelMarkers.length;
-    refuelMarkers.push(marker);
+  const marker = L.marker(latLng, { icon: gasIcon, bubblingMouseEvents: false }).addTo(map);
+  const markerIndex = refuelMarkers.length;
+  refuelMarkers.push(marker);
 
-    // 🆕 Generate the Google Maps search link for this exact location
-    const gmapsUrl = `https://www.google.com/maps/search/gas+station/@${latLng.lat},${latLng.lng},12z`;
+  const targetStopId = currentStops[targetStopIndex]?.id ?? "";
+  const gmapsSearchUrl = `https://www.google.com/maps/search/gas+station/@${latLng.lat},${latLng.lng},10z`;
+  const gmapsPinUrl = `https://www.google.com/maps?q=${latLng.lat},${latLng.lng}&z=15`;
 
-    marker.bindPopup(`
-        <div style="text-align: center; min-width: 220px;">
-            <strong>⛽ Refuel Point</strong><br>
-            <span style="font-size: 0.8rem;">You will hit 25% fuel (${warningThreshold.toFixed(0)} miles left) here.</span><br><br>
-            
-            <!-- Google Maps Link -->
-            <a href="${gmapsUrl}" target="_blank" style="display: block; background: #1a73e8; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: bold; margin-bottom: 8px; font-size: 0.9rem;">
-                🔍 Find Gas on Google Maps
-            </a>
-            
-            <!-- Manual Add Button -->
-            <button onclick="prepManualRefuel(${targetStopIndex})" style="background: #6B8071; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 0.85rem; font-weight: bold;">
-                📍 Add Refuel Stop Manually
-            </button>
-        </div>
-    `).openPopup();
-}
-
-function prepManualRefuel(targetStopIndex) {
-    map.closePopup();
-    window.pendingManualRefuelIndex = targetStopIndex;
-    
-    // Pre-fill the name
-    const nameInput = document.getElementById("locName");
-    if (nameInput) {
-        nameInput.value = "⛽ Refuel Stop";
-    }
-    
-    alert("Double-click the map on the gas station you want to add. The $40 fuel cost will be applied automatically.");
+  marker.bindPopup(`
+    <div class="refuel-popup" style="text-align: center; min-width: 240px;">
+      <strong style="font-size: 1rem;">⛽ Refuel Point</strong><br>
+      <span style="font-size: 0.8rem; color: #555;">You'll hit 25% fuel (${warningThreshold.toFixed(0)} miles left) here.</span>
+      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px;">
+        <a href="${gmapsSearchUrl}" target="_blank" rel="noopener" style="display: block; background: #1a73e8; color: white; padding: 8px 10px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.82rem;">🔍 Find Gas Nearby</a>
+        <a href="${gmapsPinUrl}" target="_blank" rel="noopener" style="display: block; background: #3c2f2f; color: white; padding: 8px 10px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.82rem;">📍 View Refuel Point</a>
+      </div>
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ccc; text-align: left;">
+        <label style="display: block; font-size: 0.8rem; font-weight: bold; margin-bottom: 4px;">Add manual refuel stop</label>
+        <input type="text" class="refuel-address-input" placeholder="Gas station address..." style="width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.82rem; box-sizing: border-box; margin-bottom: 6px;">
+        <button type="button" onclick="addManualRefuel(this)" data-target-stop-id="${esc(String(targetStopId))}" style="background: #6B8071; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 0.82rem; font-weight: bold;">Add Refuel Here</button>
+      </div>
+    </div>
+  `);
 }
 
 function toggleStopComplete(i) {
@@ -2071,12 +2331,11 @@ function renderFavoritesUI() {
             html += `<li style="color: #777; font-style: italic; font-size: 0.9rem;">No favorites saved yet. (Double-click map to add)</li>`;
         } else {
             favoriteLocations.forEach(fav => {
-                html += `
-                    <li style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
-                        <input type="text" value="${esc(fav.name)}" onchange="updateFavoriteName('${fav.id}', this.value)" style="flex: 1; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; font-family: inherit;">
-                        <button onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite">🗑️</button>
-                    </li>
-                `;
+                html += `<li style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                    <span style="flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(fav.name)}</span>
+                    <button class="admin-only" onclick="openFavoriteEditModal('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Edit Favorite">✏️</button>
+                    <button onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite">🗑️</button>
+                </li>`;
             });
         }
         html += `</ul></div>`;
@@ -2100,20 +2359,70 @@ function renderFavoriteMarkers() {
     });
 
     favoriteLocations.forEach(fav => {
-        const marker = L.marker([fav.lat, fav.lng], { icon: yellowPin, bubblingMouseEvents: false }).addTo(map);
-        
-        // 🆕 Updated Popup with "Add to Route" button
-        marker.bindPopup(`
-            <div style="text-align:center; min-width: 160px;">
-                <strong>⭐ ${esc(fav.name)}</strong>
-                <p style="font-size: 0.8rem; color: #666; margin: 4px 0 8px 0;">${esc(fav.notes || "")}</p>
-                <button onclick="addFavoriteToRoute('${fav.id}')" style="background: #6B8071; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;">
-                    + Add to Route
-                </button>
-            </div>
-        `);
+        const editBtnHtml = isAdmin()
+            ? `<button onclick="openFavoriteEditModal('${fav.id}')" style="background: #BC9E84; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 4px; font-weight: bold;">✏️ Edit</button>`
+            : "";
+            marker.bindPopup(`<div style="text-align:center; min-width: 160px;">
+            <strong>⭐ ${esc(fav.name)}</strong>
+        <p style="font-size: 0.8rem; color: #666; margin: 4px 0 8px 0;">${esc(fav.notes || "")}</p>
+            ${editBtnHtml}
+            <button onclick="addFavoriteToRoute('${fav.id}')" style="background: #6B8071; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;">
+            + Add to Route
+        </button>
+  </div>`);
         favoriteMarkers.push(marker);
     });
+}
+
+/* ============================================================
+Batch 6: Favorite edit modal
+============================================================ */
+function openFavoriteEditModal(favId) {
+  if (!isAdmin()) return;
+  const fav = favoriteLocations.find(f => f.id === favId);
+  if (!fav) return;
+
+  editingFavoriteId = favId;
+
+  document.getElementById("fav-edit-name").value = fav.name || "";
+  document.getElementById("fav-edit-tickets").value = fav.costs?.tickets || 0;
+  document.getElementById("fav-edit-parking").value = fav.costs?.parking || 0;
+  document.getElementById("fav-edit-food").value = fav.costs?.food || 0;
+  document.getElementById("fav-edit-merch").value = fav.costs?.merch || 0;
+
+  favOpenHoursDraft = fav.openHours ? JSON.parse(JSON.stringify(fav.openHours)) : [];
+  renderOpenHoursEditorShared("favOpenHoursList", favOpenHoursDraft, "fav");
+
+  document.getElementById("favorite-edit-modal").classList.remove("hidden");
+}
+
+function closeFavoriteEditModal() {
+  document.getElementById("favorite-edit-modal").classList.add("hidden");
+  editingFavoriteId = null;
+  favOpenHoursDraft = [];
+  renderOpenHoursEditorShared("favOpenHoursList", favOpenHoursDraft, "fav");
+}
+
+function saveFavoriteEdit() {
+  if (!editingFavoriteId) return;
+  const fav = favoriteLocations.find(f => f.id === editingFavoriteId);
+  if (!fav) { closeFavoriteEditModal(); return; }
+
+  fav.name = document.getElementById("fav-edit-name").value.trim() || "Favorite";
+  fav.costs = {
+    tickets: parseFloat(document.getElementById("fav-edit-tickets").value) || 0,
+    parking: parseFloat(document.getElementById("fav-edit-parking").value) || 0,
+    food: parseFloat(document.getElementById("fav-edit-food").value) || 0,
+    merch: parseFloat(document.getElementById("fav-edit-merch").value) || 0,
+    fuel: 0
+  };
+  fav.openHours = favOpenHoursDraft.length ? JSON.parse(JSON.stringify(favOpenHoursDraft)) : [];
+
+  const savedName = fav.name;
+  renderFavoriteMarkers();
+  renderFavoritesUI();
+  closeFavoriteEditModal();
+  queueSave(`Edit favorite: ${savedName}`);
 }
 
 function addFavoriteToRoute(id) {
@@ -2129,7 +2438,9 @@ function addFavoriteToRoute(id) {
         completed: false,
         duration: 1, // 🆕 Defaults to 1 hour since we don't save Time Spent
         preferredTime: "",
-        costs: fav.costs || { tickets: 0, parking: 0, food: 0, merch: 0, fuel: 0 }
+        costs: fav.costs || { tickets: 0, parking: 0, food: 0, merch: 0, fuel: 0 },
+        openHours: fav.openHours ? JSON.parse(JSON.stringify(fav.openHours)) : [],
+        fieldVisibility: { tickets: true, parking: true, food: true, merch: true, duration: true, preferredTime: true }
     };
 
     currentStops.push(newStop);
