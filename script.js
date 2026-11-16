@@ -156,6 +156,7 @@ async function loadSiteData() {
 
     paintStatePatterns();
     updateChecklists();
+    populateVehicleDropdown(); 
 
     if (activeStateName) {
         const container = document.getElementById("polaroid-container");
@@ -1204,6 +1205,7 @@ function openPlanTripModal(stateNameOrCode) {
 
     populateSavedTripsSelect();
     updateHomeUI();
+    populateVehicleDropdown();
 
     setTimeout(() => {
         if (!map) {
