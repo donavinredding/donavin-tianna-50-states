@@ -113,6 +113,17 @@
             <label>🕒 Preferred Arrival<input type="time" id="locPreferredTime"></label>
           </div>
 
+          <!-- 🕒 Open Hours (Batch 4) -->
+          <div class="open-hours-section">
+            <div class="open-hours-header">
+              <strong>🕒 Open Hours</strong>
+              <button type="button" class="oh-add-day-btn" onclick="addOpenHoursDay()">+ Add Day</button>
+            </div>
+            <div id="openHoursList" class="open-hours-list">
+              <p class="oh-empty">No open hours set. Click "+ Add Day" to add one.</p>
+            </div>
+          </div>
+
           <div class="stop-action-row">
             <button type="button" onclick="saveLocationAsFavorite()" class="fav-star-btn" title="Save as Favorite">⭐</button>
             <button onclick="saveLocationToTrip()" class="add-loc-btn">+ Add Location to Itinerary</button>
