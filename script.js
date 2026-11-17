@@ -1651,6 +1651,9 @@ function openPlanTripModal(stateNameOrCode) {
                 if (tempMarker) map.removeLayer(tempMarker);
                 tempMarker = L.marker(pendingLatLng).addTo(map);
                 document.getElementById("locationFormCard").style.display = "block";
+              openHoursDraft = [];
+              renderOpenHoursEditor();
+              resetFieldVisibilityForm();
 
                 fetch(`https://nominatim.openstreetmap.org/reverse?format=json&email=your_email@example.com&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
                     .then((r) => r.json())
@@ -1863,7 +1866,9 @@ function saveLocationToTrip() {
             merch:   parseFloat(document.getElementById("costMerch").value) || 0,
             fuel:    isRefuel ? 40 : 0 // 🆕 Automatically apply $40 if it's a refuel stop
         },
-        isRefuel: isRefuel // 🆕 Flag it so the math resets the tank
+        isRefuel: isRefuel,
+        openHours: openHoursDraft.length ? JSON.parse(JSON.stringify(openHoursDraft)) : [],
+        fieldVisibility: getFieldVisibilityFromForm() // 🆕 Flag it so the math resets the tank
     };
 
     if (isRefuel) {
@@ -1882,6 +1887,9 @@ function saveLocationToTrip() {
     ["costTickets", "costParking", "costFood", "costMerch"].forEach(
         (id) => (document.getElementById(id).value = 0)
     );
+  openHoursDraft = [];
+  renderOpenHoursEditor();
+  resetFieldVisibilityForm();
 
     renderItinerary();
     updateRoute();
@@ -1894,13 +1902,25 @@ function renderItinerary() {
 
     currentStops.forEach((stop, index) => {
         const t = stop.costs || {};
-        const stopTotal = (t.tickets || 0) + (t.parking || 0) + (t.food || 0) + (t.merch || 0) + (t.fuel || 0);
+        const vis = getStopVisibility(stop);
+        
+        let stopTotal = 0;
+        if (vis.tickets) stopTotal += t.tickets || 0;
+        if (vis.parking) stopTotal += t.parking || 0;
+        if (vis.food) stopTotal += t.food || 0;
+        if (vis.merch) stopTotal += t.merch || 0;
+        if (t.fuel) stopTotal += t.fuel;
         grandTotal += stopTotal;
-
-        const extras = [
-            stop.duration ? `⏱️ ${stop.duration}h` : "",
-            stop.preferredTime ? `🕒 ${stop.preferredTime}` : ""
-        ].filter(Boolean).join(" | ");
+        
+        const summaryParts = [];
+        if (vis.tickets) summaryParts.push(`🎟️ $${t.tickets || 0}`);
+        if (vis.parking) summaryParts.push(`🅿️ $${t.parking || 0}`);
+        if (vis.food) summaryParts.push(`🍔 $${t.food || 0}`);
+        if (vis.merch) summaryParts.push(`🛍️ $${t.merch || 0}`);
+        if (t.fuel) summaryParts.push(`⛽ $${t.fuel}`);
+        if (vis.duration && stop.duration) summaryParts.push(`⏱️ ${stop.duration}h`);
+        if (vis.preferredTime && stop.preferredTime) summaryParts.push(`🕒 ${stop.preferredTime}`);
+        const summaryHtml = summaryParts.length ? `<small>${summaryParts.join(" | ")}</small>` : "";
 
         const li = document.createElement("li");
         li.className = `stop-item ${stop.completed ? "completed" : ""}`;
@@ -2359,6 +2379,7 @@ function renderFavoriteMarkers() {
     });
 
     favoriteLocations.forEach(fav => {
+      const marker = L.marker([fav.lat, fav.lng], { icon: yellowPin, bubblingMouseEvents: false }).addTo(map);
         const editBtnHtml = isAdmin()
             ? `<button onclick="openFavoriteEditModal('${fav.id}')" style="background: #BC9E84; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 4px; font-weight: bold;">✏️ Edit</button>`
             : "";
