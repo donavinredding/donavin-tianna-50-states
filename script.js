@@ -159,6 +159,7 @@ async function loadSiteData() {
         savedTrips = data.savedTrips || {}; 
         savedVehicles = data.savedVehicles || {}; // 🆕 Load global vehicles
         favoriteLocations = data.favoriteLocations || []; // 🆕 Load Favorites
+      lastDataUpdatedAt = data.updatedAt || null;
     } catch (err) {
         console.warn("Could not load data.json — starting empty.", err);
         stateGalleries = {};
@@ -167,6 +168,7 @@ async function loadSiteData() {
         savedTrips = {}; // 🆕 Fallback
         savedVehicles = {};
         favoriteLocations = [];
+      lastDataUpdatedAt = null;
     }
 
     // 🆕 Automatically migrate old localStorage trips to the website
@@ -189,7 +191,8 @@ async function loadSiteData() {
 
     paintStatePatterns();
     updateChecklists();
-    populateVehicleDropdown(); 
+    populateVehicleDropdown();
+  updateLastUpdatedDisplay();
 
     if (activeStateName) {
         const container = document.getElementById("polaroid-container");
@@ -247,10 +250,11 @@ async function commitSave(event) {
 }
 
 async function saveSiteData(message = "Update site data") {
+  const pushedAt = new Date().toISOString();
     const payload = JSON.stringify(
         {
             version: 1,
-            updatedAt: new Date().toISOString(),
+            updatedAt: pushedAt,
             nextStateTargets: [...nextStateTargets],
             tripNotes: tripNotesText,
             savedTrips: savedTrips,
@@ -280,6 +284,8 @@ async function saveSiteData(message = "Update site data") {
     }
 
     await ghPutFile(GH_CONFIG.dataPath, toBase64(payload), message, sha);
+  lastDataUpdatedAt = pushedAt;
+updateLastUpdatedDisplay();
     setPublishStatus("✅ Saved to GitHub — live site updates in ~30–60 s.");
 }
 
@@ -1934,7 +1940,7 @@ function renderItinerary() {
                 <button onclick="removeStop(${index})">🗑️</button>
             </div>
             <p class="stop-notes">${esc(stop.notes)}</p>
-            <small>🎟️ $${t.tickets || 0} | 🅿️ $${t.parking || 0} | 🍔 $${t.food || 0} | 🛍️ $${t.merch || 0}${t.fuel ? ` | ⛽ $${t.fuel}` : ""}${extras ? " | " + extras : ""}</small>
+            ${summaryHtml}
         `;
         list.appendChild(li);
     });
@@ -2304,7 +2310,7 @@ function setupFavoritesUI() {
         favPanel = document.createElement("div");
         favPanel.id = "favorites-panel";
         // We remove the default padding so the header looks like a button
-        favPanel.style.marginBottom = "16px";
+        favPanel.style.marginBottom = "4px";
         favPanel.style.border = "1px solid #d3c5b4";
         favPanel.style.borderRadius = "6px";
         favPanel.style.overflow = "hidden";
