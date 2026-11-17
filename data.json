@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-16T05:46:23.962Z",
+  "updatedAt": "2026-11-17T19:53:47.573Z",
   "nextStateTargets": [
     "Texas"
   ],
@@ -45,7 +45,53 @@
       "gallons": 14.3
     }
   },
-  "favoriteLocations": [],
+  "favoriteLocations": [
+    {
+      "id": "fav-1794944932155",
+      "name": "Mom's House",
+      "notes": "",
+      "lat": 27.676082308207924,
+      "lng": -97.28474825476013,
+      "costs": {
+        "tickets": 0,
+        "parking": 0,
+        "food": 0,
+        "merch": 0,
+        "fuel": 0
+      },
+      "openHours": []
+    },
+    {
+      "id": "fav-1794945107826",
+      "name": "Tracy&Tracys",
+      "notes": "",
+      "lat": 37.51647221331545,
+      "lng": -97.01436013127963,
+      "costs": {
+        "tickets": 0,
+        "parking": 0,
+        "food": 0,
+        "merch": 0,
+        "fuel": 0
+      },
+      "openHours": []
+    },
+    {
+      "id": "fav-1794945197716",
+      "name": "DeerCreek",
+      "notes": "",
+      "lat": 36.80482257268252,
+      "lng": -97.52207834108981,
+      "costs": {
+        "tickets": 0,
+        "parking": 0,
+        "food": 0,
+        "merch": 0,
+        "fuel": 0
+      },
+      "openHours": []
+    }
+  ],
   "states": {
     "Oklahoma": [
       {
