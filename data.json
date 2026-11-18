@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-17T20:47:31.927Z",
+  "updatedAt": "2026-11-18T02:27:08.155Z",
   "nextStateTargets": [
     "Texas"
   ],
@@ -171,6 +171,21 @@
           ]
         }
       ]
+    },
+    {
+      "id": "fav-1794968586316",
+      "name": "Big Bend National Park",
+      "notes": "",
+      "lat": 29.659890447640514,
+      "lng": -103.17335032145148,
+      "costs": {
+        "tickets": 0,
+        "parking": 0,
+        "food": 0,
+        "merch": 0,
+        "fuel": 0
+      },
+      "openHours": []
     }
   ],
   "states": {
