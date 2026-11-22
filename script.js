@@ -1653,11 +1653,18 @@ function openPlanTripModal(stateNameOrCode) {
             map.on("dblclick", (e) => {
                 if (editingStopIndex !== null) return;
                 window.pendingManualRefuelIndex = undefined; 
-                pendingLatLng = e.latlng;
-                if (tempMarker) map.removeLayer(tempMarker);
-                tempMarker = L.marker(pendingLatLng).addTo(map);
-                document.getElementById("locationFormCard").style.display = "block";
-              openHoursDraft = [];
+                  pendingLatLng = e.latlng;
+                  if (tempMarker) map.removeLayer(tempMarker);
+                  tempMarker = L.marker(pendingLatLng).addTo(map);
+                  const tempGmapsUrl = `https://www.google.com/maps?q=${pendingLatLng.lat},${pendingLatLng.lng}&z=15`;
+                  tempMarker.bindPopup(`
+                    <div style="text-align:center; min-width:160px;">
+                      <strong>New Stop Location</strong>
+                      <a href="${tempGmapsUrl}" target="_blank" rel="noopener" style="display: block; background: #1a73e8; color: white; padding: 6px 10px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.82rem; margin-top: 8px;">📍 View on Google Maps</a>
+                    </div>
+                  `).openPopup();
+                  document.getElementById("locationFormCard").style.display = "block";
+                openHoursDraft = [];
               renderOpenHoursEditor();
               resetFieldVisibilityForm();
 
@@ -2391,9 +2398,11 @@ function renderFavoriteMarkers() {
         const editBtnHtml = isAdmin()
             ? `<button onclick="openFavoriteEditModal('${fav.id}')" style="background: #BC9E84; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 4px; font-weight: bold;">✏️ Edit</button>`
             : "";
+            const favGmapsUrl = `https://www.google.com/maps?q=${fav.lat},${fav.lng}&z=15`;
             marker.bindPopup(`<div style="text-align:center; min-width: 160px;">
             <strong>⭐ ${esc(fav.name)}</strong>
         <p style="font-size: 0.8rem; color: #666; margin: 4px 0 8px 0;">${esc(fav.notes || "")}</p>
+            <a href="${favGmapsUrl}" target="_blank" rel="noopener" style="display: block; background: #1a73e8; color: white; padding: 8px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; margin-bottom: 6px;">📍 View on Google Maps</a>
             ${editBtnHtml}
             <button onclick="addFavoriteToRoute('${fav.id}')" style="background: #6B8071; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;">
             + Add to Route
