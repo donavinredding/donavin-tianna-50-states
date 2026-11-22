@@ -919,6 +919,27 @@
 
       <div class="fav-edit-form">
         <label class="fav-edit-label">Name
+          <div style="display: flex; gap: 8px;">
+            <label class="fav-edit-label" style="flex: 1;">Category
+              <select id="fav-edit-category" class="fav-edit-input">
+                <option value="food">🍔 Food</option>
+                <option value="park">🏞️ National Park</option>
+                <option value="museum">🏛️ Museum</option>
+                <option value="event">🎉 Event</option>
+                <option value="dutchbros">☕ Dutch Bros</option>
+                <option value="hotel">🛏️ Hotel</option>
+                <option value="monument">🗿 Monument</option>
+                <option value="beach">🏖️ Beach</option>
+                <option value="hiking">🥾 Hiking</option>
+                <option value="shop">🛒 Shop</option>
+                <option value="other" selected>📍 Other</option>
+              </select>
+            </label>
+  
+            <label class="fav-edit-label" style="flex: 0 0 80px;">Pin Emoji
+              <input type="text" id="fav-edit-emoji" class="fav-edit-input" placeholder="Default" maxlength="2">
+            </label>
+          </div>
           <input type="text" id="fav-edit-name" class="fav-edit-input" placeholder="Favorite name" />
         </label>
 
