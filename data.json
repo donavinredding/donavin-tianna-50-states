@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-22T08:10:25.995Z",
+  "updatedAt": "2026-11-22T08:34:03.113Z",
   "nextStateTargets": [
     "Texas"
   ],
@@ -196,6 +196,40 @@
       "openHours": [],
       "category": "other",
       "customEmoji": "🎃"
+    },
+    {
+      "id": "fav-1795335159168",
+      "name": "Dutch Bros. Coffee",
+      "notes": "",
+      "lat": 36.129144709999515,
+      "lng": -97.05088644496598,
+      "category": "dutchbros",
+      "customEmoji": "",
+      "costs": {
+        "tickets": 0,
+        "parking": 0,
+        "food": 15,
+        "merch": 0,
+        "fuel": 0
+      },
+      "openHours": []
+    },
+    {
+      "id": "fav-1795336422760",
+      "name": "Dutch Bros",
+      "notes": "",
+      "lat": 37.73069268507907,
+      "lng": -97.20547818733822,
+      "category": "dutchbros",
+      "customEmoji": "",
+      "costs": {
+        "tickets": 0,
+        "parking": 0,
+        "food": 15,
+        "merch": 0,
+        "fuel": 0
+      },
+      "openHours": []
     }
   ],
   "states": {
