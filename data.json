@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-22T06:44:43.505Z",
+  "updatedAt": "2026-11-22T08:10:25.995Z",
   "nextStateTargets": [
     "Texas"
   ],
@@ -59,7 +59,9 @@
         "merch": 0,
         "fuel": 0
       },
-      "openHours": []
+      "openHours": [],
+      "category": "other",
+      "customEmoji": "🏡"
     },
     {
       "id": "fav-1794945197716",
@@ -74,7 +76,9 @@
         "merch": 0,
         "fuel": 0
       },
-      "openHours": []
+      "openHours": [],
+      "category": "other",
+      "customEmoji": "🏡"
     },
     {
       "id": "fav-1794948273798",
@@ -155,7 +159,9 @@
             }
           ]
         }
-      ]
+      ],
+      "category": "museum",
+      "customEmoji": "🥤"
     },
     {
       "id": "fav-1794968586316",
@@ -170,7 +176,9 @@
         "merch": 0,
         "fuel": 0
       },
-      "openHours": []
+      "openHours": [],
+      "category": "park",
+      "customEmoji": ""
     },
     {
       "id": "fav-1795329842658",
@@ -185,7 +193,9 @@
         "merch": 0,
         "fuel": 0
       },
-      "openHours": []
+      "openHours": [],
+      "category": "other",
+      "customEmoji": "🎃"
     }
   ],
   "states": {
