@@ -783,3 +783,30 @@ button.cancel-edit-btn:hover {
   min-width: 0;
   padding: 6px 4px;
 }
+
+#favorite-edit-modal .fav-edit-label select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #b5a491;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+  box-sizing: border-box;
+}
+@media (max-width: 480px) {
+  #favorite-edit-modal .fav-edit-form > div:has(#fav-edit-category) {
+    flex-direction: column;
+    gap: 12px;
+  }
+  #favorite-edit-modal .fav-edit-label[style*="flex: 0 0 80px"] {
+    flex: 1 1 auto !important;
+  }
+}
+
+/* Force the Dutch Bros SVG to fit inside the map pin */
+.custom-div-icon svg.dutch-bros-icon {
+  width: 18px !important;
+  height: 18px !important;
+  fill: #156299 !important;
+}
