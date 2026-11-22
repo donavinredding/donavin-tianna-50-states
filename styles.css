@@ -775,3 +775,11 @@ button.cancel-edit-btn:hover {
   outline: none;
   border-color: var(--primary-orange);
 }
+
+/* ---- Adjust fuel row for reserve dropdown ---- */
+.fuel-row #fuelReserveSelect {
+  flex: 0 0 70px;
+  width: 70px;
+  min-width: 0;
+  padding: 6px 4px;
+}

@@ -2072,7 +2072,9 @@ function calculateFuelAndPlaceMarker(route, startCoords) {
 
     const veh = savedVehicles[vehId];
     const totalRange = veh.mpg * veh.gallons;
-    const warningThreshold = totalRange * 0.25; 
+    const reserveSelect = document.getElementById("fuelReserveSelect");
+    const reservePct = reserveSelect ? parseInt(reserveSelect.value, 10) / 100 : 0.25;
+    const warningThreshold = totalRange * reservePct;
     const coords = route.coordinates;
 
     const stopIndices = currentStops.map(stop => {
@@ -2219,7 +2221,7 @@ function placeRefuelMarker(latLng, warningThreshold, targetStopIndex) {
   marker.bindPopup(`
     <div class="refuel-popup" style="text-align: center; min-width: 240px;">
       <strong style="font-size: 1rem;">⛽ Refuel Point</strong><br>
-      <span style="font-size: 0.8rem; color: #555;">You'll hit 25% fuel (${warningThreshold.toFixed(0)} miles left) here.</span>
+      <span style="font-size: 0.8rem; color: #555;">You'll hit ${Math.round((warningThreshold / (savedVehicles[document.getElementById("tripVehicleSelect").value]?.mpg * savedVehicles[document.getElementById("tripVehicleSelect").value]?.gallons || 1)) * 100)}% fuel (${warningThreshold.toFixed(0)} miles left) here.</span>
       <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px;">
         <a href="${gmapsSearchUrl}" target="_blank" rel="noopener" style="display: block; background: #1a73e8; color: white; padding: 8px 10px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.82rem;">🔍 Find Gas Nearby</a>
         <a href="${gmapsPinUrl}" target="_blank" rel="noopener" style="display: block; background: #3c2f2f; color: white; padding: 8px 10px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.82rem;">📍 View Refuel Point</a>
