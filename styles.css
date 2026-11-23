@@ -810,3 +810,9 @@ button.cancel-edit-btn:hover {
   height: 18px !important;
   fill: #156299 !important;
 }
+
+/* Fix the Emoji input sizing and text alignment */
+#fav-edit-emoji {
+  font-size: 1.1rem; /* Slightly larger font for the emoji */
+  text-align: center;
+}
