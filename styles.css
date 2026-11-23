@@ -816,3 +816,23 @@ button.cancel-edit-btn:hover {
   font-size: 1.1rem; /* Slightly larger font for the emoji */
   text-align: center;
 }
+
+/* ---- Batch 12 Fixes: Stretch layout & Fade form ---- */
+.itinerary-section {
+  max-height: none; /* Allow stretching */
+  display: flex;
+  flex-direction: column;
+}
+
+#locationFormCard {
+  flex-shrink: 0; /* Prevent squishing when favorites open */
+  opacity: 0.6;   /* 🆕 Fade the form when it's empty */
+  transition: opacity 0.2s ease;
+}
+#locationFormCard.active-form {
+  opacity: 1;     /* Full opacity when active */
+}
+
+.trip-totals {
+  margin-top: auto; /* Pushes the totals box to the very bottom */
+}

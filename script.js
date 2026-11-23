@@ -462,9 +462,6 @@ function updateAdminUI() {
         document.getElementById("btn-forget").style.display = hasToken ? "block" : "none";
         document.body.classList.remove("admin-unlocked");
         
-        // 🆕 Force-close any open modals so the user can't keep editing
-        document.getElementById("gallery-modal").classList.remove("active");
-        document.getElementById("planTripModal").classList.add("hidden");
         unlockScroll();
     }
 
@@ -475,6 +472,7 @@ function updateAdminUI() {
         isEditMode = false;
         const btn = document.getElementById("toggle-edit-btn");
         if (btn) { btn.classList.remove("active"); btn.textContent = "Edit Mode ✏️"; }
+        populateSavedTripsSelect();
     }
 
     // 🆕 Instantly redraw the checklists and gallery to strip admin buttons
@@ -1438,6 +1436,7 @@ window.startEditStop = function (index) {
 
   const form = document.getElementById("locationFormCard");
   form.style.display = "block";
+  document.getElementById("locationFormCard").classList.add("active-form");
 
   document.getElementById("locName").value = stop.name || "";
   document.getElementById("locNotes").value = stop.notes || "";
@@ -1478,6 +1477,7 @@ window.cancelEditStop = function () {
   editingStopIndex = null;
 
   document.getElementById("locationFormCard").style.display = "none";
+  document.getElementById("locationFormCard").classList.remove("active-form");
   document.getElementById("form-title-text").textContent = "New Stop Details";
   document.getElementById("save-stop-btn").textContent = "+ Add Location to Itinerary";
   document.getElementById("cancel-edit-btn").style.display = "none";
@@ -1678,6 +1678,7 @@ function openPlanTripModal(stateNameOrCode) {
                     </div>
                   `).openPopup();
                   document.getElementById("locationFormCard").style.display = "block";
+                  document.getElementById("locationFormCard").classList.add("active-form");
                 openHoursDraft = [];
               renderOpenHoursEditor();
               resetFieldVisibilityForm();
@@ -1693,6 +1694,7 @@ function openPlanTripModal(stateNameOrCode) {
 
             new Sortable(document.getElementById("itineraryList"), {
                 animation: 150,
+                disabled: !isAdmin(),
                 onEnd(evt) {
                     const [moved] = currentStops.splice(evt.oldIndex, 1);
                     currentStops.splice(evt.newIndex, 0, moved);
@@ -1715,6 +1717,7 @@ function closeTripModal() {
     if (tempMarker && map) { map.removeLayer(tempMarker); tempMarker = null; }
     pendingLatLng = null;
     document.getElementById("locationFormCard").style.display = "none";
+    document.getElementById("locationFormCard").classList.remove("active-form");
     openHoursDraft = [];
     renderOpenHoursEditor();
     editingStopIndex = null;
@@ -1732,7 +1735,9 @@ function populateSavedTripsSelect() {
     const select = document.getElementById("savedTripsSelect");
     if (!select) return;
     const current = select.value;
-    select.innerHTML = '<option value="new">+ Create New Trip</option>';
+    select.innerHTML = isAdmin() 
+        ? '<option value="new">+ Create New Trip</option>'
+        : '';
 
     // 🆕 Read from global savedTrips
     Object.values(savedTrips)
@@ -1955,12 +1960,12 @@ function renderItinerary() {
         li.className = `stop-item ${stop.completed ? "completed" : ""}`;
         li.innerHTML = `
             <div class="stop-header">
-                <span class="drag-handle">☰</span>
-                <input type="checkbox" ${stop.completed ? "checked" : ""} onchange="toggleStopComplete(${index})">
+                ${isAdmin() ? `<span class="drag-handle">☰</span>` : ""}
+                ${isAdmin() ? `<input type="checkbox" ${stop.completed ? "checked" : ""} onchange="toggleStopComplete(${index})">` : ""}
                 <strong>${index + 1}. ${esc(stop.name)}</strong>
                 <span>$${stopTotal.toFixed(2)}</span>
                 <button class="edit-stop-btn admin-only" onclick="startEditStop(${index})" title="Edit stop">✏️</button>
-                <button onclick="removeStop(${index})">🗑️</button>
+                <button class="admin-only" onclick="removeStop(${index})" title="Delete stop">🗑️</button>
             </div>
             <p class="stop-notes">${esc(stop.notes)}</p>
             ${summaryHtml}
@@ -2382,6 +2387,7 @@ function renderFavoritesUI() {
             html += `<li style="color: #777; font-style: italic; font-size: 0.9rem;">No favorites saved yet. (Double-click map to add)</li>`;
         } else {
             favoriteLocations.forEach(fav => {
+                if (fav.isHidden) return; // 🆕 Skip drawing this marker
                 const catKey = fav.category || "other";
                 const cat = FAV_CATEGORIES[catKey] || FAV_CATEGORIES.other;
                 const displayEmoji = fav.customEmoji || cat.emoji;
@@ -2628,7 +2634,7 @@ function renderFavoritesUI() {
                     <span style="font-size: 1.1rem; flex-shrink: 0;">${listIcon}</span>
                     <span style="flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(fav.name)}</span>
                     <button class="admin-only" onclick="openFavoriteEditModal('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Edit Favorite">✏️</button>
-                    <button onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite">🗑️</button>
+                    <button class="admin-only" onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite">🗑️</button>
                 </li>`;
             });
         }
@@ -2953,6 +2959,7 @@ function openFavoriteEditModal(favId) {
   document.getElementById("fav-edit-merch").value = fav.costs?.merch || 0;
   document.getElementById("fav-edit-category").value = fav.category || "other";
   document.getElementById("fav-edit-emoji").value = fav.customEmoji || "";
+  document.getElementById("fav-edit-hidden").checked = fav.isHidden || false;
 
   favOpenHoursDraft = fav.openHours ? JSON.parse(JSON.stringify(fav.openHours)) : [];
   renderOpenHoursEditorShared("favOpenHoursList", favOpenHoursDraft, "fav");
@@ -2983,7 +2990,8 @@ function saveFavoriteEdit() {
   };
   fav.category = document.getElementById("fav-edit-category").value;
   fav.customEmoji = document.getElementById("fav-edit-emoji").value.trim();
-  
+  fav.isHidden = document.getElementById("fav-edit-hidden").checked;
+
   fav.openHours = favOpenHoursDraft.length ? JSON.parse(JSON.stringify(favOpenHoursDraft)) : [];
 
   const savedName = fav.name;

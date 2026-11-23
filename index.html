@@ -48,17 +48,17 @@
           <select id="savedTripsSelect" onchange="loadSelectedTrip()" style="flex-grow: 1;">
             <option value="new">+ Create New Trip</option>
           </select>
-          <button onclick="deleteSelectedTrip()"
+          <button class="admin-only" onclick="deleteSelectedTrip()"
             style="background: var(--primary-red); color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 1.2rem;"
             title="Delete Trip">🗑️</button>
         </div>
 
-        <input type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)"
+        <input class="admin-only" type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)"
           style="width: 100%;" />
 
         <!-- 🆕 Route Start Options -->
         <div
-          style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%;">
+          class="admin-only" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center; background: #e9e3d5; padding: 10px; border-radius: 6px; width: 100%;">
           <strong style="font-size: 0.85rem; width: 100%; margin-bottom: -5px;">Start Route From:</strong>
 
           <select id="startRouteSelect" onchange="resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc; flex-grow: 1;">
@@ -114,13 +114,13 @@
           <!-- 🆕 Search Bar Container -->
           <div id="map-search-container" style="margin-bottom: 10px;"></div>
           <div id="tripMap" style="height: 400px; width: 100%; border-radius: 6px;"></div>
-          <p class="map-hint">Double-click anywhere on the map to drop a pin and add a stop.</p>
+          <p class="admin-only map-hint">Double-click anywhere on the map to drop a pin and add a stop.</p>
         </div>
 
         <!-- Right: Add/Edit Location Form & Draggable List -->
         <div class="itinerary-section">
 
-          <div id="locationFormCard" class="detail-card" style="display:none;">
+          <div id="locationFormCard" class="detail-card admin-only" style="display:none;">
             <h4 id="form-title-text">New Stop Details</h4>
             <div class="field-visibility-row">
               <span class="fv-label">Show in itinerary:</span>
@@ -190,8 +190,8 @@
             </div>
             <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
               <button onclick="openInGoogleMaps()" class="gmaps-btn" style="background: #1a73e8;">🗺️ Maps</button>
-              <button onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
-              <button onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
+              <button class="admin-only" onclick="saveAndCloseTrip()" style="background: #3c2f2f;">💾 Save & Exit</button>
+              <button class="admin-only" onclick="markTripVisited()" style="background: var(--primary-green);">✅ Mark as Visited</button>
             </div>
           </div>
         </div>
@@ -469,9 +469,9 @@
       <button class="close-btn" id="close-modal">X Close</button>
       <h2 id="modal-state-title">State Gallery</h2>
 
-      <!-- 🆕 Plan Trip button — admin-only -->
-      <div class="admin-only" style="margin: 15px 0;">
-        <button id="modal-plan-trip-btn" class="open-modal-btn" type="button">+ Plan Trip to This State</button>
+      <!-- 🆕 Plan Trip button -->
+      <div style="margin: 15px 0;">
+        <button id="modal-plan-trip-btn" class="open-modal-btn" type="button">Trip(s) to This State</button>
       </div>
 
       <!-- Hidden when the admin token isn't unlocked -->
@@ -947,6 +947,11 @@
         <!-- 🆕 NEW: Notes Field -->
         <label class="fav-edit-label">Notes
           <textarea id="fav-edit-notes" class="fav-edit-input" placeholder="Add notes, reservation info, or why you love this place..." style="resize: vertical; min-height: 60px;"></textarea>
+        </label>
+
+        <label class="fav-edit-label" style="flex-direction: row; align-items: center; gap: 8px; cursor: pointer;">
+          <input type="checkbox" id="fav-edit-hidden" style="width: auto; transform: scale(1.2);">
+          Hide pin from map (Keep in list)
         </label>
       
         <div class="cost-grid">
