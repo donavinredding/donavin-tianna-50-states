@@ -2946,6 +2946,7 @@ function openFavoriteEditModal(favId) {
   editingFavoriteId = favId;
 
   document.getElementById("fav-edit-name").value = fav.name || "";
+  document.getElementById("fav-edit-notes").value = fav.notes || ""; // 🆕 Added
   document.getElementById("fav-edit-tickets").value = fav.costs?.tickets || 0;
   document.getElementById("fav-edit-parking").value = fav.costs?.parking || 0;
   document.getElementById("fav-edit-food").value = fav.costs?.food || 0;
@@ -2972,6 +2973,7 @@ function saveFavoriteEdit() {
   if (!fav) { closeFavoriteEditModal(); return; }
 
   fav.name = document.getElementById("fav-edit-name").value.trim() || "Favorite";
+  fav.notes = document.getElementById("fav-edit-notes").value.trim(); // 🆕 Added
   fav.costs = {
     tickets: parseFloat(document.getElementById("fav-edit-tickets").value) || 0,
     parking: parseFloat(document.getElementById("fav-edit-parking").value) || 0,
