@@ -196,6 +196,38 @@
           </div>
         </div>
       </div>
+            <!-- 🆕 Suggestion Card (Trip Modal) -->
+      <div id="trip-suggestion-card" class="suggestion-card-container admin-hidden" style="margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 20px; background: transparent; border: none; box-shadow: none;">
+        <h2 class="suggestion-title">💡 Suggest a Trip</h2>
+        <p class="suggestion-desc">Have an idea for a route or a stop we missed? Tell us!</p>
+        
+        <div class="suggestion-form">
+          <div class="suggestion-row">
+            <input type="text" id="suggestion-name-trip" class="suggestion-input" placeholder="Your Name (optional)">
+            <select id="suggestion-topic-trip" class="suggestion-input">
+              <option value="Trip">🚐 A Trip</option>
+              <option value="Place">📍 A Place</option>
+              <option value="Restaurant">🍔 A Restaurant</option>
+              <option value="Other">💡 Other</option>
+            </select>
+          </div>
+          <textarea id="suggestion-text-trip" class="suggestion-textarea" placeholder="e.g., You should add a stop in Nashville on the way to Florida." maxlength="500"></textarea>
+          <div class="suggestion-footer">
+            <span id="suggestion-char-count-trip" class="char-count">0 / 500</span>
+            <button id="suggestion-submit-trip" class="suggestion-btn" onclick="submitSuggestion('trip')">Send Suggestion</button>
+          </div>
+        </div>
+
+        <div class="suggestion-history-wrapper">
+          <button class="history-toggle" onclick="toggleSuggestionHistory('trip')">
+            <span>Your Past Suggestions (Only visible to you)</span>
+            <span class="arrow">▼</span>
+          </button>
+          <ul id="suggestion-history-trip" class="suggestion-history-list" style="display: none;">
+            <!-- Local history injects here -->
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -827,6 +859,39 @@
     </div>
   </div>
 
+  <!-- 🆕 Suggestion Card (Home Screen) -->
+  <div id="home-suggestion-card" class="suggestion-card-container admin-hidden">
+    <h2 class="suggestion-title">💡 Suggest a Place</h2>
+    <p class="suggestion-desc">Have a favorite spot we should visit? Let us know!</p>
+    
+    <div class="suggestion-form">
+      <div class="suggestion-row">
+        <input type="text" id="suggestion-name-home" class="suggestion-input" placeholder="Your Name (optional)">
+        <select id="suggestion-topic-home" class="suggestion-input">
+          <option value="Place">📍 A Place</option>
+          <option value="Trip">🚐 A Trip</option>
+          <option value="Restaurant">🍔 A Restaurant</option>
+          <option value="Other">💡 Other</option>
+        </select>
+      </div>
+      <textarea id="suggestion-text-home" class="suggestion-textarea" placeholder="e.g., You have to check out the Grand Canyon! It's amazing." maxlength="500"></textarea>
+      <div class="suggestion-footer">
+        <span id="suggestion-char-count-home" class="char-count">0 / 500</span>
+        <button id="suggestion-submit-home" class="suggestion-btn" onclick="submitSuggestion('home')">Send Suggestion</button>
+      </div>
+    </div>
+
+    <div class="suggestion-history-wrapper">
+      <button class="history-toggle" onclick="toggleSuggestionHistory('home')">
+        <span>Your Past Suggestions (Only visible to you)</span>
+        <span class="arrow">▼</span>
+      </button>
+      <ul id="suggestion-history-home" class="suggestion-history-list" style="display: none;">
+        <!-- Local history injects here -->
+      </ul>
+    </div>
+  </div>
+
   <footer>
     <p>Created for Donavin &amp; Tianna's Travels</p>
     <p id="last-updated-text" class="last-updated"></p>
@@ -977,6 +1042,16 @@
             style="background: var(--primary-green); color: #fff; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-family: 'Courier Prime', monospace; font-weight: 700;">Save</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 🆕 Thank You Modal -->
+  <div id="thankyou-modal" class="modal-overlay hidden" style="z-index: 4000;">
+    <div class="modal-card" style="text-align: center; max-width: 400px; padding: 30px;">
+      <div style="font-size: 4rem; margin-bottom: 10px;">✅</div>
+      <h3 class="modal-title" style="font-size: 1.5rem; margin-bottom: 10px;">Thank You!</h3>
+      <p style="font-size: 0.95rem; margin-bottom: 25px; color: #555;">Your suggestion has been sent. We'll take a look soon!</p>
+      <button onclick="closeThankYouModal()" class="suggestion-btn" style="width: 100%;">Take me home</button>
     </div>
   </div>
 

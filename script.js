@@ -3154,3 +3154,160 @@ function addStateLabels() {
         labelGroup.appendChild(text);
     });
 }
+
+/* ============================================================
+Batch 13: Suggestion / Comment System UI
+============================================================ */
+const SUGGESTIONS_STORAGE_KEY = "local_suggestions";
+
+// Load local history from storage
+function getLocalSuggestions() {
+    try {
+        return JSON.parse(localStorage.getItem(SUGGESTIONS_STORAGE_KEY) || "[]");
+    } catch {
+        return [];
+    }
+}
+
+function saveLocalSuggestions(arr) {
+    localStorage.setItem(SUGGESTIONS_STORAGE_KEY, JSON.stringify(arr));
+}
+
+// Populate the history lists on page load
+function renderSuggestionHistories() {
+    const suggestions = getLocalSuggestions();
+    
+    ["home", "trip"].forEach(context => {
+        const listEl = document.getElementById(`suggestion-history-${context}`);
+        if (!listEl) return;
+        
+        if (suggestions.length === 0) {
+            listEl.innerHTML = `<li style="text-align:center; color:#888; font-style:italic; border:none; background:transparent;">No suggestions sent yet.</li>`;
+            return;
+        }
+
+        // Sort newest first
+        const sorted = [...suggestions].sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        listEl.innerHTML = sorted.map(s => `
+            <li>
+                <strong>${esc(s.topic)}</strong>: ${esc(s.text)}
+                <span class="status-tag">Sent ✅</span>
+                <span class="date-tag">${new Date(s.date).toLocaleDateString()} • by ${esc(s.name)}</span>
+            </li>
+        `).join("");
+    });
+}
+
+// Toggle the accordion
+window.toggleSuggestionHistory = function(context) {
+    const list = document.getElementById(`suggestion-history-${context}`);
+    const arrow = list.previousElementSibling.querySelector(".arrow");
+    if (!list) return;
+    
+    if (list.style.display === "none") {
+        list.style.display = "block";
+        if (arrow) arrow.textContent = "▲";
+    } else {
+        list.style.display = "none";
+        if (arrow) arrow.textContent = "▼";
+    }
+};
+
+// Character counter
+function setupCharCounter(context) {
+    const textarea = document.getElementById(`suggestion-text-${context}`);
+    const counter = document.getElementById(`suggestion-char-count-${context}`);
+    if (!textarea || !counter) return;
+    
+    textarea.addEventListener("input", () => {
+        const len = textarea.value.length;
+        counter.textContent = `${len} / 500`;
+        counter.style.color = len > 450 ? "var(--primary-orange)" : "#888";
+    });
+}
+
+// Submit logic
+window.submitSuggestion = async function(context) {
+    const nameInput = document.getElementById(`suggestion-name-${context}`);
+    const topicSelect = document.getElementById(`suggestion-topic-${context}`);
+    const textInput = document.getElementById(`suggestion-text-${context}`);
+    const submitBtn = document.getElementById(`suggestion-submit-${context}`);
+
+    let name = nameInput.value.trim() || "Anonymous";
+    let topic = topicSelect.value;
+    let text = textInput.value.trim();
+
+    if (!text) {
+        alert("Please type a suggestion first!");
+        return;
+    }
+
+    // Save name to localStorage for next time
+    localStorage.setItem("user_suggestion_name", name === "Anonymous" ? "" : name);
+
+    submitBtn.textContent = "Sending...";
+    submitBtn.disabled = true;
+
+    try {
+        // ---------------------------------------------------------
+        // WEB3FORMS INTEGRATION GOES HERE (Batch 14)
+        // For Batch 13, we will just simulate a successful send.
+        // ---------------------------------------------------------
+        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+
+        // Save to local history
+        const suggestions = getLocalSuggestions();
+        suggestions.push({
+            id: Date.now(),
+            name: name,
+            topic: topic,
+            text: text,
+            date: new Date().toISOString()
+        });
+        saveLocalSuggestions(suggestions);
+        renderSuggestionHistories();
+
+        // Clear form
+        textInput.value = "";
+        if (document.getElementById(`suggestion-char-count-${context}`)) {
+            document.getElementById(`suggestion-char-count-${context}`).textContent = "0 / 500";
+        }
+
+        // Show Thank You Modal
+        document.getElementById("thankyou-modal").classList.remove("hidden");
+
+    } catch (err) {
+        alert("Error sending suggestion: " + err.message);
+    } finally {
+        submitBtn.textContent = "Send Suggestion";
+        submitBtn.disabled = false;
+    }
+};
+
+// Close thank you modal
+window.closeThankYouModal = function() {
+    document.getElementById("thankyou-modal").classList.add("hidden");
+    
+    // Close the trip planner if it's open
+    const tripModal = document.getElementById("planTripModal");
+    if (tripModal && !tripModal.classList.contains("hidden")) {
+        closeTripModal();
+    }
+};
+
+// Initialize on load
+document.addEventListener("DOMContentLoaded", () => {
+    renderSuggestionHistories();
+    setupCharCounter("home");
+    setupCharCounter("trip");
+
+    // Pre-fill remembered name
+    const savedName = localStorage.getItem("user_suggestion_name");
+    if (savedName) {
+        const nameHome = document.getElementById("suggestion-name-home");
+        const nameTrip = document.getElementById("suggestion-name-trip");
+        if (nameHome) nameHome.value = savedName;
+        if (nameTrip) nameTrip.value = savedName;
+    }
+});

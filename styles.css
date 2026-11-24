@@ -836,3 +836,164 @@ button.cancel-edit-btn:hover {
 .trip-totals {
   margin-top: auto; /* Pushes the totals box to the very bottom */
 }
+
+/* ---- Batch 13: Suggestion System ---- */
+.suggestion-card-container {
+  width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border: 2px solid var(--primary-tan);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 0 auto 30px auto;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.suggestion-title {
+  font-family: 'Special Elite', cursive;
+  color: var(--primary-red);
+  font-size: 1.4rem;
+  margin-bottom: 5px;
+}
+
+.suggestion-desc {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 15px;
+}
+
+.suggestion-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.suggestion-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.suggestion-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 16px; /* Prevents iOS zoom */
+}
+
+.suggestion-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 16px;
+  resize: vertical;
+}
+
+.suggestion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.char-count {
+  font-size: 0.75rem;
+  color: #888;
+  font-family: monospace;
+}
+
+.suggestion-btn {
+  background: var(--primary-green);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-height: 48px; /* Age-friendly touch target */
+}
+
+.suggestion-btn:hover {
+  background: var(--primary-orange);
+}
+
+.suggestion-btn:disabled {
+  background: #aaa;
+  cursor: not-allowed;
+}
+
+.suggestion-history-wrapper {
+  margin-top: 20px;
+  border-top: 1px dashed #ddd;
+  padding-top: 10px;
+}
+
+.history-toggle {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 0;
+}
+
+.history-toggle:hover {
+  color: var(--primary-orange);
+}
+
+.suggestion-history-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-history-list li {
+  background: #f9f9f9;
+  border-left: 3px solid var(--primary-tan);
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.suggestion-history-list .status-tag {
+  float: right;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+.suggestion-history-list .date-tag {
+  display: block;
+  font-size: 0.7rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  .suggestion-row {
+    flex-direction: column;
+  }
+}
+
+/* Hide suggestion cards when admin is unlocked */
+body.admin-unlocked .admin-hidden {
+  display: none !important;
+}
