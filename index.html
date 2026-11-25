@@ -39,7 +39,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalStateTitle">Plan Trip: Alabama</h2>
-        <button onclick="closeTripModal()">✖</button>
+        <button onclick="closeTripModal()" aria-label="Close tab">✖</button>
       </div>
 
       <!-- Trip Selector & Name -->
@@ -48,12 +48,12 @@
           <select id="savedTripsSelect" onchange="loadSelectedTrip()" style="flex-grow: 1;">
             <option value="new">+ Create New Trip</option>
           </select>
-          <button class="admin-only" onclick="deleteSelectedTrip()"
+          <button class="admin-only" onclick="deleteSelectedTrip()" aria-label="Delete this trip" title="Delete Trip"
             style="background: var(--primary-red); color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-size: 1.2rem;"
             title="Delete Trip">🗑️</button>
         </div>
 
-        <input class="admin-only" type="text" id="tripNameInput" placeholder="Trip Name (e.g., Gulf Shores Weekend)"
+        <input class="admin-only" type="text" id="tripNameInput" placeholder="Trip Name (e.g., Summer Road Trip)"
           style="width: 100%;" />
 
         <!-- 🆕 Route Start Options -->
@@ -91,7 +91,7 @@
               <option value="">-- Select Vehicle --</option>
             </select>
           
-            <input type="number" id="currentFuelMiles" placeholder="Miles left" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
+            <input type="number" id="currentFuelMiles" placeholder="Miles till empty" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
             <select id="fuelReserveSelect" onchange="resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
               <option value="5">5%</option>
               <option value="10">10%</option>
@@ -203,15 +203,15 @@
         
         <div class="suggestion-form">
           <div class="suggestion-row">
-            <input type="text" id="suggestion-name-trip" class="suggestion-input" placeholder="Your Name (optional)">
-            <select id="suggestion-topic-trip" class="suggestion-input">
+            <input type="text" id="suggestion-name-trip" class="suggestion-input" placeholder="Your Name (optional)" aria-label="Your name">
+            <select id="suggestion-topic-trip" class="suggestion-input" aria-label="Suggestion topic">
               <option value="Trip">🚐 A Trip</option>
               <option value="Place">📍 A Place</option>
               <option value="Restaurant">🍔 A Restaurant</option>
               <option value="Other">💡 Other</option>
             </select>
           </div>
-          <textarea id="suggestion-text-trip" class="suggestion-textarea" placeholder="e.g., You should add a stop in Nashville on the way to Florida." maxlength="500"></textarea>
+          <textarea id="suggestion-text-trip" class="suggestion-textarea" placeholder="e.g., You should add a stop in Nashville on the way to Florida." maxlength="500" aria-label="Your suggestion message"></textarea>
           <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
           <div class="suggestion-footer">
             <span id="suggestion-char-count-trip" class="char-count">0 / 500</span>
@@ -534,7 +534,7 @@
           <div class="queue-thumbnails" id="queue-thumbnails"></div>
         </div>
 
-        <button id="toggle-edit-btn" class="btn-edit-toggle" type="button">Edit Mode ✏️</button>
+        <button id="toggle-edit-btn" class="btn-edit-toggle" type="button" title="Edit mode" aria-label="Turn on edit mode">Edit Mode ✏️</button>
       </div>
 
       <div id="polaroid-container" class="polaroid-grid"></div>
@@ -550,7 +550,7 @@
           <div class="form-group notes-group">
             <label for="plan-notes">Notes / Daily Itinerary</label>
             <textarea id="plan-notes"
-              placeholder="- Day 1: Hike &amp; picnic at the lake - Day 2: Visit local shops downtown..."></textarea>
+              placeholder="- Day 1: Drive to the beach and check into the hotel. - Day 2: Visit the local museum..."></textarea>
           </div>
         </form>
       </div>
@@ -867,15 +867,15 @@
     
     <div class="suggestion-form">
       <div class="suggestion-row">
-        <input type="text" id="suggestion-name-home" class="suggestion-input" placeholder="Your Name (optional)">
-        <select id="suggestion-topic-home" class="suggestion-input">
+        <input type="text" id="suggestion-name-home" class="suggestion-input" placeholder="Your Name (optional)" aria-label="Your name">
+        <select id="suggestion-topic-home" class="suggestion-input" aria-label="Suggestion topic">
           <option value="Place">📍 A Place</option>
           <option value="Trip">🚐 A Trip</option>
           <option value="Restaurant">🍔 A Restaurant</option>
           <option value="Other">💡 Other</option>
         </select>
       </div>
-      <textarea id="suggestion-text-home" class="suggestion-textarea" placeholder="e.g., You have to check out the Grand Canyon! It's amazing." maxlength="500"></textarea>
+      <textarea id="suggestion-text-home" class="suggestion-textarea" placeholder="e.g., You have to check out the Grand Canyon! It's amazing." maxlength="500" aria-label="Your suggestion message"></textarea>
       <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
       <div class="suggestion-footer">
         <span id="suggestion-char-count-home" class="char-count">0 / 500</span>
@@ -901,13 +901,13 @@
 
   <script src="script.js"></script>
   <!-- FLOATING GEAR BUTTON -->
-  <button class="admin-gear" type="button" onclick="toggleAdminPanel()" title="Site Admin">⚙️</button>
+  <button class="admin-gear" type="button" onclick="toggleAdminPanel()" title="Site Admin" aria-label="Open Admin Panel">⚙️</button>
 
   <!-- ADMIN CONTROL PANEL -->
   <div id="admin-panel" class="admin-panel hidden">
     <div class="admin-row">
       <strong>Site Admin</strong>
-      <button type="button" class="admin-close" onclick="toggleAdminPanel()" title="Close">✕</button>
+      <button type="button" class="admin-close" onclick="toggleAdminPanel()" title="Close" aria-label="Close Admin Panel">✕</button>
     </div>
 
     <p id="admin-status" style="margin: 10px 0; font-weight: bold;">🔒 Locked</p>
@@ -919,7 +919,7 @@
         Unlock Admin</button>
       <button id="btn-lock" type="button" class="admin-btn secondary" onclick="lockAdmin()" style="display: none;">🔒
         Lock Site (Keep Token)</button>
-      <button id="btn-forget" type="button" class="admin-btn danger" onclick="confirmForgetToken()"
+      <button id="btn-forget" type="button" class="admin-btn danger" onclick="confirmForgetToken()" aria-label="Forget this token" title="Forget Token"
         style="display: none;">🗑️ Forget Token</button>
     </div>
   </div>
@@ -979,9 +979,9 @@
   <div id="favorite-edit-modal" class="modal-overlay hidden" style="z-index: 2100;">
     <div class="modal-card" style="max-width: 520px; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <h3 class="modal-title" style="margin: 0;">✏️ Edit Favorite</h3>
+        <h3 class="modal-title" style="margin: 0;" title="Edit Favorite" aria-label="Edit this Favorite">✏️ Edit Favorite</h3>
         <button type="button" onclick="closeFavoriteEditModal()"
-          style="background:none; border:none; font-size:1.2rem; cursor:pointer;">✖</button>
+          style="background:none; border:none; font-size:1.2rem; cursor:pointer;" aria-label="Close tab">✖</button>
       </div>
 
       <div class="fav-edit-form">

@@ -1967,8 +1967,8 @@ function renderItinerary() {
                 ${isAdmin() ? `<input type="checkbox" ${stop.completed ? "checked" : ""} onchange="toggleStopComplete(${index})">` : ""}
                 <strong>${index + 1}. ${esc(stop.name)}</strong>
                 <span>$${stopTotal.toFixed(2)}</span>
-                <button class="edit-stop-btn admin-only" onclick="startEditStop(${index})" title="Edit stop">✏️</button>
-                <button class="admin-only" onclick="removeStop(${index})" title="Delete stop">🗑️</button>
+                <button class="edit-stop-btn admin-only" onclick="startEditStop(${index})" title="Edit stop" aria-label="Edit this stop">✏️</button>
+                <button class="admin-only" onclick="removeStop(${index})" title="Delete stop" aria-label="Delete this stop">🗑️</button>
             </div>
             <p class="stop-notes">${esc(stop.notes)}</p>
             ${summaryHtml}
@@ -2636,8 +2636,8 @@ function renderFavoritesUI() {
                 html += `<li style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
                     <span style="font-size: 1.1rem; flex-shrink: 0;">${listIcon}</span>
                     <span style="flex: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(fav.name)}</span>
-                    <button class="admin-only" onclick="openFavoriteEditModal('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Edit Favorite">✏️</button>
-                    <button class="admin-only" onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite">🗑️</button>
+                    <button class="admin-only" onclick="openFavoriteEditModal('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Edit Favorite" aria-label="Edit this favorite">✏️</button>
+                    <button class="admin-only" onclick="deleteFavorite('${fav.id}')" style="background: transparent; border: none; cursor: pointer; font-size: 1rem;" title="Delete Favorite" aria-label="Delete this favorite">🗑️</button>
                 </li>`;
             });
         }

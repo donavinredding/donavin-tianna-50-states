@@ -997,3 +997,46 @@ button.cancel-edit-btn:hover {
 body.admin-unlocked .admin-hidden {
   display: none !important;
 }
+
+/* ---- Batch 15: Accessibility & Age-Friendly Polish ---- */
+
+/* Prevent iOS auto-zoom on inputs */
+input[type="text"], 
+input[type="number"], 
+input[type="time"], 
+select, 
+textarea {
+  font-size: 16px !important;
+}
+
+/* Enforce large touch targets for buttons */
+button, 
+.admin-btn, 
+.suggestion-btn, 
+.submit-btn, 
+.open-modal-btn,
+.cancel-btn,
+.oh-add-day-btn,
+.oh-btn {
+  min-height: 44px; /* Apple's recommended minimum touch target */
+}
+
+/* Make inputs and buttons easier to tap */
+input[type="checkbox"], 
+input[type="radio"] {
+  min-width: 20px;
+  min-height: 20px;
+  cursor: pointer;
+}
+
+/* Better focus outlines for keyboard users */
+*:focus-visible {
+  outline: 3px solid var(--primary-orange) !important;
+  outline-offset: 2px;
+}
+
+/* Improve legibility of placeholder text */
+::placeholder {
+  color: #777 !important;
+  opacity: 1;
+}
