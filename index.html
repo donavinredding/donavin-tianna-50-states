@@ -212,6 +212,7 @@
             </select>
           </div>
           <textarea id="suggestion-text-trip" class="suggestion-textarea" placeholder="e.g., You should add a stop in Nashville on the way to Florida." maxlength="500"></textarea>
+          <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
           <div class="suggestion-footer">
             <span id="suggestion-char-count-trip" class="char-count">0 / 500</span>
             <button id="suggestion-submit-trip" class="suggestion-btn" onclick="submitSuggestion('trip')">Send Suggestion</button>
@@ -875,6 +876,7 @@
         </select>
       </div>
       <textarea id="suggestion-text-home" class="suggestion-textarea" placeholder="e.g., You have to check out the Grand Canyon! It's amazing." maxlength="500"></textarea>
+      <input type="checkbox" name="botcheck" class="hidden" style="display: none;">
       <div class="suggestion-footer">
         <span id="suggestion-char-count-home" class="char-count">0 / 500</span>
         <button id="suggestion-submit-home" class="suggestion-btn" onclick="submitSuggestion('home')">Send Suggestion</button>

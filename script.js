@@ -12,6 +12,9 @@ const GH_CONFIG = {
     tokenKey: "gh_publish_token"
 };
 
+/* ---------- Web3Forms Config ---------- */
+const WEB3FORMS_ACCESS_KEY = "8dcb7dd9-d91a-4e2e-93c3-4f41f18a5050";
+
 const FAV_CATEGORIES = {
     food:       { label: "Food",          emoji: "🍔", color: "#B75109" },
     park:       { label: "National Park", emoji: "🏞️", color: "#6B8071" },
@@ -3250,32 +3253,57 @@ window.submitSuggestion = async function(context) {
     submitBtn.disabled = true;
 
     try {
-        // ---------------------------------------------------------
-        // WEB3FORMS INTEGRATION GOES HERE (Batch 14)
-        // For Batch 13, we will just simulate a successful send.
-        // ---------------------------------------------------------
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+    // 1. Strip URLs for safety
+    const safeText = text.replace(/https?:\/\/[^\s]+/gi, "[link removed]");
+    const safeName = name.replace(/https?:\/\/[^\s]+/gi, "");
 
-        // Save to local history
-        const suggestions = getLocalSuggestions();
-        suggestions.push({
-            id: Date.now(),
-            name: name,
-            topic: topic,
-            text: text,
-            date: new Date().toISOString()
-        });
-        saveLocalSuggestions(suggestions);
-        renderSuggestionHistories();
+    // 2. Build the payload
+    const payload = {
+        access_key: WEB3FORMS_ACCESS_KEY,
+        subject: `[50 States] New Suggestion: ${topic}`,
+        from_name: "50 States Gallery",
+        Name: safeName,
+        Topic: topic,
+        Suggestion: safeText,
+        botcheck: false // Honeypot for bots
+    };
 
-        // Clear form
-        textInput.value = "";
-        if (document.getElementById(`suggestion-char-count-${context}`)) {
-            document.getElementById(`suggestion-char-count-${context}`).textContent = "0 / 500";
-        }
+    // 3. Send to Web3Forms
+    const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
 
-        // Show Thank You Modal
-        document.getElementById("thankyou-modal").classList.remove("hidden");
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error(result.message || "Failed to send to Web3Forms.");
+    }
+
+    // 4. Save to local history (Use original text, so the user sees what they typed)
+    const suggestions = getLocalSuggestions();
+    suggestions.push({
+        id: Date.now(),
+        name: name,
+        topic: topic,
+        text: text,
+        date: new Date().toISOString()
+    });
+    saveLocalSuggestions(suggestions);
+    renderSuggestionHistories();
+
+    // 5. Clear form
+    textInput.value = "";
+    if (document.getElementById(`suggestion-char-count-${context}`)) {
+        document.getElementById(`suggestion-char-count-${context}`).textContent = "0 / 500";
+    }
+
+    // 6. Show Thank You Modal
+    document.getElementById("thankyou-modal").classList.remove("hidden");
 
     } catch (err) {
         alert("Error sending suggestion: " + err.message);
