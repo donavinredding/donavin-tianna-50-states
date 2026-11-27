@@ -91,7 +91,7 @@
               <option value="">-- Select Vehicle --</option>
             </select>
           
-            <input type="number" id="currentFuelMiles" placeholder="Miles till empty" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
+            <input type="number" id="currentFuelMiles" placeholder="Miles" max="999" min="0" inputmode="numeric" oninput="if(this.value.length>3)this.value=this.value.slice(0,3);resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
             <select id="fuelReserveSelect" onchange="resetFirstRefuelAutoOpen();updateRoute()" style="padding: 6px; font-size: 0.85rem; border-radius: 4px; border: 1px solid #ccc;">
               <option value="5">5%</option>
               <option value="10">10%</option>
